@@ -1,0 +1,5 @@
+Verified on Oct 27, 2026 (clang/zig c++ -O2 -std=c++17, x86-64):
+ "6 6 4" -> 4 both (sample).
+ "100000 100000 1" -> student 1410065408, brute 10000000000 (mismatch).
+ "1000000000 1000000000 1" -> student -1486618624, expected 1000000000000000000 (brute loop is slow here: do not use in stress tests).
+ Signed overflow is undefined behaviour: always show the real runner output.

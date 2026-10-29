@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Daleel system architecture (hackathon MVP)",
+    "output": "architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en"
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Trainee / Coach", "sublabel": "browser, ar-EG or en", "pos": [40, 220], "size": [130, 64] },
+    { "id": "ui", "type": "frontend", "label": "Next.js UI", "sublabel": "RTL pages, player", "pos": [240, 220], "size": [140, 64] },
+    { "id": "api", "type": "backend", "label": "Route Handlers", "sublabel": "/api/* + SSE", "pos": [480, 220], "size": [150, 64] },
+    { "id": "pipeline", "type": "backend", "label": "Coach Pipeline", "sublabel": "diagnose, stress, hints", "pos": [730, 220], "size": [160, 64], "tag": "zod-validated" },
+    { "id": "meta", "type": "cloud", "label": "Meta Model API", "sublabel": "muse-spark-1.3", "pos": [1040, 220], "size": [160, 64], "tag": "json_schema" },
+    { "id": "judges", "type": "external", "label": "Codeforces / AtCoder", "sublabel": "pages + CF API", "pos": [480, 50], "size": [150, 64] },
+    { "id": "fallback", "type": "cloud", "label": "Fallback host", "sublabel": "open-weight Meta model", "pos": [1040, 50], "size": [160, 64] },
+    { "id": "db", "type": "database", "label": "SQLite / Turso", "sublabel": "Drizzle + libSQL", "pos": [480, 400], "size": [150, 64] },
+    { "id": "runner", "type": "security", "label": "Code Runner", "sublabel": "Judge0 sandbox", "pos": [730, 400], "size": [160, 64], "tag": "2s, 256MB, no net" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Vercel: Next.js server (holds MODEL_API_KEY)", "wraps": ["api", "pipeline"] }
+  ],
+  "connections": [
+    { "id": "users-ui", "from": "users", "to": "ui", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "ui-api", "from": "ui", "to": "api", "label": "fetch, SSE", "variant": "emphasis" },
+    { "id": "api-pipeline", "from": "api", "to": "pipeline", "label": "orchestrate", "variant": "emphasis" },
+    { "id": "pipeline-meta", "from": "pipeline", "to": "meta", "label": "chat/completions", "variant": "emphasis" },
+    { "id": "api-judges", "from": "api", "to": "judges", "label": "fetch + cache", "fromSide": "top", "toSide": "bottom" },
+    { "id": "api-db", "from": "api", "to": "db", "label": "SQL", "fromSide": "bottom", "toSide": "top" },
+    { "id": "pipeline-runner", "from": "pipeline", "to": "runner", "label": "compile + run", "variant": "security", "fromSide": "bottom", "toSide": "top" },
+    { "id": "pipeline-fallback", "from": "pipeline", "to": "fallback", "label": "on 5xx only", "variant": "dashed", "fromSide": "top", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Pipeline steps", "items": ["diagnose: high reasoning effort", "stress: model writes brute + tests", "ladder: 4 hints in one call", "explain + trace on demand"] },
+    { "dot": "emerald", "title": "Cost and reliability", "items": ["prompt_cache_key per problem", "daily budget guard", "retries with backoff", "replay mode for demo"] },
+    { "dot": "rose", "title": "Security", "items": ["user code only in sandbox", "brute code never sent to browser", "untrusted text fenced in tags"] }
+  ]
+}
