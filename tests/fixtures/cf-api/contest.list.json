@@ -1,0 +1,65 @@
+{
+ "status": "OK",
+ "result": [
+  {
+   "id": 2282,
+   "name": "Kotlin Heroes: Episode 15",
+   "type": "ICPC",
+   "phase": "BEFORE",
+   "frozen": false,
+   "durationSeconds": 9000,
+   "startTimeSeconds": 1795790100,
+   "relativeTimeSeconds": -2478937
+  },
+  {
+   "id": 2286,
+   "name": "Kotlin Heroes: Practice 15",
+   "type": "ICPC",
+   "phase": "BEFORE",
+   "frozen": false,
+   "durationSeconds": 604800,
+   "startTimeSeconds": 1795185000,
+   "relativeTimeSeconds": -1873837
+  },
+  {
+   "id": 2285,
+   "name": "Codeforces Round (Div. 2)",
+   "type": "CF",
+   "phase": "BEFORE",
+   "frozen": false,
+   "durationSeconds": 7200,
+   "startTimeSeconds": 1794753300,
+   "relativeTimeSeconds": -1442137
+  },
+  {
+   "id": 2272,
+   "name": "Codeforces Round 1130 (Div. 2)",
+   "type": "CF",
+   "phase": "FINISHED",
+   "frozen": false,
+   "durationSeconds": 8100,
+   "startTimeSeconds": 1793025300,
+   "relativeTimeSeconds": 285862
+  },
+  {
+   "id": 2277,
+   "name": "Codeforces Round 1129 (Div. 2)",
+   "type": "CF",
+   "phase": "FINISHED",
+   "frozen": false,
+   "durationSeconds": 8100,
+   "startTimeSeconds": 1792839900,
+   "relativeTimeSeconds": 471263
+  },
+  {
+   "id": 2261,
+   "name": "WorldQuant Round 1 (Codeforces Round 1128, Div. 1 + Div. 2)",
+   "type": "CF",
+   "phase": "FINISHED",
+   "frozen": false,
+   "durationSeconds": 10800,
+   "startTimeSeconds": 1792247700,
+   "relativeTimeSeconds": 1063462
+  }
+ ]
+}
