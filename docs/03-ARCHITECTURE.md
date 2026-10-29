@@ -119,8 +119,8 @@ All bodies are JSON; errors use `{ "error": { "code": string, "message": string 
 - An account needs a payment method on file before any API call; $150 hackathon credits are applied to usage first; after that, usage is charged to the card [rules file, Credit Terms §1.2, §3.6].
 
 ### 5.2 Not verified — check in PR-02 smoke test
-- **[UNVERIFIED]** Whether reasoning tokens are included in `usage.completion_tokens` (and billed as output). The smoke test logs `usage` for a high-effort call; the cost estimator uses `completion_tokens` as billed output either way.
-- **[UNVERIFIED]** Exact behaviour of `response_format` + `stream:true` together (expect JSON deltas). The pipeline does **not** depend on it: we stream progress *events* from our server and call the model non-streaming **only for short steps**; diagnose/explain use `stream:true` and accumulate text, then parse. If streaming + json_schema misbehaves, fall back to non-streaming with `reasoning_effort:"medium"`.
+- **[VERIFIED 2026-10-29, see VERIFIED.md: yes, included]** Whether reasoning tokens are included in `usage.completion_tokens` (and billed as output). The smoke test logs `usage` for a high-effort call; the cost estimator uses `completion_tokens` as billed output either way.
+- **[VERIFIED 2026-10-29, see VERIFIED.md: works, JSON text deltas]** Exact behaviour of `response_format` + `stream:true` together (expect JSON deltas). The pipeline does **not** depend on it: we stream progress *events* from our server and call the model non-streaming **only for short steps**; diagnose/explain use `stream:true` and accumulate text, then parse. If streaming + json_schema misbehaves, fall back to non-streaming with `reasoning_effort:"medium"`.
 - **[UNVERIFIED]** Typical latency of `muse-spark-1.3` at `high` effort for ~4k-token prompts. Measure in PR-02 and PR-09; target p50 ≤ 25 s.
 - **[UNVERIFIED]** Quality of Egyptian Arabic. Measured in PR-11 review.
 - **[UNVERIFIED]** Whether the hackathon credits cover Muse Code pay-as-you-go usage (docs say Muse Code bills pay-as-you-go to the same account; credits apply to "Services") — check the Billing page after a first Muse Code session.
