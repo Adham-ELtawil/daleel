@@ -14,4 +14,6 @@ Changes to the plan pack agreed with the owner after it was written. When a deci
 | D8 | 2026-10-29 | Product name: **Daleel stays a placeholder** until the owner picks one. | Open Question 1 (name). |
 | D9 | 2026-10-29 | Package manager **pnpm** (chosen in PR-01, never mix). | `03-ARCHITECTURE.md` §1. |
 
+| D10 | 2026-10-29 | **Meta API key now available** (env only, never committed or sent to third-party coding relays). `pnpm smoke:meta` ran live once in PR-02; results in `VERIFIED.md`. Supersedes the "waits for the key" part of D7; tests still use fakes only. | D7, M1. |
+
 Still open: Open Question 3 (can 5–10 trainees test on Nov 2–3 and appear anonymised in the video).
