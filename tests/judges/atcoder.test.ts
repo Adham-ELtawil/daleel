@@ -8,7 +8,7 @@ describe("parseAtcoderHtml", () => {
   it.each([
     {
       id: "abc300_a",
-      title: "A - N-choice question",
+      title: "N-choice question",
       phrase: "Given integers",
       samples: [
         { input: "3 125 175\n200 300 400\n", output: "2\n" },
@@ -19,7 +19,7 @@ describe("parseAtcoderHtml", () => {
     },
     {
       id: "abc300_b",
-      title: "B - Same Map in the RPG World",
+      title: "Same Map in the RPG World",
       phrase: "We have grids",
       samples: [
         { input: "4 3\n..#\n...\n.#.\n...\n#..\n...\n.#.\n...\n", output: "Yes\n" },
@@ -52,7 +52,7 @@ describe("parseAtcoderHtml", () => {
     const problem = parseAtcoderHtml(
       fixture("abc300_a").replace("<title>A -", "<title>Problem - A -"),
     );
-    expect(problem.title).toBe("A - N-choice question");
+    expect(problem.title).toBe("N-choice question");
     expect(problem.inputSpecMd).toContain(String.raw`\dots`);
     expect(problem.statementMd).toContain(String.raw`1 \le N \le 300`);
   });
