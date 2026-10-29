@@ -22,3 +22,17 @@ body {
 .bidi-isolate {
   unicode-bidi: isolate;
 }
+
+.intake label {
+  display: grid;
+  gap: 0.5rem;
+}
+.intake :is(input, textarea, select, pre) {
+  border: 1px solid;
+  border-radius: 0.5rem;
+  padding-block: 0.5rem;
+  padding-inline: 0.5rem;
+}
+.intake pre {
+  overflow: auto;
+}

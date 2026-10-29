@@ -19,7 +19,9 @@
     "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
+    "@codemirror/lang-cpp": "^6.0.3",
     "@libsql/client": "^0.18.0",
+    "@uiw/react-codemirror": "^4.25.12",
     "drizzle-orm": "^0.45.4",
     "next": "15.5.28",
     "openai": "^7.45.1",
