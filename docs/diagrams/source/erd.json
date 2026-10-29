@@ -1,0 +1,707 @@
+{
+ "schema_version": 1,
+ "diagram_type": "erd",
+ "meta": {
+  "title": "Daleel database schema (SQLite / libSQL)",
+  "locale": "en",
+  "output": "erd.html",
+  "quality_profile": "standard"
+ },
+ "layout": {
+  "mode": "grid",
+  "gapX": 72,
+  "gapY": 38
+ },
+ "entities": [
+  {
+   "id": "users",
+   "label": "users",
+   "tag": "people",
+   "row": 0,
+   "col": 0,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "handle",
+     "type": "text",
+     "key": "uk"
+    },
+    {
+     "name": "role",
+     "type": "text"
+    },
+    {
+     "name": "locale",
+     "type": "text"
+    },
+    {
+     "name": "cf_handle",
+     "type": "text"
+    },
+    {
+     "name": "is_guest",
+     "type": "integer"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "teams",
+   "label": "teams",
+   "tag": "people",
+   "row": 1,
+   "col": 0,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "name",
+     "type": "text"
+    },
+    {
+     "name": "coach_id",
+     "type": "text",
+     "key": "fk",
+     "references": "users.id"
+    },
+    {
+     "name": "invite_code",
+     "type": "text",
+     "key": "uk"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "team_members",
+   "label": "team_members",
+   "tag": "people",
+   "row": 2,
+   "col": 0,
+   "attributes": [
+    {
+     "name": "team_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "teams.id"
+    },
+    {
+     "name": "user_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "users.id"
+    },
+    {
+     "name": "joined_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "weekly_reports",
+   "label": "weekly_reports",
+   "tag": "reports",
+   "row": 3,
+   "col": 0,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "team_id",
+     "type": "text",
+     "key": "fk",
+     "references": "teams.id"
+    },
+    {
+     "name": "week_start",
+     "type": "text"
+    },
+    {
+     "name": "locale",
+     "type": "text"
+    },
+    {
+     "name": "stats_json",
+     "type": "text"
+    },
+    {
+     "name": "report_json",
+     "type": "text"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "problems",
+   "label": "problems",
+   "tag": "practice",
+   "row": 0,
+   "col": 1,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "judge",
+     "type": "text"
+    },
+    {
+     "name": "external_id",
+     "type": "text"
+    },
+    {
+     "name": "url",
+     "type": "text"
+    },
+    {
+     "name": "title",
+     "type": "text"
+    },
+    {
+     "name": "statement_md",
+     "type": "text"
+    },
+    {
+     "name": "input_spec_md",
+     "type": "text"
+    },
+    {
+     "name": "output_spec_md",
+     "type": "text"
+    },
+    {
+     "name": "notes_md",
+     "type": "text"
+    },
+    {
+     "name": "samples_json",
+     "type": "text"
+    },
+    {
+     "name": "time_limit_ms",
+     "type": "integer"
+    },
+    {
+     "name": "memory_limit_mb",
+     "type": "integer"
+    },
+    {
+     "name": "rating",
+     "type": "integer"
+    },
+    {
+     "name": "tags_json",
+     "type": "text"
+    },
+    {
+     "name": "contest_id",
+     "type": "text"
+    },
+    {
+     "name": "content_hash",
+     "type": "text"
+    },
+    {
+     "name": "fetched_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "attempts",
+   "label": "attempts",
+   "tag": "practice",
+   "row": 1,
+   "col": 1,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "user_id",
+     "type": "text",
+     "key": "fk",
+     "references": "users.id"
+    },
+    {
+     "name": "problem_id",
+     "type": "text",
+     "key": "fk",
+     "references": "problems.id"
+    },
+    {
+     "name": "parent_attempt_id",
+     "type": "text",
+     "key": "fk",
+     "references": "attempts.id"
+    },
+    {
+     "name": "language",
+     "type": "text"
+    },
+    {
+     "name": "code",
+     "type": "text"
+    },
+    {
+     "name": "code_hash",
+     "type": "text"
+    },
+    {
+     "name": "verdict_reported",
+     "type": "text"
+    },
+    {
+     "name": "verdict_test_no",
+     "type": "integer"
+    },
+    {
+     "name": "student_note",
+     "type": "text"
+    },
+    {
+     "name": "locale",
+     "type": "text"
+    },
+    {
+     "name": "status",
+     "type": "text"
+    },
+    {
+     "name": "max_hint_level",
+     "type": "integer"
+    },
+    {
+     "name": "solved_at",
+     "type": "integer"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "diagnoses",
+   "label": "diagnoses",
+   "tag": "AI results",
+   "row": 0,
+   "col": 2,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "attempt_id",
+     "type": "text",
+     "key": [
+      "fk",
+      "uk"
+     ],
+     "references": "attempts.id"
+    },
+    {
+     "name": "result_json",
+     "type": "text"
+    },
+    {
+     "name": "bug_class",
+     "type": "text"
+    },
+    {
+     "name": "topics_json",
+     "type": "text"
+    },
+    {
+     "name": "confidence",
+     "type": "real"
+    },
+    {
+     "name": "model",
+     "type": "text"
+    },
+    {
+     "name": "reasoning_effort",
+     "type": "text"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "stress_runs",
+   "label": "stress_runs",
+   "tag": "AI results",
+   "row": 1,
+   "col": 2,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "attempt_id",
+     "type": "text",
+     "key": [
+      "fk",
+      "uk"
+     ],
+     "references": "attempts.id"
+    },
+    {
+     "name": "status",
+     "type": "text"
+    },
+    {
+     "name": "runner",
+     "type": "text"
+    },
+    {
+     "name": "brute_code",
+     "type": "text"
+    },
+    {
+     "name": "tests_json",
+     "type": "text"
+    },
+    {
+     "name": "failing_input",
+     "type": "text"
+    },
+    {
+     "name": "expected_output",
+     "type": "text"
+    },
+    {
+     "name": "actual_output",
+     "type": "text"
+    },
+    {
+     "name": "compile_output",
+     "type": "text"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "hint_ladders",
+   "label": "hint_ladders",
+   "tag": "AI results",
+   "row": 2,
+   "col": 2,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "attempt_id",
+     "type": "text",
+     "key": "fk",
+     "references": "attempts.id"
+    },
+    {
+     "name": "locale",
+     "type": "text"
+    },
+    {
+     "name": "levels_json",
+     "type": "text"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "hint_reveals",
+   "label": "hint_reveals",
+   "tag": "learning",
+   "row": 0,
+   "col": 3,
+   "attributes": [
+    {
+     "name": "attempt_id",
+     "type": "text",
+     "key": [
+      "pk",
+      "fk"
+     ],
+     "references": "attempts.id"
+    },
+    {
+     "name": "level",
+     "type": "integer",
+     "key": "pk"
+    },
+    {
+     "name": "revealed_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "walkthroughs",
+   "label": "walkthroughs",
+   "tag": "learning",
+   "row": 1,
+   "col": 3,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "attempt_id",
+     "type": "text",
+     "key": "fk",
+     "references": "attempts.id"
+    },
+    {
+     "name": "locale",
+     "type": "text"
+    },
+    {
+     "name": "explanation_json",
+     "type": "text"
+    },
+    {
+     "name": "trace_json",
+     "type": "text"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  },
+  {
+   "id": "llm_calls",
+   "label": "llm_calls",
+   "tag": "ops",
+   "row": 2,
+   "col": 3,
+   "attributes": [
+    {
+     "name": "id",
+     "type": "text",
+     "key": "pk"
+    },
+    {
+     "name": "step",
+     "type": "text"
+    },
+    {
+     "name": "attempt_id",
+     "type": "text",
+     "key": "fk",
+     "references": "attempts.id"
+    },
+    {
+     "name": "model",
+     "type": "text"
+    },
+    {
+     "name": "request_hash",
+     "type": "text"
+    },
+    {
+     "name": "status",
+     "type": "text"
+    },
+    {
+     "name": "http_status",
+     "type": "integer"
+    },
+    {
+     "name": "input_tokens",
+     "type": "integer"
+    },
+    {
+     "name": "output_tokens",
+     "type": "integer"
+    },
+    {
+     "name": "cached_tokens",
+     "type": "integer"
+    },
+    {
+     "name": "cost_usd",
+     "type": "real"
+    },
+    {
+     "name": "latency_ms",
+     "type": "integer"
+    },
+    {
+     "name": "error",
+     "type": "text"
+    },
+    {
+     "name": "created_at",
+     "type": "integer"
+    }
+   ]
+  }
+ ],
+ "relationships": [
+  {
+   "id": "teams_coach",
+   "from": "teams",
+   "to": "users",
+   "fromCardinality": "many",
+   "toCardinality": "one",
+   "label": "coached by"
+  },
+  {
+   "id": "tm_team",
+   "from": "team_members",
+   "to": "teams",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "tm_user",
+   "from": "team_members",
+   "to": "users",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "wr_team",
+   "from": "weekly_reports",
+   "to": "teams",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "att_user",
+   "from": "attempts",
+   "to": "users",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "att_problem",
+   "from": "attempts",
+   "to": "problems",
+   "fromCardinality": "many",
+   "toCardinality": "one"
+  },
+  {
+   "id": "diag_att",
+   "from": "diagnoses",
+   "to": "attempts",
+   "fromCardinality": "one",
+   "toCardinality": "one",
+   "fromOptional": true
+  },
+  {
+   "id": "stress_att",
+   "from": "stress_runs",
+   "to": "attempts",
+   "fromCardinality": "one",
+   "toCardinality": "one",
+   "fromOptional": true
+  },
+  {
+   "id": "ladder_att",
+   "from": "hint_ladders",
+   "to": "attempts",
+   "fromCardinality": "many",
+   "toCardinality": "one",
+   "fromOptional": true
+  },
+  {
+   "id": "reveal_att",
+   "from": "hint_reveals",
+   "to": "attempts",
+   "fromCardinality": "many",
+   "toCardinality": "one",
+   "fromOptional": true
+  },
+  {
+   "id": "walk_att",
+   "from": "walkthroughs",
+   "to": "attempts",
+   "fromCardinality": "many",
+   "toCardinality": "one",
+   "fromOptional": true
+  },
+  {
+   "id": "llm_att",
+   "from": "llm_calls",
+   "to": "attempts",
+   "fromCardinality": "many",
+   "toCardinality": "one",
+   "fromOptional": true,
+   "toOptional": true
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Hub",
+   "items": [
+    "attempts is the hub: every AI result points at one attempt",
+    "self-reference: attempts.parent_attempt_id points to attempts.id (a re-check is a child attempt)"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "JSON columns",
+   "items": [
+    "*_json columns are text validated by zod",
+    "ids are ULID text, times are unix ms UTC"
+   ]
+  },
+  {
+   "dot": "emerald",
+   "title": "Cost tracking",
+   "items": [
+    "llm_calls logs tokens, cached tokens and cost per call",
+    "daily budget guard sums cost_usd"
+   ]
+  }
+ ]
+}

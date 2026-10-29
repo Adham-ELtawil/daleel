@@ -1,0 +1,8 @@
+{
+  "landing": {
+    "title": "Daleel",
+    "tagline": "مدرب AI للمبرمجين في الـ competitive programming.",
+    "description": "حط مسألة Codeforces أو AtCoder والكود بتاعك بالـ C++. دليل بيلاقي الكود بيقع فين، ويثبتها بـ failing test، ويعلمك الحل بالتدريج من غير ما يحرق الفكرة.",
+    "status": "نسخة أولية: الكوتش لسه بيتبني."
+  }
+}

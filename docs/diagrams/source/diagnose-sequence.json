@@ -1,0 +1,345 @@
+{
+ "schema_version": 1,
+ "diagram_type": "sequence",
+ "meta": {
+  "title": "Daleel main flow: submit, diagnose, verify, hint, walkthrough",
+  "output": "diagnose-sequence.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "participants": [
+  {
+   "id": "trainee",
+   "type": "external",
+   "label": "Trainee",
+   "sublabel": "browser"
+  },
+  {
+   "id": "ui",
+   "type": "frontend",
+   "label": "Next.js UI",
+   "sublabel": "attempt page"
+  },
+  {
+   "id": "api",
+   "type": "backend",
+   "label": "API + Pipeline",
+   "sublabel": "route handlers"
+  },
+  {
+   "id": "db",
+   "type": "database",
+   "label": "SQLite",
+   "sublabel": "Drizzle"
+  },
+  {
+   "id": "meta",
+   "type": "cloud",
+   "label": "Meta Model API",
+   "sublabel": "muse-spark-1.3"
+  },
+  {
+   "id": "runner",
+   "type": "security",
+   "label": "Runner",
+   "sublabel": "Judge0 sandbox"
+  }
+ ],
+ "segments": [
+  {
+   "from": 153,
+   "to": 271,
+   "label": "Submit"
+  },
+  {
+   "from": 281,
+   "to": 367,
+   "label": "Diagnose"
+  },
+  {
+   "from": 415,
+   "to": 603,
+   "label": "Verify by running"
+  },
+  {
+   "from": 613,
+   "to": 769,
+   "label": "Hint ladder"
+  },
+  {
+   "from": 779,
+   "to": 1057,
+   "label": "Learn: hints, stuck, walkthrough"
+  }
+ ],
+ "messages": [
+  {
+   "id": "paste",
+   "from": "trainee",
+   "to": "ui",
+   "y": 165,
+   "label": "paste CF link + code"
+  },
+  {
+   "id": "create-attempt",
+   "from": "ui",
+   "to": "api",
+   "y": 197,
+   "label": "POST /api/attempts",
+   "variant": "emphasis"
+  },
+  {
+   "id": "save-attempt",
+   "from": "api",
+   "to": "db",
+   "y": 229,
+   "label": "insert attempt"
+  },
+  {
+   "id": "attempt-id",
+   "from": "api",
+   "to": "ui",
+   "y": 261,
+   "label": "attemptId",
+   "variant": "return"
+  },
+  {
+   "id": "start-diagnose",
+   "from": "ui",
+   "to": "api",
+   "y": 293,
+   "label": "POST diagnose (SSE)",
+   "variant": "emphasis"
+  },
+  {
+   "id": "diagnose-call",
+   "from": "api",
+   "to": "meta",
+   "y": 325,
+   "label": "diagnose, effort high",
+   "variant": "emphasis"
+  },
+  {
+   "id": "diagnosis",
+   "from": "meta",
+   "to": "api",
+   "y": 357,
+   "label": "Diagnosis JSON",
+   "variant": "return",
+   "note": "schema-constrained, then zod"
+  },
+  {
+   "id": "stress-call",
+   "from": "api",
+   "to": "meta",
+   "y": 427,
+   "label": "brute + tests, effort medium"
+  },
+  {
+   "id": "stress-plan",
+   "from": "meta",
+   "to": "api",
+   "y": 459,
+   "label": "StressPlan JSON",
+   "variant": "return"
+  },
+  {
+   "id": "trust-gate",
+   "from": "api",
+   "to": "runner",
+   "y": 491,
+   "label": "run brute on samples",
+   "variant": "security",
+   "note": "trust gate: brute must pass"
+  },
+  {
+   "id": "stress-run",
+   "from": "api",
+   "to": "runner",
+   "y": 561,
+   "label": "run both on tests",
+   "variant": "security"
+  },
+  {
+   "id": "mismatch",
+   "from": "runner",
+   "to": "api",
+   "y": 593,
+   "label": "first mismatch",
+   "variant": "return"
+  },
+  {
+   "id": "ladder-call",
+   "from": "api",
+   "to": "meta",
+   "y": 625,
+   "label": "4-hint ladder, effort low"
+  },
+  {
+   "id": "ladder",
+   "from": "meta",
+   "to": "api",
+   "y": 657,
+   "label": "HintLadder JSON",
+   "variant": "return",
+   "note": "no-spoiler validator"
+  },
+  {
+   "id": "persist",
+   "from": "api",
+   "to": "db",
+   "y": 727,
+   "label": "save results",
+   "variant": "dashed"
+  },
+  {
+   "id": "sse-done",
+   "from": "api",
+   "to": "ui",
+   "y": 759,
+   "label": "SSE diagnosis, stress, done",
+   "variant": "return"
+  },
+  {
+   "id": "reveal",
+   "from": "trainee",
+   "to": "ui",
+   "y": 791,
+   "label": "reveal next hint"
+  },
+  {
+   "id": "hints-next",
+   "from": "ui",
+   "to": "api",
+   "y": 823,
+   "label": "POST hints/next"
+  },
+  {
+   "id": "hint-db",
+   "from": "api",
+   "to": "db",
+   "y": 855,
+   "label": "read + record reveal"
+  },
+  {
+   "id": "hint-back",
+   "from": "api",
+   "to": "ui",
+   "y": 887,
+   "label": "hint level n",
+   "variant": "return"
+  },
+  {
+   "id": "stuck",
+   "from": "ui",
+   "to": "api",
+   "y": 919,
+   "label": "POST explain (stuck)",
+   "variant": "emphasis"
+  },
+  {
+   "id": "explain-call",
+   "from": "api",
+   "to": "meta",
+   "y": 951,
+   "label": "explain + trace, effort medium"
+  },
+  {
+   "id": "explanation",
+   "from": "meta",
+   "to": "api",
+   "y": 983,
+   "label": "Explanation JSON",
+   "variant": "return"
+  },
+  {
+   "id": "trace-back",
+   "from": "api",
+   "to": "ui",
+   "y": 1015,
+   "label": "trace with real outputs",
+   "variant": "return"
+  },
+  {
+   "id": "play",
+   "from": "ui",
+   "to": "trainee",
+   "y": 1047,
+   "label": "animated walkthrough",
+   "variant": "return"
+  }
+ ],
+ "activations": [
+  {
+   "participant": "ui",
+   "from": 192,
+   "to": 1053,
+   "type": "frontend"
+  },
+  {
+   "participant": "api",
+   "from": 192,
+   "to": 1021,
+   "type": "backend"
+  },
+  {
+   "participant": "meta",
+   "from": 320,
+   "to": 363,
+   "type": "cloud"
+  },
+  {
+   "participant": "meta",
+   "from": 422,
+   "to": 465,
+   "type": "cloud"
+  },
+  {
+   "participant": "runner",
+   "from": 486,
+   "to": 599,
+   "type": "security"
+  },
+  {
+   "participant": "meta",
+   "from": 620,
+   "to": 663,
+   "type": "cloud"
+  },
+  {
+   "participant": "meta",
+   "from": 946,
+   "to": 989,
+   "type": "cloud"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Why verify",
+   "items": [
+    "model diagnosis can be wrong",
+    "a failing input from a real run is proof",
+    "contradiction triggers one re-diagnose"
+   ]
+  },
+  {
+   "dot": "emerald",
+   "title": "Cheap reveals",
+   "items": [
+    "all 4 hints generated once",
+    "reveals read from DB in under 300 ms",
+    "ladder cached per locale"
+   ]
+  },
+  {
+   "dot": "rose",
+   "title": "Never shown",
+   "items": [
+    "brute force code",
+    "internal fix fields before hint 3",
+    "a full solution at any level"
+   ]
+  }
+ ]
+}
