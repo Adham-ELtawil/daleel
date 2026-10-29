@@ -47,9 +47,9 @@ describe("problems repo", () => {
 
   it("enforces UNIQUE(judge, external_id)", async () => {
     await insertProblem(db, watermelon, 1_000);
-    await expect(insertProblem(db, { ...watermelon, title: "dup" }, 2_000)).rejects.toThrow(
-      /UNIQUE/,
-    );
+    await expect(insertProblem(db, { ...watermelon, title: "dup" }, 2_000)).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/UNIQUE/) },
+    });
     await expect(
       insertProblem(db, { ...watermelon, judge: "atcoder" }, 2_000),
     ).resolves.toHaveProperty("id");

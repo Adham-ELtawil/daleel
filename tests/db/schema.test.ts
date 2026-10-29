@@ -12,7 +12,7 @@ afterEach(() => cleanup());
 describe("migrations", () => {
   it("create every table from docs/03-ARCHITECTURE.md §3", async () => {
     const rows = await db.all<{ name: string }>(
-      sql`select name from sqlite_master where type = 'table' and name not like '\_\_%' escape '\\' and name not like 'sqlite_%' order by name`,
+      sql`select name from sqlite_master where type = 'table' and name not glob '__*' and name not glob 'sqlite_*' order by name`,
     );
     expect(rows.map((r) => r.name)).toEqual([
       "attempts",
@@ -44,6 +44,6 @@ describe("migrations", () => {
   it("enforce foreign keys", async () => {
     await expect(
       db.insert(teamMembers).values({ teamId: "no-team", userId: "no-user", joinedAt: 1 }),
-    ).rejects.toThrow(/FOREIGN KEY/);
+    ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/FOREIGN KEY/) } });
   });
 });
