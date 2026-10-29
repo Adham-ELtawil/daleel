@@ -44,7 +44,7 @@ Times are **Cairo time**. Deadline = **Thu Nov 5, 04:00 Cairo** (= Nov 4, 21:00 
 | PR | Goal | RED test first | Verify |
 |---|---|---|---|
 | **PR-05 judge URL parser** ✅ | `parseProblemUrl(url)` → `{judge, contestId, index, externalId}` for all forms in US-1 AC1. | Table test of ≥ 10 URLs incl. invalid ones. | tests green |
-| **PR-06 CF + AtCoder page parsers** | Fetch with browser UA + 8 s timeout; `parseCodeforcesHtml`, `parseAtcoderHtml` (statement, specs, notes, samples, limits). Save HTML fixtures for CF 4A, 1A, 1352C and AtCoder abc300_a, abc300_b. | Fixture tests: titles, limits, sample counts and exact sample text. | tests green; manual: resolve 3 live URLs from the deployed host (A5). |
+| **PR-06 CF + AtCoder page parsers** ✅ | Fetch with browser UA + 8 s timeout; `parseCodeforcesHtml`, `parseAtcoderHtml` (statement, specs, notes, samples, limits). Save HTML fixtures for CF 4A, 1A, 1352C and AtCoder abc300_a, abc300_b. | Fixture tests: titles, limits, sample counts and exact sample text. | Offline fixture tests green; live resolve deferred by the owner's no-network brief (deployment optional per D4). |
 | **PR-07 CF API + limiter** | `CfApi` with a global 1 call / 2 s limiter; `problemset.problems` daily cache; `contest.list` 10-min cache. | Limiter test with fake clock; parse fixture JSON. | tests green |
 | **PR-08 resolve + attempt UI** | `POST /api/problems/resolve`, paste fallback, `POST /api/attempts`, S2 page with CodeMirror, verdict + note fields, i18n keys (English only today). | Route tests: cache hit makes 0 fetches; fetch_failed → 502 shape; code > 64 KB → 400. | e2e: paste 4A link → title + sample shown → submit → redirected to `/attempt/[id]`. |
 
