@@ -26,7 +26,9 @@ export function parseAtcoderHtml(html: string): ParsedProblem {
     };
   });
   return {
-    title: required(text(required(element(html, "title")))).replace(/^Problem -\s*/, ""),
+    title: required(text(required(element(html, "title"))))
+      .replace(/^Problem -\s*/, "")
+      .replace(/^[A-Z]\d*\s*-\s*/, ""),
     statementMd:
       required(text(required(section("Problem Statement")))) +
       (section("Constraints")

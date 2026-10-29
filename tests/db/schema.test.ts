@@ -46,4 +46,13 @@ describe("migrations", () => {
       db.insert(teamMembers).values({ teamId: "no-team", userId: "no-user", joinedAt: 1 }),
     ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/FOREIGN KEY/) } });
   });
+
+  it("enforces foreign keys inside db.transaction", async () => {
+    await expect(
+      db.transaction(async (tx) => {
+        await tx.insert(teamMembers).values({ teamId: "no-team", userId: "no-user", joinedAt: 1 });
+      }),
+    ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/FOREIGN KEY/) } });
+    expect(await db.select().from(teamMembers)).toHaveLength(0);
+  });
 });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import messages from "@/messages/en.json";
 
 export default function Home() {
@@ -8,6 +9,9 @@ export default function Home() {
       <p className="text-xl font-medium">{t.tagline}</p>
       <p className="text-base leading-7 opacity-80">{t.description}</p>
       <p className="text-sm opacity-60">{t.status}</p>
+      <Link href="/problem" className="underline">
+        {messages.intake.title}
+      </Link>
     </main>
   );
 }
