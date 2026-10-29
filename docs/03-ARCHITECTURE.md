@@ -70,7 +70,9 @@ All ids are `text` (ULID). Timestamps are `integer` unix ms (UTC). JSON columns 
 | `hint_reveals` | `attempt_id` FK, `level` int 1–4, `revealed_at`; PK(`attempt_id`,`level`) |
 | `walkthroughs` | `id` PK, `attempt_id` FK, `locale`, `explanation_json`, `trace_json`, `created_at`; UNIQUE(`attempt_id`,`locale`) |
 | `weekly_reports` | `id` PK, `team_id` FK, `week_start` (`YYYY-MM-DD`, Monday, Cairo), `locale`, `stats_json`, `report_json`, `created_at`; UNIQUE(`team_id`,`week_start`,`locale`) |
-| `llm_calls` | `id` PK, `step` (`normalize`\|`diagnose`\|`stress`\|`ladder`\|`explain`\|`report`\|`asr`), `attempt_id` NULL FK, `model`, `request_hash`, `status` (`ok`\|`error`\|`replay`), `http_status` NULL, `input_tokens`, `output_tokens`, `cached_tokens`, `cost_usd` real, `latency_ms`, `error` NULL, `created_at` |
+| `llm_calls` | `id` PK, `step` (`normalize`\|`diagnose`\|`stress`\|`ladder`\|`explain`\|`report`\|`asr`), `attempt_id` NULL FK, `model`, `request_hash`, `status` (`ok`\|`error`\|`replay`), `http_status` NULL, `input_tokens`, `output_tokens`, `cached_tokens`, `reasoning_tokens` (added in PR-03; Muse Spark reports it, see VERIFIED.md), `cost_usd` real, `latency_ms`, `error` NULL, `created_at` |
+
+SQLite needs `PRAGMA foreign_keys = ON` per connection: call `connect(db)` (or `migrateDb`) from `src/db/client.ts` before queries. Local default `file:./data/daleel.db` (`pnpm db:migrate && pnpm db:seed`); Turso optional per DECISIONS D4.
 
 Indexes: `attempts(user_id, created_at)`, `attempts(problem_id, code_hash, locale)`, `llm_calls(created_at)`, `team_members(user_id)`.
 
