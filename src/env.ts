@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export const RunnerEnvSchema = z.object({
+  RUNNER_PROVIDER: z.enum(["local", "none"]).default("none"),
+});
+
 // Parsed by diagnoseStepConfig before any model call; no secrets are included.
 export const DiagnoseEnvSchema = z.object({
   MODEL_DIAGNOSE: z.string().min(1).default("muse-spark-1.3"),

@@ -65,7 +65,7 @@ Times are **Cairo time**. Deadline = **Thu Nov 5, 04:00 Cairo** (= Nov 4, 21:00 
 ## Day 5 — Sun Nov 1 → M5
 | PR | Goal | RED test first | Verify |
 |---|---|---|---|
-| **PR-15 runner** | `Runner` interface `{compile, run}` + `judge0` adapter (batch submissions, base64, limits, language id from `GET /languages`), `docker` adapter (dev only, refuses in production), `none`. | Contract tests against a fake Judge0 HTTP server: AC/WA/TLE/CE mapping; output cap; production refuses docker. | `pnpm smoke:runner` compiles and runs `examples/watermelon/*.cpp` on the chosen provider. |
+| **PR-15 runner ✅** (D13: local g++ + bwrap; Judge0 not built) | `Runner` interface `{compile, run}` + `judge0` adapter (batch submissions, base64, limits, language id from `GET /languages`), `docker` adapter (dev only, refuses in production), `none`. | Contract tests against a fake Judge0 HTTP server: AC/WA/TLE/CE mapping; output cap; production refuses docker. | `pnpm smoke:runner` compiles and runs `examples/watermelon/*.cpp` on the chosen provider. |
 | **PR-16 stress step** | `prompts/stress.ts`, `schemas/stress.ts`, `services/stress.ts` exactly as §2.3 (trust gate on samples, first mismatch, checker modes), re-diagnose on contradiction; SSE `stress` event; UI "Verified counterexample" box + "not verified" badge. | Service tests with a fake runner: brute fails sample → `brute_untrusted`; mismatch on test 2 → `verified`; student CE → `compile_error`; `any_valid` → `skipped`. | Live: CF 4A → verified `2 → NO vs YES`; CF 1A → verified `100000 100000 1`. Re-run `pnpm eval`: target ≥ 8/10. |
 
 ## Day 6 — Mon Nov 2 → M6
