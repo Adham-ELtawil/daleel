@@ -58,7 +58,7 @@ Times are **Cairo time**. Deadline = **Thu Nov 5, 04:00 Cairo** (= Nov 4, 21:00 
 ## Day 4 — Sat Oct 31 → M4
 | PR | Goal | RED test first | Verify |
 |---|---|---|---|
-| **PR-12 ladder generation + validator** | `prompts/ladder.ts`, `schemas/ladder.ts`, `domain/ladder-validator.ts` (§3.3), stored in `hint_ladders`. | Validator tests: code fence in level 2 → violation; leaked fix line → violation; good A.3 ladder → ok; fallback replacement. | tests green |
+| **PR-12 ladder generation + validator** ✅ | `prompts/ladder.ts`, `schemas/ladder.ts`, `domain/ladder-validator.ts` (§3.3), stored in `hint_ladders`. | Exact schema/A.3/B.3, prompt snapshot, spoiler rules, localized fallback, cached service/one regeneration, 409 without diagnosis; fake-transport smoke/no-key tests. | Fresh lint/typecheck pass; `Test Files 30 passed (30)`, `Tests 277 passed (277)`. Red output: `/tmp/pr12-red-codex.txt`. Live smoke/eval deferred at owner's request. |
 | **PR-13 reveal API + UI + re-check** | `POST /hints/next`, `POST /stuck`, `POST /solved`, child attempt on re-check; S3 ladder UI; `/me` history. | Route tests: strict order, 409 after 4, reveal records time, child attempt links parent. | e2e: reveal 1→4, then "I fixed it" with fixed code → new diagnosis says `bug_found=false`. |
 | **PR-14 i18n + RTL** | `next-intl`, `messages/ar.json` + `en.json`, `[locale]` routing, logical CSS, bidi-safe markdown renderer, STYLE_AR/EN blocks wired into prompts, ladder regenerated on language switch. | Test: every key in `en.json` exists in `ar.json`; renderer puts `dir="ltr"` on code; grep test: no `ml-`/`mr-` classes. | Manual: owner reviews 5 Arabic ladders (A3) and rates them. |
 

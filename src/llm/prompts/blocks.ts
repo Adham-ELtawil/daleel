@@ -38,9 +38,9 @@ export type AttemptBlock = {
 };
 
 // Preserve code/Markdown, while preventing data from opening or closing our delimiters.
-function taggedText(text: string): string {
+export function taggedText(text: string): string {
   return text.replace(
-    /<(?=\/?(?:problem|sample|input|output|student_code|student_verdict|student_note|runner_result)\b)/gi,
+    /<(?=\/?(?:problem|sample|input|output|student_code|student_verdict|student_note|runner_result|diagnosis)\b)/gi,
     "&lt;",
   );
 }
@@ -67,11 +67,15 @@ ${p.samples.map((s, i) => `<sample index="${i}"><input>${taggedText(s.input)}</i
 </problem>`;
 }
 
+export function numberedCode(code: string): string {
+  return codeLines(code)
+    .map((line, i) => `L${i + 1}| ${taggedText(line)}`)
+    .join("\n");
+}
+
 export function buildAttemptBlock(a: AttemptBlock): string {
   return `<student_code language="${attribute(a.language)}">
-${codeLines(a.code)
-  .map((line, i) => `L${i + 1}| ${taggedText(line)}`)
-  .join("\n")}
+${numberedCode(a.code)}
 </student_code>
 <student_verdict>${taggedText(a.verdictReported || "unknown")} ${a.verdictTestNo ? `on test ${a.verdictTestNo}` : ""}</student_verdict>
 <student_note>${taggedText(a.studentNote || "none")}</student_note>`;

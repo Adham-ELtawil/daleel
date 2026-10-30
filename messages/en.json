@@ -5,6 +5,22 @@
     "description": "Paste a Codeforces or AtCoder problem and your C++ code. Daleel finds where it breaks, proves it with a failing test, and teaches the fix through a hint ladder, without spoiling the solution.",
     "status": "Early preview: the coach is under construction."
   },
+  "ladder_fallback_1": {
+    "title": "Check the boundaries",
+    "body": "Try the smallest allowed values by hand. Which part of your code decides the answer?"
+  },
+  "ladder_fallback_2": {
+    "title": "Revisit the constraints",
+    "body": "Compare the problem's requirements with the assumptions in your approach. Does each assumption hold for every allowed value?"
+  },
+  "ladder_fallback_3": {
+    "title": "Trace your own lines",
+    "body": "Follow your code step by step on a small case. Compare each decision with the statement and check where they disagree."
+  },
+  "ladder_fallback_4": {
+    "title": "Review the reasoning",
+    "body": "Write down why each step should work, then check the boundaries and time complexity. Change only the lines that do not match that reasoning."
+  },
   "intake": {
     "title": "New attempt",
     "url": "Problem link",
@@ -49,6 +65,7 @@
     "confidence": "Confidence",
     "low_confidence": "Not sure exactly where. Check the summary before changing your code.",
     "already_running": "This attempt is already being diagnosed.",
+    "not_diagnosed": "Diagnose this attempt before requesting hints.",
     "budget_reached": "Today's model budget has been reached. Please try again later.",
     "schema_error": "The diagnosis could not be validated. Please try again.",
     "truncated": "The model could not finish the diagnosis. Please try again.",

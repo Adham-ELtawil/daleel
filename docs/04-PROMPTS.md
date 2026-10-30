@@ -163,7 +163,7 @@ User message: PROBLEM BLOCK is already the 2nd developer message; user = ATTEMPT
 
 ---
 
-## 3. LADDER  (`muse-spark-1.3`, effort `low`, non-stream, max 3000)
+## 3. LADDER  (`muse-spark-1.3`, effort `low`, non-stream, max 8000 via `MAXTOK_LADDER`; includes reasoning tokens)
 
 ### 3.1 Developer prompt
 ```text
