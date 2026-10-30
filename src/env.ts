@@ -13,3 +13,10 @@ export const MetaEnvSchema = z.object({
   DAILY_BUDGET_USD: z.coerce.number().positive().default(10),
   PROMPT_CACHE_RETENTION: z.enum(["in_memory", "24h"]).default("24h"),
 });
+
+export const EvalEnvSchema = MetaEnvSchema.extend(DiagnoseEnvSchema.shape).extend({
+  EVAL_MAX_USD: z.preprocess(
+    (value) => (value === "" ? NaN : value),
+    z.coerce.number().nonnegative().default(1),
+  ),
+});
