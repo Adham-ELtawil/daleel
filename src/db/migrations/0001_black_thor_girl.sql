@@ -1,0 +1,1 @@
+ALTER TABLE `attempts` ADD `diagnosing_since` integer;
