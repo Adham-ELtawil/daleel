@@ -7,6 +7,14 @@ import { t } from "@/src/i18n";
 
 const LocaleContext = createContext<"en" | "ar-EG">("en");
 export const useLocale = () => useContext(LocaleContext);
+export async function switchUiLocale(locale: "en" | "ar-EG", pathname: string, refresh: () => void) {
+  const target = locale === "en" ? "ar-EG" : "en";
+  document.cookie = `daleel_locale=${target}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  const attempt = /^\/attempt\/([^/]+)\/?$/.exec(pathname);
+  // Warm the target ladder before the server refresh so both reads share its cache.
+  if (attempt) await fetch(`/api/attempts/${attempt[1]}?locale=${target}`).catch(() => null);
+  refresh();
+}
 export function LocaleShell({
   locale,
   children,
@@ -25,8 +33,7 @@ export function LocaleShell({
           className="ms-auto underline"
           aria-label={t("ui_language", locale)}
           onClick={() => {
-            document.cookie = `daleel_locale=${locale === "en" ? "ar-EG" : "en"}; Path=/; Max-Age=31536000; SameSite=Lax`;
-            router.refresh();
+            void switchUiLocale(locale, window.location.pathname, () => router.refresh());
           }}
         >
           {t(locale === "en" ? "arabic" : "english", locale)}

@@ -13,6 +13,15 @@ it("has every English key in Arabic, including the intake UI", () => {
   expect(en).toHaveProperty("intake");
   expect(keys(ar).sort()).toEqual(keys(en).sort());
 });
+it.each([
+  ["en", { lang: "en", dir: "ltr" }],
+  ["ar-EG", { lang: "ar", dir: "rtl" }],
+] as const)("sets whole-page attributes for %s", (locale, expected) => {
+  expect(i18n.localeAttrs(locale)).toEqual(expected);
+});
+it("can translate landing copy through the typed translator", () => {
+  expect(i18n.t("description", "ar-EG", "landing")).toBe(ar.landing.description);
+});
 it("has translated demo and replay badge copy in both locales", () => {
   for (const messages of [en, ar]) {
     expect(messages.intake).toHaveProperty("try_demo");

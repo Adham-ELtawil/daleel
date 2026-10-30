@@ -3,7 +3,7 @@ import { jsonSchemaFor, type ChatMessage, type LlmStepConfig } from "@/src/llm/m
 import type { Diagnosis } from "../schemas/diagnosis";
 import { HintLadderSchema } from "../schemas/ladder";
 import {
-  STYLE_AR,
+  STYLE_AR_LADDER,
   STYLE_EN,
   SAFETY_AND_DATA,
   buildProblemBlock,
@@ -39,7 +39,7 @@ export function buildLadderMessages({
     {
       role: "developer",
       content: DEVELOPER_PROMPT.replace("{{STYLE}}", () =>
-        locale === "en" ? STYLE_EN : STYLE_AR,
+        locale === "en" ? STYLE_EN : STYLE_AR_LADDER,
       ).replace("{{SAFETY_AND_DATA}}", () => SAFETY_AND_DATA),
     },
     { role: "developer", content: buildProblemBlock(problem) },

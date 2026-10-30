@@ -15,6 +15,11 @@ const args = {
   code: "int w;\ncin >> w;\n",
   locale: "en" as const,
 };
+it("uses compact Arabic ladder instructions without style over-checking", () => {
+  const text = buildLadderMessages({ ...args, locale: "ar-EG" })[0].content;
+  expect(text).toContain("OUTPUT LANGUAGE: Egyptian Arabic colloquial; technical terms in English; each sentence starts with an Arabic word; code/values only in backticks. Write naturally; do not over-check these style rules.");
+  expect(text).not.toContain("Prefer ending sentences");
+});
 it("snapshots the tagged attempt including internals and uncertainty", () => {
   const messages = buildLadderMessages(args);
   expect(messages.map((m) => m.role)).toEqual(["developer", "developer", "user"]);
@@ -48,7 +53,7 @@ it.each(["en", "ar-EG"] as const)("uses the verbatim developer prompt in %s", (l
   const block = (heading: string) => doc.split(heading)[1].split("```text\n")[1].split("\n```")[0];
   expect(buildLadderMessages({ ...args, locale })[0].content).toBe(
     block("### 3.1")
-      .replace("{{STYLE}}", block(locale === "en" ? "### 0.2" : "### 0.1"))
+      .replace("{{STYLE}}", block(locale === "en" ? "### 0.2" : "#### STYLE_AR_LADDER"))
       .replace("{{SAFETY_AND_DATA}}", block("### 0.3")),
   );
 });

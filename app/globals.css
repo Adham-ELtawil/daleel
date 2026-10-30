@@ -18,6 +18,15 @@ body {
   font-family: system-ui, sans-serif;
 }
 
+[dir="rtl"] body {
+  font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+}
+
+:is(code, pre, .cm-editor) {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 /* Bidi isolation for inline code inside Arabic text (03-ARCHITECTURE.md §7). */
 .bidi-isolate {
   unicode-bidi: isolate;

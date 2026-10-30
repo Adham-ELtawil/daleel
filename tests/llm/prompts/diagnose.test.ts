@@ -15,6 +15,11 @@ const doc = readFileSync("docs/04-PROMPTS.md", "utf8");
 const block = (heading: string) => doc.split(heading)[1].split("```text\n")[1].split("\n```")[0];
 
 describe("buildDiagnoseMessages", () => {
+  it("uses a lite Arabic block scoped to public fields, with English internals", () => {
+    const text = buildDiagnoseMessages({ problem, attempt, locale: "ar-EG" })[0].content;
+    expect(text).toContain("OUTPUT LANGUAGE for public_summary and approach.student_idea_public ONLY: short Egyptian Arabic (colloquial), start with an Arabic word, keep technical terms in English. All other fields in English. Do not spend effort polishing the Arabic style.");
+    expect(text).not.toContain("Prefer ending sentences");
+  });
   it("numbers source lines in developer/developer/user order", () => {
     const messages = buildDiagnoseMessages({ problem, attempt, locale: "en" });
     expect(
@@ -58,7 +63,7 @@ describe("buildDiagnoseMessages", () => {
     "inserts the verbatim developer/style/safety blocks for %s",
     (locale) => {
       const expected = block("### 1.1")
-        .replace("{{STYLE}}", block(locale === "en" ? "### 0.2" : "### 0.1"))
+        .replace("{{STYLE}}", block(locale === "en" ? "### 0.2" : "#### STYLE_AR_LITE"))
         .replace("{{SAFETY_AND_DATA}}", block("### 0.3"));
       expect(buildDiagnoseMessages({ problem, attempt, locale })[0].content).toBe(expected);
     },

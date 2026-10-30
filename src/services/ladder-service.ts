@@ -5,6 +5,7 @@ import { getProblem } from "@/src/db/repo/problems";
 import { StoredDiagnosisSchema, StoredLadderSchema } from "@/src/db/json";
 import { attempts, diagnoses, hintLadders, stressRuns } from "@/src/db/schema";
 import { applyFallback, validateLadder } from "@/src/domain/ladder-validator";
+import { fixArabicPublicText } from "@/src/domain/arabic-style";
 import type { CallOptions, ChatMessage, LlmStepConfig } from "@/src/llm/meta-client";
 import { buildLadderMessages } from "@/src/llm/prompts/ladder";
 import { HintLadderSchema, type HintLadder } from "@/src/llm/schemas/ladder";
@@ -90,6 +91,14 @@ export async function ensureLadder(
     ladder = await generate();
     checked = validateLadder(ladder, context);
     if (!checked.ok) ladder = applyFallback(ladder, checked.violations, locale);
+  }
+  if (locale === "ar-EG") {
+    ladder = { levels: ladder.levels.map((hint) => ({
+      ...hint,
+      title: fixArabicPublicText(hint.title).slice(0, 80),
+      body_md: fixArabicPublicText(hint.body_md).slice(0, 1500),
+      question_back: hint.question_back === null ? null : fixArabicPublicText(hint.question_back).slice(0, 200),
+    })) };
   }
   await db
     .insert(hintLadders)
