@@ -14,7 +14,7 @@ import { readSse, type DiagnoseEvent } from "@/src/services/sse";
 import { tempDb } from "@/tests/db/helpers";
 import { chatCompletion, createFakeFetch, noNetworkFetch } from "@/tests/llm/fake-fetch";
 import diagnosis from "@/recordings/diagnose/1ad7a81ef1d0795cc50c790900f20dd82e482aec57113692dcfd3522c3103df8.json";
-import ladder from "@/recordings/ladder/0e7309728a1c97bdd51b600acf499dfbd896d03deb9b88e34e0f89cb3a2e589e.json";
+import ladder from "@/recordings/ladder/b841dcb1e9c6f5ed7b76470d664db6843c61614649a1902e65abed224cb3e7d4.json";
 
 let store: Awaited<ReturnType<typeof tempDb>>;
 const now = () => Date.UTC(2026, 9, 30, 13);
