@@ -9,6 +9,21 @@ it("serializes SSE with a JSON data line and a blank line terminator", () => {
     serializeSse({ event: "error", data: { code: "llm_error", message: "First\nSecond" } }),
   ).toBe('event: error\ndata: {"code":"llm_error","message":"First\\nSecond"}\n\n');
 });
+
+it("reads ladder_ready with exactly four levels before done", async () => {
+  const events: DiagnoseEvent[] = [];
+  await readSse(
+    new Response('event: ladder_ready\ndata: {"levels":4}\n\nevent: done\ndata: {}\n\n').body!,
+    (event) => events.push(event),
+  );
+  expect(events).toEqual([
+    { event: "ladder_ready", data: { levels: 4 } },
+    { event: "done", data: {} },
+  ]);
+  await expect(
+    readSse(new Response('event: ladder_ready\ndata: {"levels":3}\n\n').body!, () => {}),
+  ).rejects.toThrow();
+});
 it("reads fragmented UTF-8 events and detects premature EOF", async () => {
   const events: DiagnoseEvent[] = [
     { event: "error", data: { code: "llm_error", message: "حصلت مشكلة" } },

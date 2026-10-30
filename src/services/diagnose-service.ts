@@ -20,6 +20,7 @@ import { DiagnosisSchema, toPublic, type Diagnosis } from "@/src/llm/schemas/dia
 import { t } from "@/src/i18n";
 import { HttpError } from "./http-error";
 import type { DiagnoseEvent } from "./sse";
+import { ensureLadder, type LadderDeps } from "./ladder-service";
 
 // Keep stale claims older than the 120s LLM deadline.
 export const STALE_MS = 150000;
@@ -33,6 +34,8 @@ export type DiagnoseDeps = {
   ) => Promise<Diagnosis>;
   config: LlmStepConfig;
   now: () => number;
+  ladder: Pick<LadderDeps, "llm" | "config">;
+  log?: (code: string) => void;
 };
 async function withDeadline(job: (signal: AbortSignal) => Promise<Diagnosis>) {
   const controller = new AbortController();
@@ -143,6 +146,12 @@ export async function diagnoseAttempt(
         .where(eq(attempts.id, attemptId));
     });
     emit({ event: "diagnosis", data: { public: toPublic(result) } });
+    try {
+      await ensureLadder({ db, now, ...deps.ladder }, attemptId, attempt.locale);
+      emit({ event: "ladder_ready", data: { levels: 4 } });
+    } catch {
+      (deps.log ?? ((code) => console.error({ requestId: attemptId, code })))("ladder_error");
+    }
     emit({ event: "done", data: {} });
   } catch (error) {
     await db

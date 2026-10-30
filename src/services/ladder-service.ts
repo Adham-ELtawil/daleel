@@ -90,5 +90,6 @@ export async function ensureLadder(
       createdAt: now(),
     })
     .onConflictDoNothing(); // a concurrent request may have stored the ladder first
-  return ladder;
+  const saved = (await db.select().from(hintLadders).where(key).get())!;
+  return HintLadderSchema.parse({ levels: JSON.parse(saved.levelsJson) });
 }

@@ -6,7 +6,7 @@ import { HttpError } from "./http-error";
 import { serializeSse } from "./sse";
 
 export function createDiagnoseHandler(
-  deps: Omit<DiagnoseDeps, "db"> & {
+  deps: Omit<DiagnoseDeps, "db" | "log"> & {
     db: () => Promise<Db>;
     log?: (event: { requestId: string; code: string }) => void;
   },
@@ -29,7 +29,7 @@ export function createDiagnoseHandler(
         },
       });
       await new Promise<void>((resolve, reject) => {
-        void diagnoseAttempt({ ...deps, db }, id, (event) => {
+        void diagnoseAttempt({ ...deps, db, log }, id, (event) => {
           if (event.event === "error") log(event.data.code);
           if (!cancelled) controller.enqueue(new TextEncoder().encode(serializeSse(event)));
           resolve();

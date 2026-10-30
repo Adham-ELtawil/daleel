@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { attempts, diagnoses } from "@/src/db/schema";
+import { attempts, diagnoses, hintLadders } from "@/src/db/schema";
 import { seed } from "@/src/db/seed";
 import { BudgetReached, SchemaError, OutputTruncated, MetaApiError } from "@/src/llm/meta-client";
 import { diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
+import { ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { HintLadderSchema } from "@/src/llm/schemas/ladder";
 import { DiagnosisSchema, toPublic } from "@/src/llm/schemas/diagnosis";
 import { getProblemByExternalId } from "@/src/db/repo/problems";
 import { diagnoseAttempt, type DiagnoseDeps } from "@/src/services/diagnose-service";
@@ -13,6 +15,8 @@ import { createHandlers } from "@/src/services/handlers";
 import { readSse, type DiagnoseEvent } from "@/src/services/sse";
 import { tempDb } from "@/tests/db/helpers";
 import fixture from "@/tests/fixtures/llm/diagnosis-a.json";
+import ladderFixture from "@/tests/fixtures/llm/ladder-a.json";
+import type { LadderDeps } from "@/src/services/ladder-service";
 
 const code = readFileSync("docs/examples/cf-4A-watermelon/student.cpp", "utf8");
 const result = DiagnosisSchema.parse(fixture);
@@ -54,6 +58,11 @@ const deps = () => ({
   llm: vi.fn<DiagnoseDeps["llm"]>(async () => result),
   config,
   now: () => now,
+  ladder: {
+    config: ladderStepConfig({}),
+    llm: vi.fn<LadderDeps["llm"]>(async () => HintLadderSchema.parse(ladderFixture)),
+  },
+  log: vi.fn<(code: string) => void>(),
 });
 beforeEach(async () => {
   store = await tempDb();
@@ -77,12 +86,26 @@ it("streams ordered stages, stores validated internals, and sends only the publi
       topics: [" Math "],
     };
   });
-  const response = await createDiagnoseHandler({ ...d, db: async () => store.db })(request(), id);
+  const response = await createDiagnoseHandler({ ...d, log: vi.fn(), db: async () => store.db })(
+    request(),
+    id,
+  );
   expect(response.headers.get("content-type")).toBe("text/event-stream");
   expect(response.headers.get("x-request-id")).toBe("pr10-test");
   const events: DiagnoseEvent[] = [];
   await readSse(response.body!, (event) => events.push(event));
-  expect(events.map((e) => e.event)).toEqual(["stage", "stage", "stage", "diagnosis", "done"]);
+  expect(events.map((e) => e.event)).toEqual([
+    "stage",
+    "stage",
+    "stage",
+    "diagnosis",
+    "ladder_ready",
+    "done",
+  ]);
+  expect(events[4]).toEqual({ event: "ladder_ready", data: { levels: 4 } });
+  expect(await store.db.select().from(hintLadders)).toMatchObject([
+    { attemptId: id, locale: "en" },
+  ]);
   const expected = { ...result, topics: ["math"] };
   expect(events[3]).toEqual({ event: "diagnosis", data: { public: toPublic(expected) } });
   expect(JSON.stringify(events)).not.toContain("_internal");
@@ -191,7 +214,7 @@ it.each([
 });
 it("returns safe 404/409 JSON before streaming and never calls the LLM", async () => {
   const d = deps();
-  const handler = createDiagnoseHandler({ ...d, db: async () => store.db });
+  const handler = createDiagnoseHandler({ ...d, log: vi.fn(), db: async () => store.db });
   for (const [id, expected] of [
     ["missing", 404],
     [await attempt({ status: "diagnosing", diagnosingSince: now }), 409],
@@ -215,7 +238,7 @@ it.each([151000, null])("recovers a diagnosing attempt aged %s ms", async (age) 
   const events: DiagnoseEvent[] = [];
   await diagnoseAttempt(d, id, (event) => events.push(event));
   expect(d.llm).toHaveBeenCalledOnce();
-  expect(events.at(-2)).toEqual({ event: "diagnosis", data: { public: toPublic(result) } });
+  expect(events.at(-3)).toEqual({ event: "diagnosis", data: { public: toPublic(result) } });
   expect(events.at(-1)).toEqual({ event: "done", data: {} });
   expect(await diagnosisState(id)).toEqual({ status: "diagnosed", diagnosingSince: null });
 });
@@ -226,13 +249,48 @@ it.each([10000, 150000])(
     now = 200000;
     const id = await attempt({ status: "diagnosing", diagnosingSince: now - age });
     const d = deps();
-    const response = await createDiagnoseHandler({ ...d, db: async () => store.db })(request(), id);
+    const response = await createDiagnoseHandler({ ...d, log: vi.fn(), db: async () => store.db })(
+      request(),
+      id,
+    );
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({ error: { code: "already_running" } });
     expect(d.llm).not.toHaveBeenCalled();
     expect(await diagnosisState(id)).toEqual({ status: "diagnosing", diagnosingSince: now - age });
   },
 );
+
+it("prepares the ladder in the attempt locale after successful diagnosis", async () => {
+  const id = await attempt({ locale: "ar-EG" });
+  const d = deps();
+  await diagnoseAttempt(d, id, () => {});
+  expect(await store.db.select().from(hintLadders)).toMatchObject([
+    { attemptId: id, locale: "ar-EG" },
+  ]);
+  expect(JSON.stringify(d.ladder.llm.mock.calls[0][1])).toContain("Egyptian");
+});
+it("ends with diagnosis + done when ladder generation fails and logs a safe ladder error with requestId", async () => {
+  const id = await attempt();
+  const d = deps();
+  d.ladder.llm.mockRejectedValueOnce(new Error("private ladder detail"));
+  const log = vi.fn();
+  const response = await createDiagnoseHandler({ ...d, db: async () => store.db, log })(
+    request(),
+    id,
+  );
+  const events: DiagnoseEvent[] = [];
+  await readSse(response.body!, (event) => events.push(event));
+  expect(events.slice(-2)).toEqual([
+    { event: "diagnosis", data: { public: toPublic(result) } },
+    { event: "done", data: {} },
+  ]);
+  expect(events.some((event) => event.event === "error" || event.event === "ladder_ready")).toBe(
+    false,
+  );
+  expect(await status(id)).toBe("diagnosed");
+  expect(log).toHaveBeenCalledWith({ requestId: "pr10-test", code: "ladder_error" });
+  expect(JSON.stringify(log.mock.calls)).not.toContain("private ladder detail");
+});
 
 it.each(["diagnosed", "error"] as const)(
   "sets the claim timestamp and clears it after %s",

@@ -1,0 +1,162 @@
+import { and, count, desc, eq, lt, or, sql, type SQL } from "drizzle-orm";
+import { z } from "zod";
+import type { Db } from "@/src/db/client";
+import { getProblem } from "@/src/db/repo/problems";
+import { attempts, diagnoses, hintReveals, problems } from "@/src/db/schema";
+import { DiagnosisSchema, toPublic } from "@/src/llm/schemas/diagnosis";
+import type { HintLadder } from "@/src/llm/schemas/ladder";
+import { getCurrentUser } from "./current-user";
+import { HttpError } from "./http-error";
+import { ensureLadder, type LadderDeps } from "./ladder-service";
+
+export type AttemptDeps = {
+  db: Db;
+  now: () => number;
+  ladder?: Pick<LadderDeps, "llm" | "config">;
+};
+async function ownedAttempt(db: Db, id: string) {
+  const user = await getCurrentUser(db);
+  const attempt = await db
+    .select()
+    .from(attempts)
+    .where(and(eq(attempts.id, id), eq(attempts.userId, user.id)))
+    .get();
+  if (!attempt) throw new HttpError(404, "not_found");
+  return attempt;
+}
+function ladderFor(deps: AttemptDeps, id: string, locale: "en" | "ar-EG") {
+  if (!deps.ladder) throw new HttpError(500, "internal_error");
+  return ensureLadder({ ...deps, ...deps.ladder }, id, locale);
+}
+function publicHint(hint: HintLadder["levels"][number]) {
+  return {
+    level: hint.level,
+    title: hint.title,
+    body_md: hint.body_md,
+    question_back: hint.question_back,
+  };
+}
+export async function revealHint(deps: AttemptDeps, id: string, locale?: "en" | "ar-EG") {
+  const { db, now } = deps;
+  const attempt = await ownedAttempt(db, id);
+  if (
+    !(await db
+      .select({ id: diagnoses.id })
+      .from(diagnoses)
+      .where(eq(diagnoses.attemptId, id))
+      .get())
+  )
+    throw new HttpError(425, "not_diagnosed");
+  const key = eq(hintReveals.attemptId, id);
+  const [{ total }] = await db.select({ total: count() }).from(hintReveals).where(key);
+  if (total >= 4) throw new HttpError(409, "no_more_hints");
+  const ladder = await ladderFor(deps, id, locale ?? attempt.locale);
+  // libSQL batch is one write transaction. Count inside INSERT serializes concurrent reveals.
+  const [inserted] = await db.batch([
+    db
+      .insert(hintReveals)
+      .select(
+        db
+          .select({
+            attemptId: sql<string>`${id}`.as("attempt_id"),
+            level: sql<number>`count(*) + 1`.as("level"),
+            revealedAt: sql<number>`${now()}`.as("revealed_at"),
+          })
+          .from(hintReveals)
+          .where(key)
+          .having(sql`count(*) < 4`),
+      )
+      .returning({ level: hintReveals.level }),
+    db
+      .update(attempts)
+      .set({
+        maxHintLevel: sql`(select count(*) from hint_reveals where attempt_id = ${id})`,
+      })
+      .where(eq(attempts.id, id)),
+  ]);
+  const level = inserted[0]?.level;
+  if (!level) throw new HttpError(409, "no_more_hints");
+  return { hint: publicHint(ladder.levels[level - 1]), remaining: 4 - level };
+}
+export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en" | "ar-EG") {
+  const stored = await ownedAttempt(deps.db, id);
+  const problem = await getProblem(deps.db, stored.problemId);
+  const diagnosis = await deps.db.select().from(diagnoses).where(eq(diagnoses.attemptId, id)).get();
+  const reveals = await deps.db
+    .select()
+    .from(hintReveals)
+    .where(eq(hintReveals.attemptId, id))
+    .orderBy(hintReveals.level);
+  const ladder = reveals.length ? await ladderFor(deps, id, locale ?? stored.locale) : null;
+  const attempt = {
+    id: stored.id,
+    problemId: stored.problemId,
+    parentAttemptId: stored.parentAttemptId,
+    language: stored.language,
+    code: stored.code,
+    verdictReported: stored.verdictReported,
+    verdictTestNo: stored.verdictTestNo,
+    studentNote: stored.studentNote,
+    locale: stored.locale,
+    status: stored.status,
+    maxHintLevel: stored.maxHintLevel,
+    solvedAt: stored.solvedAt,
+    createdAt: stored.createdAt,
+  };
+  return {
+    attempt,
+    problem,
+    ...(diagnosis
+      ? { diagnosis: toPublic(DiagnosisSchema.parse(JSON.parse(diagnosis.resultJson))) }
+      : {}),
+    revealedHints: ladder ? reveals.map((r) => publicHint(ladder.levels[r.level - 1])) : [],
+    canExplain: reveals.length >= 3 || stored.status === "stuck",
+  };
+}
+export async function markAttempt(deps: AttemptDeps, id: string, status: "stuck" | "solved") {
+  await ownedAttempt(deps.db, id);
+  await deps.db
+    .update(attempts)
+    .set({ status, solvedAt: status === "solved" ? deps.now() : null })
+    .where(eq(attempts.id, id));
+  return status === "stuck" ? { canExplain: true } : { ok: true };
+}
+const CursorSchema = z.tuple([z.number().int().nonnegative(), z.string().min(1)]);
+export async function attemptHistory(db: Db, cursor: string | null) {
+  const user = await getCurrentUser(db);
+  let before: SQL | undefined;
+  if (cursor !== null) {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(cursor);
+    } catch {
+      throw new HttpError(400, "invalid");
+    }
+    const parsed = CursorSchema.safeParse(raw);
+    if (!parsed.success) throw new HttpError(400, "invalid");
+    const [createdAt, id] = parsed.data;
+    before = or(
+      lt(attempts.createdAt, createdAt),
+      and(eq(attempts.createdAt, createdAt), lt(attempts.id, id)),
+    );
+  }
+  const rows = await db
+    .select({
+      id: attempts.id,
+      problemTitle: problems.title,
+      status: attempts.status,
+      maxHintLevel: attempts.maxHintLevel,
+      createdAt: attempts.createdAt,
+    })
+    .from(attempts)
+    .innerJoin(problems, eq(problems.id, attempts.problemId))
+    .where(and(eq(attempts.userId, user.id), before))
+    .orderBy(desc(attempts.createdAt), desc(attempts.id))
+    .limit(21);
+  const items = rows.slice(0, 20);
+  const last = items.at(-1);
+  return {
+    items,
+    ...(rows.length > 20 && last ? { nextCursor: JSON.stringify([last.createdAt, last.id]) } : {}),
+  };
+}

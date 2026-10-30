@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { ulid } from "ulid";
 import { z } from "zod";
 import type { Db } from "@/src/db/client";
@@ -9,6 +9,13 @@ import { createCfApi } from "@/src/judges/cf-api";
 import { getCurrentUser } from "./current-user";
 import { HttpError } from "./http-error";
 import { resolveProblem } from "./problem-service";
+import {
+  attemptDetail,
+  attemptHistory,
+  markAttempt,
+  revealHint,
+  type AttemptDeps,
+} from "./attempt-service";
 
 const resolveSchema = z.union([
   z.strictObject({ url: z.string().trim().min(1) }),
@@ -31,6 +38,7 @@ const attemptSchema = z.strictObject({
   studentNote: z.string().max(1000).optional(),
   parentAttemptId: z.string().min(1).optional(),
 });
+const localeSchema = z.strictObject({ locale: z.enum(["en", "ar-EG"]).optional() });
 async function body<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
   const result = schema.safeParse(await request.json().catch(() => null));
   if (!result.success)
@@ -49,6 +57,7 @@ export function createHandlers(deps: {
   cfApi?: Parameters<typeof resolveProblem>[1]["cfApi"];
   now?: () => number;
   log?: (event: { requestId: string; code: string }) => void;
+  ladder?: AttemptDeps["ladder"];
 }) {
   const now = deps.now ?? Date.now;
   async function run(request: Request, job: () => Promise<unknown>) {
@@ -63,6 +72,12 @@ export function createHandlers(deps: {
       return json({ error: { code: failure.code, message: failure.message } }, failure.status);
     }
   }
+  const attemptDeps = async () => ({ ...deps, db: await deps.db(), now });
+  const mark = (request: Request, id: string, status: "stuck" | "solved") =>
+    run(request, async () => {
+      await body(request, z.strictObject({}));
+      return markAttempt(await attemptDeps(), id, status);
+    });
   return {
     resolve: (request: Request) =>
       run(request, async () => {
@@ -87,16 +102,15 @@ export function createHandlers(deps: {
         const fields = await body(request, attemptSchema);
         const db = await deps.db();
         if (!(await getProblem(db, fields.problemId))) throw new HttpError(404, "not_found");
-        if (
-          fields.parentAttemptId &&
-          !(await db
-            .select({ id: attempts.id })
-            .from(attempts)
-            .where(eq(attempts.id, fields.parentAttemptId))
-            .get())
-        )
-          throw new HttpError(404, "not_found");
         const user = await getCurrentUser(db);
+        if (fields.parentAttemptId) {
+          const parent = await db
+            .select({ problemId: attempts.problemId })
+            .from(attempts)
+            .where(and(eq(attempts.id, fields.parentAttemptId), eq(attempts.userId, user.id)))
+            .get();
+          if (!parent || parent.problemId !== fields.problemId) throw new HttpError(400, "invalid");
+        }
         const createdAt = now();
         const attemptId = ulid(createdAt);
         await db.insert(attempts).values({
@@ -110,5 +124,24 @@ export function createHandlers(deps: {
         });
         return { attemptId };
       }),
+    nextHint: (request: Request, id: string) =>
+      run(request, async () => {
+        const { locale } = await body(request, localeSchema);
+        return revealHint(await attemptDeps(), id, locale);
+      }),
+    getAttempt: (request: Request, id: string) =>
+      run(request, async () => {
+        const parsed = localeSchema.safeParse({
+          locale: new URL(request.url).searchParams.get("locale") ?? undefined,
+        });
+        if (!parsed.success) throw new HttpError(400, "invalid");
+        return attemptDetail(await attemptDeps(), id, parsed.data.locale);
+      }),
+    stuck: (request: Request, id: string) => mark(request, id, "stuck"),
+    solved: (request: Request, id: string) => mark(request, id, "solved"),
+    history: (request: Request) =>
+      run(request, async () =>
+        attemptHistory(await deps.db(), new URL(request.url).searchParams.get("cursor")),
+      ),
   };
 }
