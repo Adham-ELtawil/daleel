@@ -18,6 +18,12 @@ export const MetaEnvSchema = z.object({
   MODEL_API_BASE_URL: z.url().default("https://api.meta.ai/v1"),
   DAILY_BUDGET_USD: z.coerce.number().positive().default(10),
   PROMPT_CACHE_RETENTION: z.enum(["in_memory", "24h"]).default("24h"),
+  DEMO_REPLAY: z.enum(["0", "1"]).default("0"),
+  DEMO_RECORD: z.enum(["0", "1"]).default("0"),
+});
+
+export const RecordEnvSchema = MetaEnvSchema.extend({
+  RECORD_MAX_USD: z.coerce.number().positive().default(0.5),
 });
 
 export const EvalEnvSchema = MetaEnvSchema.extend(DiagnoseEnvSchema.shape).extend({
