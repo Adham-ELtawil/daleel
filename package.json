@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "smoke:meta": "tsx scripts/smoke-meta.ts",
+    "smoke:runner": "tsx scripts/smoke-runner.ts",
     "smoke:diagnose": "tsx scripts/smoke-diagnose.ts",
     "smoke:ladder": "tsx scripts/smoke-ladder.ts",
     "smoke:recheck": "node --import tsx scripts/smoke-recheck.ts",
