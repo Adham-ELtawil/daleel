@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["levels"],
+  "properties": {
+    "levels": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["level", "kind", "title", "body_md", "question_back"],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["nudge", "concept", "precise", "full"]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "body_md": {
+            "type": "string",
+            "maxLength": 1500
+          },
+          "question_back": {
+            "type": ["string", "null"],
+            "maxLength": 200
+          }
+        }
+      }
+    }
+  }
+}

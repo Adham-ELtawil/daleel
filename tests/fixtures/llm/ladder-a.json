@@ -1,0 +1,32 @@
+{
+  "levels": [
+    {
+      "level": 1,
+      "kind": "nudge",
+      "title": "Look at the smallest inputs",
+      "body_md": "Your idea works for most weights. Try the smallest values of w one by one and split them by hand.",
+      "question_back": "For each small w, what are the two parts exactly?"
+    },
+    {
+      "level": 2,
+      "kind": "concept",
+      "title": "Both parts must be positive",
+      "body_md": "Being even is not enough on its own: each of the two parts must be even AND greater than zero. Some even weight cannot be split that way.",
+      "question_back": "Which even w has no split into two positive even parts?"
+    },
+    {
+      "level": 3,
+      "kind": "precise",
+      "title": "Line 6 accepts w = 2",
+      "body_md": "On line 6 you print `YES` for every even `w`. For `w = 2` the only split is `1 + 1`, so the correct answer is `NO`, but your program prints `YES` (verified by running your code).",
+      "question_back": null
+    },
+    {
+      "level": 4,
+      "kind": "full",
+      "title": "Even and bigger than two",
+      "body_md": "An even w ≥ 4 can always be split as 2 + (w − 2), and both parts are even and positive. An odd w can never be split into two even parts, and w = 2 only splits into 1 + 1. So the answer is YES exactly when w is even and w > 2. Change the condition on line 6 to also require w > 2. Time complexity stays O(1).",
+      "question_back": null
+    }
+  ]
+}
