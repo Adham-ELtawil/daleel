@@ -52,7 +52,7 @@ const contestsSchema = z.array(
     id: z.number().int(),
     name: z.string(),
     type: z.enum(["CF", "ICPC", "IOI"]),
-    phase: z.enum(["BEFORE", "CODING", "PENDING_SYSTEM_TEST", "SYSTEM_TEST", "FINISHED"]),
+    phase: z.string(),
     frozen: z.boolean(),
     durationSeconds: z.number().int().nonnegative(),
     startTimeSeconds: z.number().int().optional(),
