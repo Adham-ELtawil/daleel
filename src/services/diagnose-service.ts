@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, gte, ne } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, ne, or } from "drizzle-orm";
 import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
@@ -20,6 +20,9 @@ import { DiagnosisSchema, toPublic, type Diagnosis } from "@/src/llm/schemas/dia
 import { t } from "@/src/i18n";
 import { HttpError } from "./http-error";
 import type { DiagnoseEvent } from "./sse";
+
+// Keep stale claims older than the 120s LLM deadline.
+export const STALE_MS = 150000;
 
 export type DiagnoseDeps = {
   db: Db;
@@ -70,10 +73,20 @@ export async function diagnoseAttempt(
   const attempt = await db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
   const problem = attempt && (await getProblem(db, attempt.problemId));
   if (!attempt || !problem) throw new HttpError(404, "not_found");
+  const diagnosingSince = now();
   const claimed = await db
     .update(attempts)
-    .set({ status: "diagnosing" })
-    .where(and(eq(attempts.id, attemptId), ne(attempts.status, "diagnosing")))
+    .set({ status: "diagnosing", diagnosingSince })
+    .where(
+      and(
+        eq(attempts.id, attemptId),
+        or(
+          ne(attempts.status, "diagnosing"),
+          isNull(attempts.diagnosingSince),
+          lt(attempts.diagnosingSince, diagnosingSince - STALE_MS),
+        ),
+      ),
+    )
     .returning({ id: attempts.id })
     .get();
   if (!claimed) throw new HttpError(409, "already_running");
@@ -124,12 +137,18 @@ export async function diagnoseAttempt(
         .insert(diagnoses)
         .values(values)
         .onConflictDoUpdate({ target: diagnoses.attemptId, set: values });
-      await tx.update(attempts).set({ status: "diagnosed" }).where(eq(attempts.id, attemptId));
+      await tx
+        .update(attempts)
+        .set({ status: "diagnosed", diagnosingSince: null })
+        .where(eq(attempts.id, attemptId));
     });
     emit({ event: "diagnosis", data: { public: toPublic(result) } });
     emit({ event: "done", data: {} });
   } catch (error) {
-    await db.update(attempts).set({ status: "error" }).where(eq(attempts.id, attemptId));
+    await db
+      .update(attempts)
+      .set({ status: "error", diagnosingSince: null })
+      .where(eq(attempts.id, attemptId));
     const code =
       error instanceof BudgetReached
         ? "budget_reached"

@@ -93,6 +93,7 @@ export const attempts = sqliteTable(
     status: text("status", {
       enum: ["new", "diagnosing", "diagnosed", "error", "solved", "stuck"],
     }).notNull(),
+    diagnosingSince: integer("diagnosing_since"),
     maxHintLevel: integer("max_hint_level").notNull().default(0),
     solvedAt: integer("solved_at"),
     createdAt: integer("created_at").notNull(),
