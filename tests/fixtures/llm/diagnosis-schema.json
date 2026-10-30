@@ -1,0 +1,180 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bug_found",
+    "bug_class",
+    "confidence",
+    "public_summary",
+    "lines",
+    "topics",
+    "approach",
+    "suspect_inputs",
+    "complexity",
+    "root_cause_internal",
+    "fix_internal",
+    "checked_internal"
+  ],
+  "properties": {
+    "bug_found": {
+      "type": "boolean"
+    },
+    "bug_class": {
+      "type": "string",
+      "enum": [
+        "edge_case",
+        "overflow",
+        "off_by_one",
+        "wrong_algorithm",
+        "wrong_greedy",
+        "time_complexity",
+        "memory",
+        "output_format",
+        "uninitialized_or_reset",
+        "input_parsing",
+        "precision",
+        "compile_error",
+        "runtime_error",
+        "other",
+        "none"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "public_summary": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "lines": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "start",
+          "end",
+          "role"
+        ],
+        "properties": {
+          "start": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "bug",
+              "related",
+              "fine_but_suspicious"
+            ]
+          }
+        }
+      }
+    },
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+        "type": "string"
+      }
+    },
+    "approach": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "student_idea_public",
+        "correct_idea_family",
+        "is_approach_correct",
+        "matches_student_note"
+      ],
+      "properties": {
+        "student_idea_public": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "correct_idea_family": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "is_approach_correct": {
+          "type": "boolean"
+        },
+        "matches_student_note": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "suspect_inputs": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "expected_output",
+          "why"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "expected_output": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "why": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "complexity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "student",
+        "required"
+      ],
+      "properties": {
+        "student": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "required": {
+          "type": "string",
+          "maxLength": 60
+        }
+      }
+    },
+    "root_cause_internal": {
+      "type": "string",
+      "maxLength": 1200
+    },
+    "fix_internal": {
+      "type": "string",
+      "maxLength": 1200
+    },
+    "checked_internal": {
+      "type": "string",
+      "maxLength": 800
+    }
+  }
+}
