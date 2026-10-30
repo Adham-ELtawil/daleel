@@ -39,6 +39,19 @@
     "unsupported_url": "Use a Codeforces or AtCoder problem link.",
     "fetch_failed": "We could not read the problem page. Paste the statement below to continue.",
     "contest_running": "This contest is still running. Please come back after it ends.",
-    "internal_error": "Something went wrong. Please try again."
+    "internal_error": "Something went wrong. Please try again.",
+    "diagnose": "Diagnose",
+    "try_again": "Try again",
+    "reading": "Reading the problem…",
+    "thinking": "Analysing your code…",
+    "validating": "Checking the diagnosis…",
+    "bug_class": "Bug class",
+    "confidence": "Confidence",
+    "low_confidence": "Not sure exactly where. Check the summary before changing your code.",
+    "already_running": "This attempt is already being diagnosed.",
+    "budget_reached": "Today's model budget has been reached. Please try again later.",
+    "schema_error": "The diagnosis could not be validated. Please try again.",
+    "truncated": "The model could not finish the diagnosis. Please try again.",
+    "llm_error": "We could not diagnose your code. Please try again."
   }
 }

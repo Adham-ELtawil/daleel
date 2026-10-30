@@ -83,6 +83,23 @@ describe("jsonSchemaFor", () => {
 });
 
 describe("createMetaClient().callStructured", () => {
+  it("forwards caller cancellation to the transport without retrying", async () => {
+    const controller = new AbortController();
+    const aborted: boolean[] = [];
+    const { client, sleep } = setup([], {
+      fetch: async (_input, init) => {
+        controller.abort();
+        aborted.push(init?.signal?.aborted ?? false);
+        throw new DOMException("cancelled", "AbortError");
+      },
+    });
+    await expect(
+      client.callStructured(cfg, messages, { ...opts, signal: controller.signal }),
+    ).rejects.toBeInstanceOf(MetaApiError);
+    expect(aborted).toEqual([true]);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
   it("returns validated JSON and sends the required Meta parameters", async () => {
     const { client, fake } = setup([ok()]);
     const originalMessages = structuredClone(messages);
