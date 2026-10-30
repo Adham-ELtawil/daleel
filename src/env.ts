@@ -6,3 +6,10 @@ export const DiagnoseEnvSchema = z.object({
   EFFORT_DIAGNOSE: z.enum(["minimal", "low", "medium", "high", "xhigh"]).default("high"),
   MAXTOK_DIAGNOSE: z.coerce.number().int().positive().default(16000),
 });
+
+export const MetaEnvSchema = z.object({
+  MODEL_API_KEY: z.string().default(""),
+  MODEL_API_BASE_URL: z.url().default("https://api.meta.ai/v1"),
+  DAILY_BUDGET_USD: z.coerce.number().positive().default(10),
+  PROMPT_CACHE_RETENTION: z.enum(["in_memory", "24h"]).default("24h"),
+});

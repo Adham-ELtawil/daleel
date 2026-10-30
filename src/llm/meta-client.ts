@@ -50,6 +50,7 @@ export type MetaClientDeps = {
 };
 
 export type CallOptions<T> = {
+  signal?: AbortSignal;
   attemptId?: string;
   userId?: string;
   cacheKey?: string;
@@ -166,13 +167,20 @@ export function createMetaClient(deps: MetaClientDeps) {
     return sdk;
   }
 
-  async function request(body: Record<string, unknown>, stream: boolean): Promise<Completion> {
+  async function request(
+    body: Record<string, unknown>,
+    stream: boolean,
+    signal?: AbortSignal,
+  ): Promise<Completion> {
     const api = client();
     if (!stream) {
-      const res = await api.chat.completions.create({
-        ...body,
-        stream: false,
-      } as unknown as OpenAI.ChatCompletionCreateParamsNonStreaming);
+      const res = await api.chat.completions.create(
+        {
+          ...body,
+          stream: false,
+        } as unknown as OpenAI.ChatCompletionCreateParamsNonStreaming,
+        { signal },
+      );
       const choice = res.choices[0];
       return {
         content: choice?.message?.content ?? null,
@@ -180,11 +188,14 @@ export function createMetaClient(deps: MetaClientDeps) {
         usage: readUsage(res.usage),
       };
     }
-    const chunks = await api.chat.completions.create({
-      ...body,
-      stream: true,
-      stream_options: { include_usage: true },
-    } as unknown as OpenAI.ChatCompletionCreateParamsStreaming);
+    const chunks = await api.chat.completions.create(
+      {
+        ...body,
+        stream: true,
+        stream_options: { include_usage: true },
+      } as unknown as OpenAI.ChatCompletionCreateParamsStreaming,
+      { signal },
+    );
     let content = "";
     let finishReason: string | null = null;
     let usage: RawUsage;
@@ -255,7 +266,7 @@ export function createMetaClient(deps: MetaClientDeps) {
       for (let retry = 0; !completion; retry++) {
         const started = now();
         try {
-          completion = await request(body, cfg.stream);
+          completion = await request(body, cfg.stream, opts.signal);
         } catch (err) {
           const status = err instanceof OpenAI.APIError ? (err.status ?? null) : null;
           const message = err instanceof Error ? err.message : String(err);
