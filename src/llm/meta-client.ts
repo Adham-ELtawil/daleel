@@ -1,9 +1,10 @@
 // The only module allowed to talk to the Meta Model API (AGENTS.md "LLM rules").
-// Behaviour spec: docs/03-ARCHITECTURE.md §5.3. Replay (DEMO_REPLAY) and the fallback provider land in later PRs.
+// Behaviour spec: docs/03-ARCHITECTURE.md §5.3.
 import { createHash } from "node:crypto";
 import OpenAI from "openai";
 import { z, type ZodType } from "zod";
 import { costUsd } from "./pricing";
+import { ReplayMiss, type ReplayStore } from "./replay/store";
 
 export type LlmStep = "normalize" | "diagnose" | "stress" | "ladder" | "explain" | "report";
 export type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh";
@@ -25,7 +26,7 @@ export type LlmCallRecord = {
   attemptId: string | null;
   model: string;
   requestHash: string;
-  status: "ok" | "error";
+  status: "ok" | "error" | "replay";
   httpStatus: number | null;
   inputTokens: number;
   outputTokens: number;
@@ -47,6 +48,7 @@ export type MetaClientDeps = {
   dailyBudgetUsd: number;
   getSpentTodayUsd: () => Promise<number>;
   logCall: (rec: LlmCallRecord) => Promise<void> | void;
+  replay?: { mode: "off" | "replay" | "record"; store: ReplayStore };
 };
 
 export type CallOptions<T> = {
@@ -220,10 +222,6 @@ export function createMetaClient(deps: MetaClientDeps) {
     messages: ChatMessage[],
     opts: CallOptions<T>,
   ): Promise<T> {
-    client(); // fail fast on a missing key, before any network call
-    const spent = await deps.getSpentTodayUsd();
-    if (spent >= deps.dailyBudgetUsd) throw new BudgetReached(spent, deps.dailyBudgetUsd);
-
     const requestHash = sha256(
       JSON.stringify([cfg.model, cfg.reasoningEffort, cfg.schemaName, cfg.schema, messages]),
     );
@@ -255,15 +253,43 @@ export function createMetaClient(deps: MetaClientDeps) {
         ...rec,
       });
 
+    if (deps.replay?.mode === "replay") {
+      const started = now();
+      const recording = await deps.replay.store.read(cfg.step, requestHash);
+      if (!recording) throw new ReplayMiss(cfg.step, requestHash);
+      const checked = opts.zod.safeParse(recording.response);
+      if (!checked.success) throw new SchemaError("invalid_replay_response");
+      await log({ status: "replay", latencyMs: now() - started });
+      return checked.data;
+    }
+    client(); // Live mode fails fast on a missing key.
+    const spent = await deps.getSpentTodayUsd();
+    if (spent >= deps.dailyBudgetUsd) throw new BudgetReached(spent, deps.dailyBudgetUsd);
+
     let msgs = messages;
     let maxTokens = cfg.maxCompletionTokens;
     let truncationRetried = false;
     let repairRetried = false;
+    let recordedUsage: Completion["usage"] | undefined;
+    let recordedCost = 0;
+    let recordedLatency = 0;
 
     for (;;) {
       const body = { ...base, messages: msgs, max_completion_tokens: maxTokens };
       let completion: Completion | undefined;
       for (let retry = 0; !completion; retry++) {
+        if (deps.replay?.mode === "record") {
+          // Reserve uncached input (one token per UTF-8 byte plus envelope overhead)
+          // and the full completion allowance, including reasoning, before every retry.
+          const remaining = await deps.getSpentTodayUsd();
+          const ceiling = costUsd(cfg.model, {
+            promptTokens: Buffer.byteLength(JSON.stringify(body), "utf8") + 1024,
+            completionTokens: maxTokens,
+            cachedTokens: 0,
+          });
+          if (remaining + ceiling > deps.dailyBudgetUsd)
+            throw new BudgetReached(remaining, deps.dailyBudgetUsd);
+        }
         const started = now();
         try {
           completion = await request(body, cfg.stream, opts.signal);
@@ -283,6 +309,9 @@ export function createMetaClient(deps: MetaClientDeps) {
           continue;
         }
         const u = completion.usage;
+        recordedUsage = u;
+        recordedCost = costUsd(cfg.model, u);
+        recordedLatency = now() - started;
         const truncated = completion.finishReason === "length";
         await log({
           status: truncated ? "error" : "ok",
@@ -291,8 +320,8 @@ export function createMetaClient(deps: MetaClientDeps) {
           outputTokens: u.completionTokens,
           cachedTokens: u.cachedTokens,
           reasoningTokens: u.reasoningTokens,
-          costUsd: costUsd(cfg.model, u),
-          latencyMs: now() - started,
+          costUsd: recordedCost,
+          latencyMs: recordedLatency,
           error: truncated ? 'finish_reason "length" (output budget too small)' : null,
         });
       }
@@ -305,7 +334,33 @@ export function createMetaClient(deps: MetaClientDeps) {
       }
 
       const checked = validate(completion.content, opts.zod);
-      if (checked.ok) return checked.value;
+      if (checked.ok) {
+        if (deps.replay?.mode === "record" && recordedUsage) {
+          const recording = {
+            provenance: {
+              recordedAt: new Date(now()).toISOString(),
+              model: cfg.model,
+              reasoningEffort: cfg.reasoningEffort,
+              step: cfg.step,
+              requestHash,
+              usage: {
+                input: recordedUsage.promptTokens,
+                output: recordedUsage.completionTokens,
+                cached: recordedUsage.cachedTokens,
+                reasoning: recordedUsage.reasoningTokens,
+              },
+              costUsd: recordedCost,
+              latencyMs: recordedLatency,
+              tool: "pnpm record:demo" as const,
+            },
+            response: checked.value,
+          };
+          if (JSON.stringify(recording).includes(deps.apiKey))
+            throw new SchemaError("recording_contains_secret");
+          await deps.replay.store.write(recording);
+        }
+        return checked.value;
+      }
       if (repairRetried) throw new SchemaError(checked.error);
       repairRetried = true;
       msgs = [

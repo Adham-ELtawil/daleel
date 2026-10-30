@@ -1,7 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/health/route";
 
+afterEach(() => vi.unstubAllEnvs());
+
 describe("GET /api/health", () => {
+  it("reports the replay environment flag without contacting Meta", async () => {
+    vi.stubEnv("DEMO_REPLAY", "1");
+    expect(await GET().json()).toMatchObject({ replay: true });
+  });
   it("returns 200 with the planned health shape before db/meta/runner exist", async () => {
     const res = await GET();
 
