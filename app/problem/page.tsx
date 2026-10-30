@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import type { Problem } from "@/src/db/repo/problems";
-import { t } from "@/src/i18n";
+import { t as translate } from "@/src/i18n";
+import { useLocale } from "@/src/components/locale-shell";
 import { HttpError } from "@/src/services/http-error";
 
 const extensions = [
@@ -22,11 +23,13 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data: T & { error?: { code: Parameters<typeof t>[0] } } = await response.json();
+  const data: T & { error?: { code: Parameters<typeof translate>[0] } } = await response.json();
   if (!response.ok) throw new HttpError(response.status, data.error?.code ?? "internal_error");
   return data;
 }
 export default function ProblemPage() {
+  const locale = useLocale();
+  const t = (key: Parameters<typeof translate>[0]) => translate(key, locale);
   const router = useRouter();
   const [problem, setProblem] = useState<Problem>();
   const [paste, setPaste] = useState(false);

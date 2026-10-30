@@ -1,27 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { diagnosisHighlights } from "@/src/domain/diagnosis-highlights";
+import { shouldAutostart } from "@/src/domain/attempt-ui";
 import { t } from "@/src/i18n";
-import type { DiagnosisPublic } from "@/src/llm/schemas/diagnosis";
+import type { attemptDetail } from "@/src/services/attempt-service";
 import { readSse } from "@/src/services/sse";
+import { HintLadder } from "./hint-ladder";
 
 export function DiagnosisCard({
-  id,
-  code,
-  language,
+  detail,
   locale,
-  initial,
+  autostart,
 }: {
-  id: string;
-  code: string;
-  language: "cpp17" | "python3";
+  detail: Awaited<ReturnType<typeof attemptDetail>>;
   locale: "en" | "ar-EG";
-  initial?: DiagnosisPublic;
+  autostart?: string | string[];
 }) {
+  const {
+    attempt: { id, code, language, status },
+    diagnosis: initial,
+  } = detail;
   const [result, setResult] = useState(initial);
+  const [ladderReady, setLadderReady] = useState(false);
+  const autoStarted = useRef(false);
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<"reading" | "thinking" | "validating">();
   const [error, setError] = useState<Parameters<typeof t>[0]>();
@@ -33,10 +37,11 @@ export function DiagnosisCard({
     ],
     [language, result],
   );
-  async function diagnose() {
+  const diagnose = useCallback(async () => {
     setBusy(true);
     setError(undefined);
     setResult(undefined);
+    setLadderReady(false);
     setStage("reading");
     try {
       const response = await fetch(`/api/attempts/${id}/diagnose`, {
@@ -50,6 +55,7 @@ export function DiagnosisCard({
       await readSse(response.body, (event) => {
         if (event.event === "stage") setStage(event.data.name);
         if (event.event === "diagnosis") setResult(event.data.public);
+        if (event.event === "ladder_ready") setLadderReady(true);
         if (event.event === "error") setError(event.data.code);
       });
     } catch {
@@ -58,7 +64,14 @@ export function DiagnosisCard({
       setBusy(false);
       setStage(undefined);
     }
-  }
+  }, [id]);
+  useEffect(() => {
+    if (!autoStarted.current && shouldAutostart(autostart, status, Boolean(initial))) {
+      autoStarted.current = true;
+      void diagnose();
+    }
+  }, [autostart, status, initial, diagnose]);
+  const ready = ladderReady || (Boolean(result) && !busy);
   return (
     <section dir={locale === "en" ? "ltr" : "rtl"} className="space-y-4">
       <label id="attempt-code-label">{t("code", locale)}</label>
@@ -93,6 +106,7 @@ export function DiagnosisCard({
           </article>
         )}
       </div>
+      <HintLadder detail={detail} locale={locale} ready={ready} />
     </section>
   );
 }
