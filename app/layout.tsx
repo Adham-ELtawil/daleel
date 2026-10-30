@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
+import { localeAttrs, t } from "@/src/i18n";
 import { LocaleShell } from "@/src/components/locale-shell";
 import { uiLocale } from "@/src/services/ui-locale";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Daleel",
-  description: "AI training coach for competitive programmers",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await uiLocale();
+  return { title: t("title", locale, "landing"), description: t("description", locale, "landing") };
+}
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await uiLocale();
   return (
-    <html lang={locale} dir={locale === "en" ? "ltr" : "rtl"}>
+    <html {...localeAttrs(locale)}>
       <body className="antialiased">
         <LocaleShell locale={locale}>{children}</LocaleShell>
       </body>

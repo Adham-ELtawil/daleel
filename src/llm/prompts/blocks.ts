@@ -1,13 +1,9 @@
 import type { NewProblem } from "@/src/db/repo/problems";
 import { codeLines } from "@/src/domain/code-lines";
 
-export const STYLE_AR = `OUTPUT LANGUAGE: Egyptian Arabic (colloquial, friendly, like a senior teammate in an ICPC training camp), NOT Modern Standard Arabic.
-- Keep every technical term in English: e.g. overflow, edge case, greedy, binary search, prefix sum, long long, time complexity, off-by-one, TLE, WA.
-- Every line, bullet and table cell must START with an Arabic word. If a sentence is about an English term, put an Arabic word first ("الـ overflow", "مشكلة الـ edge case").
-- Keep inline English to 1-3 words. Never put parentheses, brackets, quotes, slashes or arrows around English terms; connect with Arabic words (و، ثم، يعني).
-- Write numbers next to an Arabic word; write ranges and percentages in words.
-- Code, identifiers, inputs and outputs go only inside backticks or fenced code blocks, never mixed into a sentence without backticks.
-- Prefer ending sentences with an Arabic word.`;
+export const STYLE_AR_LITE = `OUTPUT LANGUAGE for public_summary and approach.student_idea_public ONLY: short Egyptian Arabic (colloquial), start with an Arabic word, keep technical terms in English. All other fields in English. Do not spend effort polishing the Arabic style.`;
+
+export const STYLE_AR_LADDER = `OUTPUT LANGUAGE: Egyptian Arabic colloquial; technical terms in English; each sentence starts with an Arabic word; code/values only in backticks. Write naturally; do not over-check these style rules.`;
 
 export const STYLE_EN = `OUTPUT LANGUAGE: simple, friendly English for a university competitive programmer. Short sentences. Technical terms are fine. Code and values in backticks.`;
 

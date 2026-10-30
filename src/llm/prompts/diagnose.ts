@@ -2,7 +2,7 @@ import { DiagnoseEnvSchema } from "@/src/env";
 import { jsonSchemaFor, type ChatMessage, type LlmStepConfig } from "@/src/llm/meta-client";
 import { DiagnosisSchema } from "../schemas/diagnosis";
 import {
-  STYLE_AR,
+  STYLE_AR_LITE,
   STYLE_EN,
   SAFETY_AND_DATA,
   buildProblemBlock,
@@ -42,7 +42,7 @@ export function buildDiagnoseMessages({
     {
       role: "developer",
       content: DEVELOPER_PROMPT.replace("{{STYLE}}", () =>
-        locale === "en" ? STYLE_EN : STYLE_AR,
+        locale === "en" ? STYLE_EN : STYLE_AR_LITE,
       ).replace("{{SAFETY_AND_DATA}}", () => SAFETY_AND_DATA),
     },
     { role: "developer", content: buildProblemBlock(problem) },

@@ -7,6 +7,7 @@ import { StoredDiagnosisSchema, TagsSchema } from "@/src/db/json";
 import { attempts, diagnoses } from "@/src/db/schema";
 import { codeLines } from "@/src/domain/code-lines";
 import { validateDiagnosis } from "@/src/domain/diagnosis-validate";
+import { fixArabicPublicText } from "@/src/domain/arabic-style";
 import {
   BudgetReached,
   SchemaError,
@@ -129,6 +130,13 @@ export async function diagnoseAttempt(
     const parsed = DiagnosisSchema.safeParse(raw);
     if (!parsed.success) throw new SchemaError("invalid_diagnosis");
     const result = validateDiagnosis(parsed.data, attempt.code);
+    if (attempt.locale === "ar-EG") {
+      result.public_summary = fixArabicPublicText(result.public_summary).slice(0, 240);
+      result.approach = {
+        ...result.approach,
+        student_idea_public: fixArabicPublicText(result.approach.student_idea_public).slice(0, 300),
+      };
+    }
     const values = {
       id: ulid(now()),
       attemptId,

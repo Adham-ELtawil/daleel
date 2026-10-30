@@ -13,7 +13,7 @@ Conventions
 
 ## 0. Shared blocks
 
-### 0.1 STYLE_AR (inserted when `locale = ar-EG`)
+### 0.1 STYLE_AR (full reference for `locale = ar-EG`)
 ```text
 OUTPUT LANGUAGE: Egyptian Arabic (colloquial, friendly, like a senior teammate in an ICPC training camp), NOT Modern Standard Arabic.
 - Keep every technical term in English: e.g. overflow, edge case, greedy, binary search, prefix sum, long long, time complexity, off-by-one, TLE, WA.
@@ -23,6 +23,20 @@ OUTPUT LANGUAGE: Egyptian Arabic (colloquial, friendly, like a senior teammate i
 - Code, identifiers, inputs and outputs go only inside backticks or fenced code blocks, never mixed into a sentence without backticks.
 - Prefer ending sentences with an Arabic word.
 ```
+
+The full block remains the copy reference. PR-14 uses the lite variants below to reduce style deliberation; `STYLE_EN` is unchanged. Owner measurements on 2026-10-30 for CF 1A: English diagnose used 1238/1686 reasoning tokens, $0.009–0.011 and 7–8 s; full Arabic used 7587/4940, $0.024–0.036 and 18–30 s, with similar visible length. Lite Arabic used 1463/1662, about $0.010 and 8–10 s with good Egyptian copy. Arabic ladder used 3382 reasoning tokens versus about 1000 in English. These are owner-supplied observations, not new live checks in PR-14.
+
+#### STYLE_AR_LITE (diagnose public fields only)
+```text
+OUTPUT LANGUAGE for public_summary and approach.student_idea_public ONLY: short Egyptian Arabic (colloquial), start with an Arabic word, keep technical terms in English. All other fields in English. Do not spend effort polishing the Arabic style.
+```
+
+#### STYLE_AR_LADDER (ladder public copy)
+```text
+OUTPUT LANGUAGE: Egyptian Arabic colloquial; technical terms in English; each sentence starts with an Arabic word; code/values only in backticks. Write naturally; do not over-check these style rules.
+```
+
+After validation, a deterministic post-fix prefixes `الـ ` on public lines starting with Latin letters or backticks, preserving indentation. Diagnose applies it only to `public_summary` and `approach.student_idea_public`; ladder applies it to titles, bodies and non-null questions. Text stays within schema length limits. No model call is needed. Arabic request hashes change, so CF 1A recordings need owner re-recording; PR-14 leaves `recordings/` untouched.
 
 ### 0.2 STYLE_EN (inserted when `locale = en`)
 ```text
