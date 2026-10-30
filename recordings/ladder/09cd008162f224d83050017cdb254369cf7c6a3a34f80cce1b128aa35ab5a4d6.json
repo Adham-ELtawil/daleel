@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-30T13:18:28.423Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "ladder",
+    "requestHash": "09cd008162f224d83050017cdb254369cf7c6a3a34f80cce1b128aa35ab5a4d6",
+    "usage": {
+      "input": 1414,
+      "output": 1836,
+      "cached": 0,
+      "reasoning": 1471
+    },
+    "costUsd": 0.0095705,
+    "latencyMs": 7371,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "Where Your Counting Starts",
+        "body_md": "Look closely at the loop that reads the choices and the line that prints the answer. Think about how the problem wants positions to be numbered. What number should the first choice give?",
+        "question_back": "What should the first position print?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Zero Based Versus One Based",
+        "body_md": "C++ loops often start counting from zero. Many tasks ask for answers starting from one. You need to shift between those two ways of counting.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Your Print Line Is Off",
+        "body_md": "Line 9 is wrong because it prints `i` directly. Your `i` starts at zero for the first choice, but the problem wants the first choice to be reported as position one. So every answer is one too small.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Fix The Index Shift",
+        "body_md": "You need to find the choice equal to the sum and report its 1-based index. Your loop correctly checks each value, but your counter `i` is 0-based. That is why your output is always one less than required. The minimal fix is to keep your loop the same and, on line 9, print the value of `i` plus one instead of `i` alone. Nothing else needs to change. The scan stays `O(N)` time, which is easily fast enough.",
+        "question_back": null
+      }
+    ]
+  }
+}
