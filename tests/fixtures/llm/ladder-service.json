@@ -1,0 +1,64 @@
+{
+  "user": {
+    "id": "pr12-user",
+    "handle": "pr12_student",
+    "role": "student",
+    "locale": "en",
+    "isGuest": 1,
+    "createdAt": 1000
+  },
+  "problem": {
+    "judge": "codeforces",
+    "externalId": "4A",
+    "url": "https://codeforces.com/problemset/problem/4/A",
+    "title": "Watermelon",
+    "statementMd": "A watermelon weighs w. Determine whether it can be split into two parts, each with a positive even weight.",
+    "inputSpecMd": "One integer w, with 1 ≤ w ≤ 100.",
+    "outputSpecMd": "Print YES if such a split is possible, otherwise print NO.",
+    "notesMd": null,
+    "timeLimitMs": 1000,
+    "memoryLimitMb": 64,
+    "rating": 800,
+    "contestId": "4",
+    "id": "pr12-problem",
+    "contentHash": "fake-hash",
+    "fetchedAt": 1000,
+    "samplesJson": "[{\"input\": \"8\\n\", \"output\": \"YES\\n\"}]",
+    "tagsJson": "[\"brute force\", \"math\"]"
+  },
+  "attempt": {
+    "id": "pr12-attempt",
+    "userId": "pr12-user",
+    "problemId": "pr12-problem",
+    "language": "cpp17",
+    "code": "int w;",
+    "codeHash": "fake-hash",
+    "locale": "en",
+    "status": "new",
+    "maxHintLevel": 2,
+    "createdAt": 1000
+  },
+  "diagnosis": {
+    "id": "pr12-diagnosis",
+    "attemptId": "pr12-attempt",
+    "resultJson": "{\"bug_found\": true, \"bug_class\": \"edge_case\", \"confidence\": 0.93, \"public_summary\": \"Your condition is almost right, but there is one small value of w it handles incorrectly.\", \"lines\": [{\"start\": 6, \"end\": 6, \"role\": \"bug\"}], \"topics\": [\"math\", \"implementation\"], \"approach\": {\"student_idea_public\": \"You print YES whenever w is even.\", \"correct_idea_family\": \"parity with a positivity constraint\", \"is_approach_correct\": false, \"matches_student_note\": true}, \"suspect_inputs\": [{\"input\": \"2\\n\", \"expected_output\": \"NO\", \"why\": \"only split is 1+1, both odd\"}, {\"input\": \"1\\n\", \"expected_output\": \"NO\", \"why\": \"minimum value\"}, {\"input\": \"4\\n\", \"expected_output\": \"YES\", \"why\": \"smallest valid even split 2+2\"}], \"complexity\": {\"student\": \"O(1)\", \"required\": \"O(1)\"}, \"root_cause_internal\": \"For w = 2 the only split into positive parts is 1 + 1, which are odd, so the answer is NO; the code prints YES because 2 % 2 == 0.\", \"fix_internal\": \"if (w % 2 == 0 && w > 2) cout << \\\"YES\\\";\", \"checked_internal\": \"Checked parity logic, output format (YES/NO), input range 1..100.\"}",
+    "bugClass": "edge_case",
+    "topicsJson": "[\"math\", \"implementation\"]",
+    "confidence": 0.93,
+    "model": "fake-model",
+    "reasoningEffort": "low",
+    "createdAt": 1000
+  },
+  "stress": {
+    "id": "pr12-stress",
+    "attemptId": "pr12-attempt",
+    "status": "verified",
+    "runner": "fake",
+    "bruteCode": "private brute",
+    "testsJson": "[]",
+    "failingInput": "2",
+    "expectedOutput": "NO",
+    "actualOutput": "YES",
+    "createdAt": 1000
+  }
+}

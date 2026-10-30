@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "smoke:meta": "tsx scripts/smoke-meta.ts",
     "smoke:diagnose": "tsx scripts/smoke-diagnose.ts",
+    "smoke:ladder": "tsx scripts/smoke-ladder.ts",
     "eval": "node --import tsx scripts/eval.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
