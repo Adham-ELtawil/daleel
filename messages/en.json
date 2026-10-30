@@ -66,6 +66,7 @@
     "low_confidence": "Not sure exactly where. Check the summary before changing your code.",
     "already_running": "This attempt is already being diagnosed.",
     "not_diagnosed": "Diagnose this attempt before requesting hints.",
+    "no_more_hints": "You have revealed all four hints.",
     "budget_reached": "Today's model budget has been reached. Please try again later.",
     "schema_error": "The diagnosis could not be validated. Please try again.",
     "truncated": "The model could not finish the diagnosis. Please try again.",

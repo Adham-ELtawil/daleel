@@ -16,6 +16,7 @@ const EventSchema = z.discriminatedUnion("event", [
       }),
     }),
   }),
+  z.object({ event: z.literal("ladder_ready"), data: z.object({ levels: z.literal(4) }) }),
   z.object({ event: z.literal("done"), data: z.object({}) }),
   z.object({
     event: z.literal("error"),
