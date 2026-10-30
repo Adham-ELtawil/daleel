@@ -283,6 +283,27 @@ it("caches each locale once and translates already revealed hints without changi
   expect(await reveals(id)).toHaveLength(2);
   expect((await row(id))?.maxHintLevel).toBe(2);
 });
+it("switches locale on GET with one generation, preserves reveals and reuses that ladder", async () => {
+  const id = await diagnosed();
+  const { handlers, llm } = setup();
+  await handlers.nextHint(request(), id);
+  await handlers.nextHint(request(), id);
+  const before = await reveals(id);
+  llm.mockResolvedValue({ levels: ladder.levels.map((hint) => ({
+    ...hint, title: "hint هنا", body_md: "input هنا", question_back: "edge case هنا؟",
+  })) });
+  const expected = { attempt: { maxHintLevel: 2 }, revealedHints: [
+    { level: 1, title: "الـ hint هنا", body_md: "الـ input هنا", question_back: "الـ edge case هنا؟" },
+    { level: 2, title: "الـ hint هنا", body_md: "الـ input هنا", question_back: "الـ edge case هنا؟" },
+  ] };
+  expect(await (await handlers.getAttempt(get("?locale=ar-EG"), id)).json()).toMatchObject(expected);
+  expect(llm).toHaveBeenCalledTimes(2);
+  expect(await (await handlers.getAttempt(get("?locale=ar-EG"), id)).json()).toMatchObject(expected);
+  expect(llm).toHaveBeenCalledTimes(2);
+  expect(await reveals(id)).toEqual(before);
+  expect(await (await handlers.getAttempt(get("?locale=en"), id)).json()).toMatchObject({ revealedHints: publicHints.slice(0, 2) });
+  expect(llm).toHaveBeenCalledTimes(2);
+});
 it("links a re-check child and rejects missing or different-problem parents with 400", async () => {
   const parent = await createAttempt();
   const child = await createAttempt({ parentAttemptId: parent, code: "fixed code" });

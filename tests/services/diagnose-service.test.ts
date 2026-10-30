@@ -279,6 +279,25 @@ it("prepares the ladder in the attempt locale after successful diagnosis", async
   ]);
   expect(JSON.stringify(d.ladder.llm.mock.calls[0][1])).toContain("Egyptian");
 });
+it.each(["en", "ar-EG"] as const)("post-fixes only Arabic public diagnosis fields in %s", async (locale) => {
+  const id = await attempt({ locale });
+  const d = deps();
+  const raw = {
+    ...result,
+    public_summary: "overflow محتمل",
+    approach: { ...result.approach, student_idea_public: "`w` بيتقسم" },
+  };
+  d.llm.mockResolvedValue(raw);
+  const events: DiagnoseEvent[] = [];
+  await diagnoseAttempt(d, id, (event) => events.push(event));
+  const saved = (await store.db.select().from(diagnoses).where(eq(diagnoses.attemptId, id)).get())!;
+  const value = StoredDiagnosisSchema.parse(JSON.parse(saved.resultJson)).value;
+  expect(value.public_summary).toBe(`${locale === "ar-EG" ? "الـ " : ""}${raw.public_summary}`);
+  expect(value.approach.student_idea_public).toBe(`${locale === "ar-EG" ? "الـ " : ""}${raw.approach.student_idea_public}`);
+  expect(value.root_cause_internal).toBe(raw.root_cause_internal);
+  expect(events.find((event) => event.event === "diagnosis")).toMatchObject({ data: { public: toPublic(value) } });
+  expect(d.llm).toHaveBeenCalledOnce();
+});
 it("ends with diagnosis + done when ladder generation fails and logs a safe ladder error with requestId", async () => {
   const id = await attempt();
   const d = deps();
