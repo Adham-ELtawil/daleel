@@ -43,6 +43,12 @@ async function attempt(patch: Partial<typeof attempts.$inferInsert> = {}) {
 }
 const status = async (id: string) =>
   (await store.db.select().from(attempts).where(eq(attempts.id, id)).get())?.status;
+const diagnosisState = (id: string) =>
+  store.db
+    .select({ status: attempts.status, diagnosingSince: attempts.diagnosingSince })
+    .from(attempts)
+    .where(eq(attempts.id, id))
+    .get();
 const deps = () => ({
   db: store.db,
   llm: vi.fn<DiagnoseDeps["llm"]>(async () => result),
@@ -188,7 +194,7 @@ it("returns safe 404/409 JSON before streaming and never calls the LLM", async (
   const handler = createDiagnoseHandler({ ...d, db: async () => store.db });
   for (const [id, expected] of [
     ["missing", 404],
-    [await attempt({ status: "diagnosing" }), 409],
+    [await attempt({ status: "diagnosing", diagnosingSince: now }), 409],
   ] as const) {
     const response = await handler(request(), id);
     expect(response.status).toBe(expected);
@@ -198,3 +204,49 @@ it("returns safe 404/409 JSON before streaming and never calls the LLM", async (
   }
   expect(d.llm).not.toHaveBeenCalled();
 });
+
+it.each([151000, null])("recovers a diagnosing attempt aged %s ms", async (age) => {
+  now = 200000;
+  const id = await attempt({
+    status: "diagnosing",
+    diagnosingSince: age === null ? null : now - age,
+  });
+  const d = deps();
+  const events: DiagnoseEvent[] = [];
+  await diagnoseAttempt(d, id, (event) => events.push(event));
+  expect(d.llm).toHaveBeenCalledOnce();
+  expect(events.at(-2)).toEqual({ event: "diagnosis", data: { public: toPublic(result) } });
+  expect(events.at(-1)).toEqual({ event: "done", data: {} });
+  expect(await diagnosisState(id)).toEqual({ status: "diagnosed", diagnosingSince: null });
+});
+
+it.each([10000, 150000])(
+  "rejects a diagnosing attempt aged %s ms without LLM calls",
+  async (age) => {
+    now = 200000;
+    const id = await attempt({ status: "diagnosing", diagnosingSince: now - age });
+    const d = deps();
+    const response = await createDiagnoseHandler({ ...d, db: async () => store.db })(request(), id);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: { code: "already_running" } });
+    expect(d.llm).not.toHaveBeenCalled();
+    expect(await diagnosisState(id)).toEqual({ status: "diagnosing", diagnosingSince: now - age });
+  },
+);
+
+it.each(["diagnosed", "error"] as const)(
+  "sets the claim timestamp and clears it after %s",
+  async (outcome) => {
+    const id = await attempt();
+    const d = deps();
+    let claimed: Awaited<ReturnType<typeof diagnosisState>>;
+    d.llm.mockImplementationOnce(async () => {
+      claimed = await diagnosisState(id);
+      if (outcome === "error") throw new SchemaError("invalid_diagnosis");
+      return result;
+    });
+    await diagnoseAttempt(d, id, () => {});
+    expect(claimed).toEqual({ status: "diagnosing", diagnosingSince: now });
+    expect(await diagnosisState(id)).toEqual({ status: outcome, diagnosingSince: null });
+  },
+);
