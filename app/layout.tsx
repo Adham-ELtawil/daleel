@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { LocaleShell } from "@/src/components/locale-shell";
+import { uiLocale } from "@/src/services/ui-locale";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -6,11 +8,13 @@ export const metadata: Metadata = {
   description: "AI training coach for competitive programmers",
 };
 
-// Locale routing (app/[locale]) and RTL arrive in PR-14; English/LTR until then.
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await uiLocale();
   return (
-    <html lang="en" dir="ltr">
-      <body className="antialiased">{children}</body>
+    <html lang={locale} dir={locale === "en" ? "ltr" : "rtl"}>
+      <body className="antialiased">
+        <LocaleShell locale={locale}>{children}</LocaleShell>
+      </body>
     </html>
   );
 }
