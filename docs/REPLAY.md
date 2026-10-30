@@ -1,4 +1,4 @@
-# Demo replay — PR-22A
+# Demo replay — PR-22A/B
 
 Replay is a first-class local judging path (DECISIONS D4/D5). It never contacts
 Meta, requires no API key, and has zero LLM cost. A missing recording throws
@@ -19,7 +19,7 @@ messages. It excludes keys, cache keys, user/attempt/problem database IDs and
 timestamps. The problem prompt uses the judge's external ID. Different code,
 verdict, note, locale, prompt, schema, or model settings require a new recording.
 
-With genuine recordings present, judges can run without a key:
+Judges can use the committed recordings without an API key:
 
 ```sh
 pnpm db:migrate
@@ -27,11 +27,26 @@ pnpm db:seed
 DEMO_REPLAY=1 pnpm dev
 ```
 
-Paste the exact `student.cpp` from `docs/examples/cf-4A-watermelon` (English),
-`cf-1A-theatre-square` (Egyptian Arabic), or `atcoder-abc300_a` (English) for the
-corresponding seeded problem. Leave verdict, test number, and note unset. The 4A
+Open `/`, click **Try the demo**, and choose Watermelon (English), Theatre Square
+(Egyptian Arabic), or the AtCoder example (English). No typing is needed: the
+demo endpoint reads the exact `student.cpp` at request time, and the selected
+locale cookie is used when creating the attempt. Diagnosis starts automatically.
+The shared user remains `guest_local` until sessions are implemented. The 4A
 `fixed.cpp` also has a re-check recording. Keep MODEL/EFFORT settings identical
 to the recording run. `GET /api/health` reports `replay: true` in this mode.
+
+Each successful replay reports its original UTC `recordedAt` through the client's
+per-call `onReplay` callback. Diagnosis and ladder JSON columns persist a
+zod-validated `{value, recordedAt}` envelope; live calls store `null`. Legacy raw
+diagnoses/level arrays remain readable with `recordedAt: null`; no SQL migration
+is needed. Cached diagnosis copies preserve the recording date. Prompts, model
+schemas, and recording hashes are unchanged.
+
+Diagnosis SSE data includes `replay` and `recordedAt`. GET attempt includes those
+fields on its public diagnosis and at the top level for the requested locale's
+stored ladder; hints/next returns the same ladder metadata. The diagnosis and
+revealed hints show **Replay (recorded YYYY-MM-DD)** or its Arabic equivalent,
+using the recording date rather than the attempt date or the current replay flag.
 
 To re-record with your own key in the ignored `.env.local`:
 
@@ -50,7 +65,6 @@ repo's price table. No tokenizer or billing behaviour was verified live here.
 Model content echoing the API key is rejected before writing a recording.
 `DEMO_RECORD=1` is refused in the web runtime: only the script records our examples.
 
-PR-22A was verified entirely offline. Genuine recordings have not been generated
-in this change; the owner must run and review `pnpm record:demo` before the public
-judge path can replay these examples. PR-22B still needs `/api/session/demo`, home
-example selection, public `replay: true` flags, and the translated replay badges.
+PR-22B verification uses committed recordings and a transport fake that throws on
+network calls, plus a live-mode transport fake to check `replay: false`. No live
+Meta calls or new external API facts were established in this change.

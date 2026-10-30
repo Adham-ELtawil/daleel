@@ -9,6 +9,7 @@ import { t } from "@/src/i18n";
 import type { attemptDetail } from "@/src/services/attempt-service";
 import { HttpError } from "@/src/services/http-error";
 import { SafeMd } from "./safe-md";
+import { ReplayBadge } from "./replay-badge";
 
 export function HintLadder({
   detail,
@@ -22,6 +23,10 @@ export function HintLadder({
   const router = useRouter();
   const { attempt } = detail;
   const [hints, setHints] = useState(detail.revealedHints);
+  const [provenance, setProvenance] = useState({
+    replay: detail.replay,
+    recordedAt: detail.recordedAt,
+  });
   const [canExplain, setCanExplain] = useState(detail.canExplain);
   const [solved, setSolved] = useState(attempt.status === "solved");
   const [editing, setEditing] = useState(false);
@@ -52,7 +57,12 @@ export function HintLadder({
     try {
       const path = `/api/attempts/${attempt.id}`;
       if (action === "hint") {
-        const { hint } = await post<{ hint: Hint }>(`${path}/hints/next`, { locale });
+        const { hint, replay, recordedAt } = await post<{
+          hint: Hint;
+          replay: boolean;
+          recordedAt: string | null;
+        }>(`${path}/hints/next`, { locale });
+        setProvenance({ replay, recordedAt });
         setHints((previous) => appendHint(previous, hint));
         if (hint.level >= 3) setCanExplain(true);
       } else if (action === "recheck") {
@@ -77,6 +87,7 @@ export function HintLadder({
   return (
     <section className="space-y-4" aria-label={t("hints", locale)}>
       <div className="space-y-4" aria-live="polite">
+        {hints.length > 0 && <ReplayBadge {...provenance} locale={locale} />}
         {hints.map((hint) => (
           <article key={hint.level} data-hint-level={hint.level} className="space-y-2 border p-4">
             <h2 dir="auto" className="font-semibold">

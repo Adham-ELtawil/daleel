@@ -6,7 +6,9 @@ import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
 import { attempts } from "@/src/db/schema";
 import { createCfApi } from "@/src/judges/cf-api";
+import { resolveLocale } from "@/src/i18n";
 import { getCurrentUser } from "./current-user";
+import { demoSession } from "./demo-service";
 import { HttpError } from "./http-error";
 import { resolveProblem } from "./problem-service";
 import {
@@ -79,6 +81,11 @@ export function createHandlers(deps: {
       return markAttempt(await attemptDeps(), id, status);
     });
   return {
+    demo: (request: Request) =>
+      run(request, async () => {
+        await body(request, z.strictObject({}));
+        return demoSession(await deps.db());
+      }),
     resolve: (request: Request) =>
       run(request, async () => {
         const input = await body(request, resolveSchema);
@@ -117,7 +124,10 @@ export function createHandlers(deps: {
           ...fields,
           id: attemptId,
           userId: user.id,
-          locale: user.locale,
+          locale: resolveLocale(
+            request.headers.get("cookie")?.match(/(?:^|;\s*)daleel_locale=([^;]*)/)?.[1],
+            request.headers.get("accept-language") ?? user.locale,
+          ),
           codeHash: createHash("sha256").update(fields.code).digest("hex"),
           status: "new",
           createdAt,

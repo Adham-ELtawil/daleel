@@ -2,11 +2,11 @@ import { and, eq } from "drizzle-orm";
 import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
+import { StoredDiagnosisSchema, StoredLadderSchema } from "@/src/db/json";
 import { attempts, diagnoses, hintLadders, stressRuns } from "@/src/db/schema";
 import { applyFallback, validateLadder } from "@/src/domain/ladder-validator";
 import type { CallOptions, ChatMessage, LlmStepConfig } from "@/src/llm/meta-client";
 import { buildLadderMessages } from "@/src/llm/prompts/ladder";
-import { DiagnosisSchema } from "@/src/llm/schemas/diagnosis";
 import { HintLadderSchema, type HintLadder } from "@/src/llm/schemas/ladder";
 import { HttpError } from "./http-error";
 
@@ -20,17 +20,21 @@ export type LadderDeps = {
   now: () => number;
   config: LlmStepConfig;
 };
+function readLadder(json: string) {
+  const { value, recordedAt } = StoredLadderSchema.parse(JSON.parse(json));
+  return { ...value, replay: recordedAt !== null, recordedAt };
+}
 export async function ensureLadder(
   { db, llm, now, config }: LadderDeps,
   attemptId: string,
   locale: "en" | "ar-EG",
-): Promise<HintLadder> {
+) {
   const key = and(eq(hintLadders.attemptId, attemptId), eq(hintLadders.locale, locale));
   const cached = await db.select().from(hintLadders).where(key).get();
-  if (cached) return HintLadderSchema.parse({ levels: JSON.parse(cached.levelsJson) });
+  if (cached) return readLadder(cached.levelsJson);
   const stored = await db.select().from(diagnoses).where(eq(diagnoses.attemptId, attemptId)).get();
   if (!stored) throw new HttpError(409, "not_diagnosed");
-  const diagnosis = DiagnosisSchema.parse(JSON.parse(stored.resultJson));
+  const diagnosis = StoredDiagnosisSchema.parse(JSON.parse(stored.resultJson)).value;
   const attempt = await db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
   const problem = attempt && (await getProblem(db, attempt.problemId));
   if (!attempt || !problem) throw new HttpError(404, "not_found");
@@ -62,13 +66,20 @@ export async function ensureLadder(
     code: attempt.code,
     locale,
   });
+  let recordedAt: string | null = null;
   const options = {
     zod: HintLadderSchema,
     attemptId,
     userId: attempt.userId,
     cacheKey: `problem:${problem.id}`,
+    onReplay: (date: string) => {
+      recordedAt = date;
+    },
   };
-  const generate = async () => HintLadderSchema.parse(await llm(config, messages, options));
+  const generate = async () => {
+    recordedAt = null;
+    return HintLadderSchema.parse(await llm(config, messages, options));
+  };
   let ladder = await generate();
   let checked = validateLadder(ladder, context);
   if (!checked.ok) {
@@ -86,10 +97,10 @@ export async function ensureLadder(
       id: ulid(now()),
       attemptId,
       locale,
-      levelsJson: JSON.stringify(HintLadderSchema.parse(ladder).levels),
+      levelsJson: JSON.stringify(StoredLadderSchema.parse({ value: ladder, recordedAt })),
       createdAt: now(),
     })
     .onConflictDoNothing(); // a concurrent request may have stored the ladder first
   const saved = (await db.select().from(hintLadders).where(key).get())!;
-  return HintLadderSchema.parse({ levels: JSON.parse(saved.levelsJson) });
+  return readLadder(saved.levelsJson);
 }

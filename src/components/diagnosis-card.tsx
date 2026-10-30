@@ -9,6 +9,7 @@ import { t } from "@/src/i18n";
 import type { attemptDetail } from "@/src/services/attempt-service";
 import { readSse } from "@/src/services/sse";
 import { HintLadder } from "./hint-ladder";
+import { ReplayBadge } from "./replay-badge";
 
 export function DiagnosisCard({
   detail,
@@ -54,7 +55,12 @@ export function DiagnosisCard({
       }
       await readSse(response.body, (event) => {
         if (event.event === "stage") setStage(event.data.name);
-        if (event.event === "diagnosis") setResult(event.data.public);
+        if (event.event === "diagnosis")
+          setResult({
+            ...event.data.public,
+            replay: event.data.replay,
+            recordedAt: event.data.recordedAt,
+          });
         if (event.event === "ladder_ready") setLadderReady(true);
         if (event.event === "error") setError(event.data.code);
       });
@@ -92,6 +98,7 @@ export function DiagnosisCard({
         {error && <p role="alert">{t(error, locale)}</p>}
         {result && (
           <article className="rounded border p-4">
+            <ReplayBadge replay={result.replay} recordedAt={result.recordedAt} locale={locale} />
             <p dir="auto">{result.public_summary}</p>
             <p>
               {t("bug_class", locale)}: <bdi>{result.bug_class}</bdi>

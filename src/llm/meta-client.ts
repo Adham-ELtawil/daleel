@@ -52,6 +52,7 @@ export type MetaClientDeps = {
 };
 
 export type CallOptions<T> = {
+  onReplay?: (recordedAt: string) => void;
   signal?: AbortSignal;
   attemptId?: string;
   userId?: string;
@@ -260,6 +261,7 @@ export function createMetaClient(deps: MetaClientDeps) {
       const checked = opts.zod.safeParse(recording.response);
       if (!checked.success) throw new SchemaError("invalid_replay_response");
       await log({ status: "replay", latencyMs: now() - started });
+      opts.onReplay?.(recording.provenance.recordedAt);
       return checked.data;
     }
     client(); // Live mode fails fast on a missing key.
