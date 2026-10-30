@@ -1,0 +1,5 @@
+{
+  "bug_class": "output_format",
+  "lines": [14],
+  "must_mention": ["case", "yes"]
+}

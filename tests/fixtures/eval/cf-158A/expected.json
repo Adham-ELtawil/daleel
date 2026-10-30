@@ -1,0 +1,5 @@
+{
+  "bug_class": "edge_case",
+  "lines": [10],
+  "must_mention": ["positive", "zero"]
+}

@@ -1,0 +1,5 @@
+{
+  "bug_class": "time_complexity",
+  "lines": [8, 9, 10],
+  "must_mention": ["linear", "k"]
+}

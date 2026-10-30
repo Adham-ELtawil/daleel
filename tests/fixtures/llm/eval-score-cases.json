@@ -1,0 +1,218 @@
+[
+  {
+    "id": "class edge_case",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "bug_class": "edge_case"
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": true,
+      "mentions": 2,
+      "score": 2
+    }
+  },
+  {
+    "id": "class overflow",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "bug_class": "overflow"
+    },
+    "score": {
+      "classOk": false,
+      "lineOverlap": true,
+      "mentions": 2,
+      "score": 1
+    }
+  },
+  {
+    "id": "inclusive overlap 6..6",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "lines": [
+        {
+          "start": 6,
+          "end": 6,
+          "role": "related"
+        }
+      ]
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": true,
+      "mentions": 2,
+      "score": 2
+    }
+  },
+  {
+    "id": "inclusive overlap 1..6",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "lines": [
+        {
+          "start": 1,
+          "end": 6,
+          "role": "related"
+        }
+      ]
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": true,
+      "mentions": 2,
+      "score": 2
+    }
+  },
+  {
+    "id": "inclusive overlap 9..12",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "lines": [
+        {
+          "start": 9,
+          "end": 12,
+          "role": "related"
+        }
+      ]
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": true,
+      "mentions": 2,
+      "score": 2
+    }
+  },
+  {
+    "id": "inclusive overlap 7..8",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "lines": [
+        {
+          "start": 7,
+          "end": 8,
+          "role": "related"
+        }
+      ]
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": false,
+      "mentions": 2,
+      "score": 1
+    }
+  },
+  {
+    "id": "inclusive overlap 1..5",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "lines": [
+        {
+          "start": 1,
+          "end": 5,
+          "role": "related"
+        }
+      ]
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": false,
+      "mentions": 2,
+      "score": 1
+    }
+  },
+  {
+    "id": "inclusive overlap 10..12",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "lines": [
+        {
+          "start": 10,
+          "end": 12,
+          "role": "related"
+        }
+      ]
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": false,
+      "mentions": 2,
+      "score": 1
+    }
+  },
+  {
+    "id": "inclusive overlap 9..6",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["split", "positive"]
+    },
+    "diagnosis": {
+      "lines": [
+        {
+          "start": 9,
+          "end": 6,
+          "role": "related"
+        }
+      ]
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": false,
+      "mentions": 2,
+      "score": 1
+    }
+  },
+  {
+    "id": "case-insensitive mentions once across summary and root only, no lines",
+    "expected": {
+      "bug_class": "edge_case",
+      "lines": [6, 9],
+      "must_mention": ["even", "positive", "fixonly"]
+    },
+    "diagnosis": {
+      "lines": [],
+      "public_summary": "EVEN even",
+      "root_cause_internal": "Positive EVEN",
+      "fix_internal": "fixonly",
+      "checked_internal": "fixonly"
+    },
+    "score": {
+      "classOk": true,
+      "lineOverlap": false,
+      "mentions": 2,
+      "score": 1
+    }
+  }
+]

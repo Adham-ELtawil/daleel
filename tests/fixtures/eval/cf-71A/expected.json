@@ -1,0 +1,5 @@
+{
+  "bug_class": "off_by_one",
+  "lines": [8],
+  "must_mention": ["10", "length"]
+}

@@ -1,0 +1,29 @@
+{
+  "title": "String Task",
+  "statementMd": "Petya started to attend programming lessons. On the first lesson his task was to write a\nsimple program. The program was supposed to do the following: in the given string,\nconsisting if uppercase and lowercase Latin letters, it:\n\ndeletes all the vowels,\n\ninserts a character \".\" before each\nconsonant,\n\nreplaces all uppercase consonants with corresponding lowercase ones.\n\nVowels are letters \"A\", \"O\", \"Y\", \"E\",\n\"U\", \"I\", and the rest are consonants. The program's input is exactly\none string, it should return the output as a single string, resulting after the program's\nprocessing the initial string.\n\nHelp Petya cope with this easy task.",
+  "inputSpecMd": "The first line represents input string of Petya's program. This string only consists of\nuppercase and lowercase Latin letters and its length is from\n1 to 100, inclusive.",
+  "outputSpecMd": "Print the resulting string. It is guaranteed that this string is not empty.",
+  "notesMd": null,
+  "samples": [
+    {
+      "input": "tour\n",
+      "output": ".t.r\n"
+    },
+    {
+      "input": "Codeforces\n",
+      "output": ".c.d.f.r.c.s\n"
+    },
+    {
+      "input": "aBAcAba\n",
+      "output": ".b.c.b\n"
+    }
+  ],
+  "timeLimitMs": 2000,
+  "memoryLimitMb": 256,
+  "judge": "codeforces",
+  "externalId": "118A",
+  "url": "https://codeforces.com/problemset/problem/118/A",
+  "contestId": "118",
+  "rating": null,
+  "tags": []
+}
