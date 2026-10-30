@@ -1,0 +1,166 @@
+<!-- Saved HTML from https://atcoder.jp/contests/abc303/tasks/abc303_a; trimmed to statement, limits and samples. -->
+<html>
+  <head>
+    <title>A - Similar String</title>
+  </head>
+  <body>
+    <p>Time Limit: 2 sec / Memory Limit: 1024 MiB</p>
+    <span class="lang-en">
+      <p>Score : <var>100</var> points</p>
+
+      <div class="part">
+        <section>
+          <h3>Problem Statement</h3>
+          <p>
+            Two characters <var>x</var> and <var>y</var> are called similar characters if and only
+            if one of the following conditions is satisfied:
+          </p>
+          <ul>
+            <li><var>x</var> and <var>y</var> are the same character.</li>
+            <li>
+              One of <var>x</var> and <var>y</var> is <code>1</code> and the other is
+              <code>l</code>.
+            </li>
+            <li>
+              One of <var>x</var> and <var>y</var> is <code>0</code> and the other is
+              <code>o</code>.
+            </li>
+          </ul>
+          <p>
+            Two strings <var>S</var> and <var>T</var>, each of length <var>N</var>, are called
+            similar strings if and only if:
+          </p>
+          <ul>
+            <li>
+              for all <var>i\ (1\leq i\leq N)</var>, the <var>i</var>-th character of
+              <var>S</var> and the <var>i</var>-th character of <var>T</var> are similar characters.
+            </li>
+          </ul>
+          <p>
+            Given two length-<var>N</var> strings <var>S</var> and <var>T</var> consisting of
+            lowercase English letters and digits, determine if <var>S</var> and <var>T</var> are
+            similar strings.
+          </p>
+        </section>
+      </div>
+
+      <div class="part">
+        <section>
+          <h3>Constraints</h3>
+          <ul>
+            <li><var>N</var> is an integer between <var>1</var> and <var>100</var>.</li>
+            <li>
+              Each of <var>S</var> and <var>T</var> is a string of length <var>N</var> consisting of
+              lowercase English letters and digits.
+            </li>
+          </ul>
+        </section>
+      </div>
+
+      <hr />
+      <div class="io-style">
+        <div class="part">
+          <section>
+            <h3>Input</h3>
+            <p>The input is given from Standard Input in the following format:</p>
+            <pre><var>N</var>
+<var>S</var>
+<var>T</var>
+</pre>
+          </section>
+        </div>
+
+        <div class="part">
+          <section>
+            <h3>Output</h3>
+            <p>
+              Print <code>Yes</code> if <var>S</var> and <var>T</var> are similar strings, and
+              <code>No</code> otherwise.
+            </p>
+          </section>
+        </div>
+      </div>
+
+      <hr />
+      <div class="part">
+        <section>
+          <h3>Sample Input 1</h3>
+          <pre>
+3
+l0w
+1ow
+</pre>
+        </section>
+      </div>
+
+      <div class="part">
+        <section>
+          <h3>Sample Output 1</h3>
+          <pre>
+Yes
+</pre>
+          <p>
+            The <var>1</var>-st character of <var>S</var> is <code>l</code>, and the <var>1</var>-st
+            character of <var>T</var> is <code>1</code>. These are similar characters.
+          </p>
+          <p>
+            The <var>2</var>-nd character of <var>S</var> is <code>0</code>, and the <var>2</var>-nd
+            character of <var>T</var> is <code>o</code>. These are similar characters.
+          </p>
+          <p>
+            The <var>3</var>-rd character of <var>S</var> is <code>w</code>, and the <var>3</var>-rd
+            character of <var>T</var> is <code>w</code>. These are similar characters.
+          </p>
+          <p>Thus, <var>S</var> and <var>T</var> are similar strings.</p>
+        </section>
+      </div>
+
+      <hr />
+      <div class="part">
+        <section>
+          <h3>Sample Input 2</h3>
+          <pre>
+3
+abc
+arc
+</pre>
+        </section>
+      </div>
+
+      <div class="part">
+        <section>
+          <h3>Sample Output 2</h3>
+          <pre>
+No
+</pre>
+          <p>
+            The <var>2</var>-nd character of <var>S</var> is <code>b</code>, and the <var>2</var>-nd
+            character of <var>T</var> is <code>r</code>. These are not similar characters.
+          </p>
+          <p>Thus, <var>S</var> and <var>T</var> are not similar strings.</p>
+        </section>
+      </div>
+
+      <hr />
+      <div class="part">
+        <section>
+          <h3>Sample Input 3</h3>
+          <pre>
+4
+nok0
+n0ko
+</pre>
+        </section>
+      </div>
+
+      <div class="part">
+        <section>
+          <h3>Sample Output 3</h3>
+          <pre>
+Yes
+</pre>
+        </section>
+      </div>
+    </span>
+  </body>
+</html>

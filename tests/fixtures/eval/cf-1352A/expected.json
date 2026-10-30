@@ -1,0 +1,5 @@
+{
+  "bug_class": "uninitialized_or_reset",
+  "lines": [4, 7],
+  "must_mention": ["clear", "vector"]
+}

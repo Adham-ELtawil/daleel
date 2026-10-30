@@ -1,0 +1,15 @@
+{
+  "step": "diagnose",
+  "attemptId": null,
+  "model": "muse-spark-1.3",
+  "requestHash": "synthetic",
+  "status": "ok",
+  "httpStatus": 200,
+  "inputTokens": 0,
+  "outputTokens": 0,
+  "cachedTokens": 0,
+  "reasoningTokens": 0,
+  "costUsd": 0.01,
+  "latencyMs": 1,
+  "error": null
+}

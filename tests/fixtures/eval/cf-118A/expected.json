@@ -1,0 +1,5 @@
+{
+  "bug_class": "wrong_algorithm",
+  "lines": [7],
+  "must_mention": ["y", "vowel"]
+}

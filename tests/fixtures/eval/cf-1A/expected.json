@@ -1,0 +1,5 @@
+{
+  "bug_class": "overflow",
+  "lines": [8],
+  "must_mention": ["int", "product"]
+}

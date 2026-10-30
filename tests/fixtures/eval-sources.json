@@ -1,0 +1,62 @@
+[
+  {
+    "id": "cf-4A",
+    "source": "judges/cf-4A",
+    "externalId": "4A",
+    "bug_class": "edge_case"
+  },
+  {
+    "id": "cf-1A",
+    "source": "judges/cf-1A",
+    "externalId": "1A",
+    "bug_class": "overflow"
+  },
+  {
+    "id": "cf-71A",
+    "source": "eval-html/cf-71A",
+    "externalId": "71A",
+    "bug_class": "off_by_one"
+  },
+  {
+    "id": "cf-158A",
+    "source": "eval-html/cf-158A",
+    "externalId": "158A",
+    "bug_class": "edge_case"
+  },
+  {
+    "id": "cf-231A",
+    "source": "eval-html/cf-231A",
+    "externalId": "231A",
+    "bug_class": "wrong_algorithm"
+  },
+  {
+    "id": "cf-1352C",
+    "source": "judges/cf-1352C",
+    "externalId": "1352C",
+    "bug_class": "time_complexity"
+  },
+  {
+    "id": "cf-1352A",
+    "source": "eval-html/cf-1352A",
+    "externalId": "1352A",
+    "bug_class": "uninitialized_or_reset"
+  },
+  {
+    "id": "cf-118A",
+    "source": "eval-html/cf-118A",
+    "externalId": "118A",
+    "bug_class": "wrong_algorithm"
+  },
+  {
+    "id": "cf-158A-template",
+    "source": "eval-html/cf-158A",
+    "externalId": "158A",
+    "bug_class": "off_by_one"
+  },
+  {
+    "id": "atcoder-abc303_a",
+    "source": "eval-html/atcoder-abc303_a",
+    "externalId": "abc303_a",
+    "bug_class": "output_format"
+  }
+]
