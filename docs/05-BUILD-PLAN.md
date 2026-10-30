@@ -51,7 +51,7 @@ Times are **Cairo time**. Deadline = **Thu Nov 5, 04:00 Cairo** (= Nov 4, 21:00 
 ## Day 3 — Fri Oct 30 → M3
 | PR | Goal | RED test first | Verify |
 |---|---|---|---|
-| **PR-09 diagnose step** | `prompts/diagnose.ts`, `schemas/diagnosis.ts` (exactly `04-PROMPTS.md` §1), message builder with line numbers and the cache-friendly order. | Snapshot test of built messages; schema test with example A.1/B.1 JSON (valid) and broken JSON (invalid); line-range validator. | tests green; `pnpm smoke:diagnose 4A` returns `bug_class=edge_case`. |
+| **PR-09 diagnose step** ✅ | `prompts/diagnose.ts`, `schemas/diagnosis.ts` (exactly `04-PROMPTS.md` §1), message builder with line numbers and the cache-friendly order. | Snapshot test of built messages; schema test with example A.1/B.1 JSON (valid) and broken JSON (invalid); line-range validator. | Offline tests green (184 tests); fake streamed smoke covers 4A/1A and usage. Live smoke and prompt-cache hit measurement deferred at owner's request. |
 | **PR-10 pipeline + SSE + result card** | `POST /api/attempts/:id/diagnose` SSE (`stage`, `diagnosis`, `done`, `error`); attempt status transitions; S3 result card with highlighted lines (confidence ≥ 0.6). Identical-attempt cache (US-2 AC3). | Route test with fake LLM: event order; second identical attempt → 0 LLM calls; budget error → `error` event. | e2e with `DEMO_REPLAY=1`: diagnose 4A shows summary + line 6 highlighted. |
 | **PR-11 eval harness** | `pnpm eval` runs the 10 cases of `04-PROMPTS.md` §9 live, prints a score table and total cost; results saved to `eval/results/<date>.json` (git-ignored except summaries). | Unit test for the scorer with fake outputs. | Run it; target ≥ 6/10 today. Paste the table in the PR. |
 

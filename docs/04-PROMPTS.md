@@ -63,7 +63,7 @@ Line numbers are added by the server so the model can cite exact lines; the UI m
 
 ---
 
-## 1. DIAGNOSE  (`muse-spark-1.3`, reasoning_effort `high`, stream, max_completion_tokens 6000)
+## 1. DIAGNOSE  (`muse-spark-1.3`, reasoning_effort `high`, stream, max_completion_tokens 16000 via `MAXTOK_DIAGNOSE`)
 
 ### 1.1 Developer prompt
 ```text
@@ -119,7 +119,7 @@ Rules:
   }
 }
 ```
-Server-side validation after zod: every `lines[].end ≥ start` and ≤ number of code lines (else drop the entry); `topics` normalised to lowercase CF tags (unknown tags kept but marked `custom`).
+Server-side validation after zod: every `lines[].end ≥ start` and ≤ number of code lines (else drop the entry); `topics` trimmed and normalised to lowercase CF tags. Unknown tags use the `custom:<tag>` string representation (for example `custom:parity trick`); an existing prefix is preserved on repeated validation. The known-tag set is a small local allowlist, not an exhaustive CF taxonomy.
 
 ---
 

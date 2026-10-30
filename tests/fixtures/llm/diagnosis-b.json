@@ -1,0 +1,47 @@
+{
+  "bug_found": true,
+  "bug_class": "overflow",
+  "confidence": 0.95,
+  "public_summary": "فكرتك صح، بس فيه مشكلة في حجم الأرقام لما الـ input يبقى كبير.",
+  "lines": [
+    {
+      "start": 4,
+      "end": 4,
+      "role": "related"
+    },
+    {
+      "start": 8,
+      "end": 8,
+      "role": "bug"
+    }
+  ],
+  "topics": [
+    "math",
+    "implementation"
+  ],
+  "approach": {
+    "student_idea_public": "إنت بتحسب عدد البلاطات على كل ضلع بالـ ceil وبعدين بتضربهم، وده الصح.",
+    "correct_idea_family": "ceil division then product, 64-bit",
+    "is_approach_correct": true,
+    "matches_student_note": true
+  },
+  "suspect_inputs": [
+    {
+      "input": "1000000000 1000000000 1\n",
+      "expected_output": "1000000000000000000",
+      "why": "max product 1e18 overflows int"
+    },
+    {
+      "input": "100000 100000 1\n",
+      "expected_output": "10000000000",
+      "why": "1e10 already exceeds int"
+    }
+  ],
+  "complexity": {
+    "student": "O(1)",
+    "required": "O(1)"
+  },
+  "root_cause_internal": "x and y can each be up to 1e9, so x*y up to 1e18 is computed in 32-bit int and overflows (undefined behaviour, wraps in practice).",
+  "fix_internal": "long long x = (n + a - 1) / a; long long y = (m + a - 1) / a; cout << x * y;",
+  "checked_internal": "n + a - 1 <= 2e9 - 1 fits in int (max 2147483647). Ceil formula correct. Output format fine."
+}

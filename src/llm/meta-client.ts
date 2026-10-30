@@ -94,7 +94,29 @@ const MAX_RETRIES = 3;
 
 /** zod → JSON Schema for `response_format`, without the `$schema` key. */
 export function jsonSchemaFor(schema: ZodType): object {
-  const json: Record<string, unknown> = { ...z.toJSONSchema(schema) };
+  const json: Record<string, unknown> = {
+    ...z.toJSONSchema(schema, {
+      override: ({ jsonSchema: node }) => {
+        // Equivalent encodings required by docs/04-PROMPTS.md §1.2.
+        if (node.type === "number" && node.multipleOf === 1) {
+          node.type = "integer";
+          delete node.multipleOf;
+        }
+        const branches = node.anyOf;
+        if (
+          branches?.length === 2 &&
+          branches[1].type === "null" &&
+          typeof branches[0].type === "string" &&
+          !branches[0].enum &&
+          !Object.hasOwn(branches[0], "const") &&
+          !branches[0].$ref
+        ) {
+          Object.assign(node, branches[0], { type: [branches[0].type, "null"] });
+          delete node.anyOf;
+        }
+      },
+    }),
+  };
   delete json.$schema;
   return json;
 }

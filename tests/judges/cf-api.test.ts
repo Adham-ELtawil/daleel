@@ -140,7 +140,7 @@ describe("createCfApi", () => {
       "problemsetProblems",
       { status: "OK", result: { problems: [{ index: "A" }], problemStatistics: [] } },
     ],
-    ["contestList", { status: "OK", result: [{ ...contestsFixture.result[0], phase: "UNKNOWN" }] }],
+    ["contestList", { status: "OK", result: [{ ...contestsFixture.result[0], phase: 123 }] }],
   ] as const)("rejects malformed %s results with zod", async (method, body) => {
     const { api } = setup(body);
     await expect(api[method]()).rejects.toBeInstanceOf(z.ZodError);
@@ -193,6 +193,7 @@ describe("CF metadata helpers", () => {
     ["PENDING_SYSTEM_TEST", false],
     ["SYSTEM_TEST", false],
     ["FINISHED", false],
+    ["UNKNOWN_PHASE", false],
   ] as const)("guards phase %s according to PRD US-9", async (phase, blocked) => {
     const fixture = structuredClone(contestsFixture);
     fixture.result[0].phase = phase;
