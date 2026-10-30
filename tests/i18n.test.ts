@@ -13,6 +13,12 @@ it("has every English key in Arabic, including the intake UI", () => {
   expect(en).toHaveProperty("intake");
   expect(keys(ar).sort()).toEqual(keys(en).sort());
 });
+it("has translated demo and replay badge copy in both locales", () => {
+  for (const messages of [en, ar]) {
+    expect(messages.intake).toHaveProperty("try_demo");
+    expect(messages.intake).toHaveProperty("replay_badge");
+  }
+});
 it.each([
   ["en", "ar-EG,ar;q=0.9", "en"],
   ["ar-EG", "en", "ar-EG"],

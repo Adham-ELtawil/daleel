@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { attempts, diagnoses, hintLadders } from "@/src/db/schema";
+import { StoredDiagnosisSchema } from "@/src/db/json";
 import { seed } from "@/src/db/seed";
 import { BudgetReached, SchemaError, OutputTruncated, MetaApiError } from "@/src/llm/meta-client";
 import { diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
@@ -107,10 +108,16 @@ it("streams ordered stages, stores validated internals, and sends only the publi
     { attemptId: id, locale: "en" },
   ]);
   const expected = { ...result, topics: ["math"] };
-  expect(events[3]).toEqual({ event: "diagnosis", data: { public: toPublic(expected) } });
+  expect(events[3]).toEqual({
+    event: "diagnosis",
+    data: { public: toPublic(expected), replay: false, recordedAt: null },
+  });
   expect(JSON.stringify(events)).not.toContain("_internal");
   const row = await store.db.select().from(diagnoses).where(eq(diagnoses.attemptId, id)).get();
-  expect(DiagnosisSchema.parse(JSON.parse(row!.resultJson))).toEqual(expected);
+  expect(StoredDiagnosisSchema.parse(JSON.parse(row!.resultJson))).toEqual({
+    value: expected,
+    recordedAt: null,
+  });
   expect(row).toMatchObject({ model: "fake-model", reasoningEffort: "low" });
   expect(await status(id)).toBe("diagnosed");
   expect(d.llm).toHaveBeenCalledWith(
@@ -135,8 +142,8 @@ it("reuses an identical normalized attempt with zero LLM calls, including repeat
   for (const id of [second, second]) await diagnoseAttempt(d, id, (event) => events.push(event));
   expect(d.llm).not.toHaveBeenCalled();
   expect(events.filter((e) => e.event === "diagnosis").map((e) => e.data)).toEqual([
-    { public: toPublic(result) },
-    { public: toPublic(result) },
+    { public: toPublic(result), replay: false, recordedAt: null },
+    { public: toPublic(result), replay: false, recordedAt: null },
   ]);
   expect(await status(second)).toBe("diagnosed");
   expect(await store.db.select().from(diagnoses)).toHaveLength(2);
@@ -238,7 +245,10 @@ it.each([151000, null])("recovers a diagnosing attempt aged %s ms", async (age) 
   const events: DiagnoseEvent[] = [];
   await diagnoseAttempt(d, id, (event) => events.push(event));
   expect(d.llm).toHaveBeenCalledOnce();
-  expect(events.at(-3)).toEqual({ event: "diagnosis", data: { public: toPublic(result) } });
+  expect(events.at(-3)).toEqual({
+    event: "diagnosis",
+    data: { public: toPublic(result), replay: false, recordedAt: null },
+  });
   expect(events.at(-1)).toEqual({ event: "done", data: {} });
   expect(await diagnosisState(id)).toEqual({ status: "diagnosed", diagnosingSince: null });
 });
@@ -281,7 +291,7 @@ it("ends with diagnosis + done when ladder generation fails and logs a safe ladd
   const events: DiagnoseEvent[] = [];
   await readSse(response.body!, (event) => events.push(event));
   expect(events.slice(-2)).toEqual([
-    { event: "diagnosis", data: { public: toPublic(result) } },
+    { event: "diagnosis", data: { public: toPublic(result), replay: false, recordedAt: null } },
     { event: "done", data: {} },
   ]);
   expect(events.some((event) => event.event === "error" || event.event === "ladder_ready")).toBe(

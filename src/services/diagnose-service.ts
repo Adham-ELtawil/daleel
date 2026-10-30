@@ -3,7 +3,7 @@ import { and, eq, gte, isNull, lt, ne, or } from "drizzle-orm";
 import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
-import { TagsSchema } from "@/src/db/json";
+import { StoredDiagnosisSchema, TagsSchema } from "@/src/db/json";
 import { attempts, diagnoses } from "@/src/db/schema";
 import { codeLines } from "@/src/domain/code-lines";
 import { validateDiagnosis } from "@/src/domain/diagnosis-validate";
@@ -108,9 +108,11 @@ export async function diagnoseAttempt(
         ),
       );
     const cached = candidates.find((row) => cacheHash(row.attempt) === cacheHash(attempt));
+    const saved = cached && StoredDiagnosisSchema.parse(JSON.parse(cached.diagnosis.resultJson));
+    let recordedAt: string | null = saved?.recordedAt ?? null;
     emit({ event: "stage", data: { name: "thinking" } });
-    const raw = cached
-      ? JSON.parse(cached.diagnosis.resultJson)
+    const raw = saved
+      ? saved.value
       : await withDeadline((signal) =>
           llm(config, buildDiagnoseMessages({ problem, attempt, locale: attempt.locale }), {
             signal,
@@ -118,6 +120,9 @@ export async function diagnoseAttempt(
             attemptId,
             userId: attempt.userId,
             cacheKey: `problem:${problem.id}`,
+            onReplay: (date) => {
+              recordedAt = date;
+            },
           }),
         );
     emit({ event: "stage", data: { name: "validating" } });
@@ -127,7 +132,7 @@ export async function diagnoseAttempt(
     const values = {
       id: ulid(now()),
       attemptId,
-      resultJson: JSON.stringify(result),
+      resultJson: JSON.stringify(StoredDiagnosisSchema.parse({ value: result, recordedAt })),
       bugClass: result.bug_class,
       topicsJson: JSON.stringify(TagsSchema.parse(result.topics)),
       confidence: result.confidence,
@@ -145,7 +150,10 @@ export async function diagnoseAttempt(
         .set({ status: "diagnosed", diagnosingSince: null })
         .where(eq(attempts.id, attemptId));
     });
-    emit({ event: "diagnosis", data: { public: toPublic(result) } });
+    emit({
+      event: "diagnosis",
+      data: { public: toPublic(result), replay: recordedAt !== null, recordedAt },
+    });
     try {
       await ensureLadder({ db, now, ...deps.ladder }, attemptId, attempt.locale);
       emit({ event: "ladder_ready", data: { levels: 4 } });

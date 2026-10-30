@@ -72,6 +72,8 @@
     "truncated": "The model could not finish the diagnosis. Please try again.",
     "llm_error": "We could not diagnose your code. Please try again.",
     "hints": "Hints",
+    "try_demo": "Try the demo",
+    "replay_badge": "Replay (recorded {date})",
     "hint": "Hint",
     "stuck": "I'm stuck",
     "solved": "I solved it",

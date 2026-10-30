@@ -9,6 +9,7 @@ import { seed } from "@/src/db/seed";
 import { getProblemByExternalId } from "@/src/db/repo/problems";
 import { recordLlmCall, sumLlmCostSince } from "@/src/db/repo/llm-calls";
 import { users } from "@/src/db/schema";
+import { examples } from "@/src/demo/examples";
 import { RecordEnvSchema } from "@/src/env";
 import { createMetaClient } from "@/src/llm/meta-client";
 import { diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
@@ -17,13 +18,6 @@ import { createReplayStore } from "@/src/llm/replay/store";
 import { getCurrentUser } from "@/src/services/current-user";
 import { diagnoseAttempt } from "@/src/services/diagnose-service";
 import { createHandlers } from "@/src/services/handlers";
-
-// Use the app's attempt defaults, not smoke:diagnose's verdict/note annotations.
-const examples = [
-  { judge: "codeforces", id: "4A", path: "cf-4A-watermelon", locale: "en" },
-  { judge: "codeforces", id: "1A", path: "cf-1A-theatre-square", locale: "ar-EG" },
-  { judge: "atcoder", id: "abc300_a", path: "atcoder-abc300_a", locale: "en" },
-] as const;
 
 /** Shared real service flow, also used for offline verification against recordings. */
 export async function runDemoFlows(

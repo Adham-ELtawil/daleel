@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createDb, connect } from "@/src/db/client";
 import { getProblemByExternalId } from "@/src/db/repo/problems";
 import { attempts, diagnoses, hintLadders, hintReveals, stressRuns, users } from "@/src/db/schema";
+import { StoredLadderSchema } from "@/src/db/json";
 import { seed } from "@/src/db/seed";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
 import { HintLadderSchema } from "@/src/llm/schemas/ladder";
@@ -99,7 +100,12 @@ it("reveals 1..4 with timestamps and maxHintLevel, then returns 409 without spen
     const response = await handlers.nextHint(request(), id);
     expect(response.status).toBe(200);
     const hint = publicHints[level - 1];
-    expect(await response.json()).toEqual({ hint, remaining: 4 - level });
+    expect(await response.json()).toEqual({
+      hint,
+      remaining: 4 - level,
+      replay: false,
+      recordedAt: null,
+    });
     expect((await reveals(id)).at(-1)).toEqual({ attemptId: id, level, revealedAt: now });
     expect((await row(id))?.maxHintLevel).toBe(level);
   }
@@ -197,7 +203,7 @@ it("returns the persisted ladder when concurrent lazy generation produces differ
   ]);
   expect(responses.map((response) => response.status)).toEqual([200, 200]);
   const saved = (await store.db.select().from(hintLadders).get())!;
-  const persisted = HintLadderSchema.parse({ levels: JSON.parse(saved.levelsJson) });
+  const persisted = StoredLadderSchema.parse(JSON.parse(saved.levelsJson)).value;
   for (const response of responses) {
     const { hint }: { hint: { level: number; title: string } } = await response.json();
     expect(hint.title).toBe(persisted.levels[hint.level - 1].title);

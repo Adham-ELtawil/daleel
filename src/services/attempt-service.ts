@@ -2,8 +2,9 @@ import { and, count, desc, eq, lt, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
-import { attempts, diagnoses, hintReveals, problems } from "@/src/db/schema";
-import { DiagnosisSchema, toPublic } from "@/src/llm/schemas/diagnosis";
+import { StoredDiagnosisSchema, StoredLadderSchema } from "@/src/db/json";
+import { attempts, diagnoses, hintLadders, hintReveals, problems } from "@/src/db/schema";
+import { toPublic } from "@/src/llm/schemas/diagnosis";
 import type { HintLadder } from "@/src/llm/schemas/ladder";
 import { getCurrentUser } from "./current-user";
 import { HttpError } from "./http-error";
@@ -76,7 +77,12 @@ export async function revealHint(deps: AttemptDeps, id: string, locale?: "en" | 
   ]);
   const level = inserted[0]?.level;
   if (!level) throw new HttpError(409, "no_more_hints");
-  return { hint: publicHint(ladder.levels[level - 1]), remaining: 4 - level };
+  return {
+    hint: publicHint(ladder.levels[level - 1]),
+    remaining: 4 - level,
+    replay: ladder.replay,
+    recordedAt: ladder.recordedAt,
+  };
 }
 export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en" | "ar-EG") {
   const stored = await ownedAttempt(deps.db, id);
@@ -88,6 +94,19 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
     .where(eq(hintReveals.attemptId, id))
     .orderBy(hintReveals.level);
   const ladder = reveals.length ? await ladderFor(deps, id, locale ?? stored.locale) : null;
+  const ladderRow =
+    !ladder &&
+    (await deps.db
+      .select({ levelsJson: hintLadders.levelsJson })
+      .from(hintLadders)
+      .where(and(eq(hintLadders.attemptId, id), eq(hintLadders.locale, locale ?? stored.locale)))
+      .get());
+  const recordedAt = ladder
+    ? ladder.recordedAt
+    : ladderRow
+      ? StoredLadderSchema.parse(JSON.parse(ladderRow.levelsJson)).recordedAt
+      : null;
+  const result = diagnosis && StoredDiagnosisSchema.parse(JSON.parse(diagnosis.resultJson));
   const attempt = {
     id: stored.id,
     problemId: stored.problemId,
@@ -106,9 +125,17 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
   return {
     attempt,
     problem,
-    ...(diagnosis
-      ? { diagnosis: toPublic(DiagnosisSchema.parse(JSON.parse(diagnosis.resultJson))) }
+    ...(result
+      ? {
+          diagnosis: {
+            ...toPublic(result.value),
+            replay: result.recordedAt !== null,
+            recordedAt: result.recordedAt,
+          },
+        }
       : {}),
+    replay: recordedAt !== null,
+    recordedAt,
     revealedHints: ladder ? reveals.map((r) => publicHint(ladder.levels[r.level - 1])) : [],
     canExplain: reveals.length >= 3 || stored.status === "stuck",
   };

@@ -9,6 +9,8 @@ const EventSchema = z.discriminatedUnion("event", [
   z.object({
     event: z.literal("diagnosis"),
     data: z.object({
+      replay: z.boolean(),
+      recordedAt: z.iso.datetime().nullable(),
       public: DiagnosisSchema.omit({
         root_cause_internal: true,
         fix_internal: true,
