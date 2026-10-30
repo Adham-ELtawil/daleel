@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { attempts, diagnoses, hintLadders, problems, stressRuns, users } from "@/src/db/schema";
+import { StoredLadderSchema } from "@/src/db/json";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
 import { HintLadderSchema } from "@/src/llm/schemas/ladder";
 import { ensureLadder, type LadderDeps } from "@/src/services/ladder-service";
@@ -37,7 +38,7 @@ it("returns the cached ladder without a diagnosis or any LLM calls", async () =>
     createdAt: 1,
   });
   const d = deps();
-  expect(await ensureLadder(d, id, "en")).toEqual(good());
+  expect(await ensureLadder(d, id, "en")).toEqual({ ...good(), replay: false, recordedAt: null });
   expect(d.llm).not.toHaveBeenCalled();
 });
 it("requires a stored diagnosis with 409 not_diagnosed", async () => {
@@ -59,7 +60,10 @@ it("regenerates once then falls back, stores the result and exposes no internal 
   expect(result.levels[1].body_md).not.toBe(bad.levels[1].body_md);
   expect(result.levels[0]).toEqual(bad.levels[0]);
   const row = (await store.db.select().from(hintLadders).get())!;
-  expect(JSON.parse(row.levelsJson)).toEqual(result.levels);
+  expect(StoredLadderSchema.parse(JSON.parse(row.levelsJson))).toEqual({
+    value: { levels: result.levels },
+    recordedAt: null,
+  });
   expect(row.createdAt).toBe(1000);
   for (const secret of ["root_cause_internal", "fix_internal", "checked_internal", "brute_code"])
     expect(JSON.stringify(result)).not.toContain(secret);
@@ -73,7 +77,7 @@ it("accepts a clean regeneration, sends only verified runner fields, and caches 
   const bad = good();
   bad.levels[0].body_md = diagnosis.fix_internal;
   d.llm.mockResolvedValueOnce(bad);
-  expect(await ensureLadder(d, id, "en")).toEqual(good());
+  expect(await ensureLadder(d, id, "en")).toEqual({ ...good(), replay: false, recordedAt: null });
   expect(d.llm).toHaveBeenCalledTimes(2);
   expect(d.llm.mock.calls[0][2]).toMatchObject({
     attemptId: id,
