@@ -17,6 +17,7 @@
     "smoke:runner": "tsx scripts/smoke-runner.ts",
     "smoke:diagnose": "tsx scripts/smoke-diagnose.ts",
     "smoke:ladder": "tsx scripts/smoke-ladder.ts",
+    "smoke:explain": "node --import tsx scripts/smoke-explain.ts",
     "smoke:recheck": "node --import tsx scripts/smoke-recheck.ts",
     "smoke:stress": "node --import tsx scripts/smoke-stress.ts",
     "record:demo": "node --import tsx scripts/record-demo.ts",

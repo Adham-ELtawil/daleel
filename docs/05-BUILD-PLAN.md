@@ -73,7 +73,7 @@ Times are **Cairo time**. Deadline = **Thu Nov 5, 04:00 Cairo** (= Nov 4, 21:00 
 ## Day 6 — Mon Nov 2 → M6
 | PR | Goal | RED test first | Verify |
 |---|---|---|---|
-| **PR-17 explain + trace** | `prompts/explain.ts`, `schemas/explanation.ts`, server overwrite of outputs with real runner outputs, fix-line validation; `POST /explain` (locked before level 3/stuck). | Tests: locked → 403; trace outputs overwritten; invalid fix line dropped. | tests green |
+| ✅ **PR-17 explain + trace** | `prompts/explain.ts`, `schemas/explanation.ts`, server overwrite of outputs with real runner outputs, fix-line validation; `POST /explain` (locked before level 3/stuck). | Tests: locked → 403; trace outputs overwritten; invalid fix line dropped. | tests green; smoke:explain tested with fakes only |
 | **PR-18 walkthrough player** | S4 player (framer-motion): arrays/pointers/vars/caption/code line; play/pause/step/speed/scrub; keyboard; RTL-safe. | Component tests (Testing Library): step forward changes caption; last frame shows expected vs actual. | Manual: play A.4 and B.4 fixtures in both languages. |
 | **PR-19 teams + stats** | `POST /api/teams`, join by invite code, `domain/weekly-stats.ts` (pure, Cairo week boundaries), S6 dashboard table. | Pure-function tests with fixture rows: solved rate, avg hint level at solve, top tags, attention list, week boundary at Mon 00:00 Cairo. | tests green |
 | **PR-20 weekly report** | Candidate fetch (§5.2 of prompts), `prompts/report.ts`, validator (ids ∈ candidates, handles ∈ team), S7 printable view; seed a synthetic week for team DEMO (20 trainees, ~120 attempts). | Validator tests; candidate filter test. | Live: DEMO report shows 5 real CF problems with working links. |

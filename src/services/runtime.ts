@@ -8,6 +8,7 @@ import {
   type LlmStepConfig,
 } from "@/src/llm/meta-client";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { explainStepConfig } from "@/src/llm/prompts/explain";
 import { stressStepConfig } from "@/src/llm/prompts/stress";
 import { createRunner } from "@/src/runner/factory";
 import { createReplayStore } from "@/src/llm/replay/store";
@@ -36,6 +37,7 @@ export function attemptHandlers() {
   return createHandlers({
     db: () => connect(getDb()),
     ladder: { config: ladderStepConfig(process.env), llm: callModel },
+    explain: { config: explainStepConfig(process.env), llm: callModel },
   });
 }
 export function stressDeps(env: Record<string, string | undefined>) {

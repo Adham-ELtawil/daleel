@@ -36,7 +36,7 @@ export type AttemptBlock = {
 // Preserve code/Markdown, while preventing data from opening or closing our delimiters.
 export function taggedText(text: string): string {
   return text.replace(
-    /<(?=\/?(?:problem|sample|input|output|student_code|student_verdict|student_note|runner_result|diagnosis|diagnosis_internal)\b)/gi,
+    /<(?=\/?(?:problem|sample|input|output|student_code|student_verdict|student_note|runner_result|diagnosis|diagnosis_internal|trace_input|expected_output)\b)/gi,
     "&lt;",
   );
 }
