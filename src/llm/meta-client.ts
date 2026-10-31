@@ -48,7 +48,8 @@ export type MetaClientDeps = {
   dailyBudgetUsd: number;
   getSpentTodayUsd: () => Promise<number>;
   logCall: (rec: LlmCallRecord) => Promise<void> | void;
-  replay?: { mode: "off" | "replay" | "record"; store: ReplayStore };
+  /** reuse: in record mode, return an existing recording instead of calling live (cheap, consistent re-records). */
+  replay?: { mode: "off" | "replay" | "record"; store: ReplayStore; reuse?: boolean };
 };
 
 export type CallOptions<T> = {
@@ -254,9 +255,13 @@ export function createMetaClient(deps: MetaClientDeps) {
         ...rec,
       });
 
-    if (deps.replay?.mode === "replay") {
+    const reusable =
+      deps.replay?.mode === "record" && deps.replay.reuse
+        ? await deps.replay.store.read(cfg.step, requestHash)
+        : null;
+    if (deps.replay?.mode === "replay" || reusable) {
       const started = now();
-      const recording = await deps.replay.store.read(cfg.step, requestHash);
+      const recording = reusable ?? (await deps.replay!.store.read(cfg.step, requestHash));
       if (!recording) throw new ReplayMiss(cfg.step, requestHash);
       const checked = opts.zod.safeParse(recording.response);
       if (!checked.success) throw new SchemaError("invalid_replay_response");

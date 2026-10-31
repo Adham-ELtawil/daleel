@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:59:12.066Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "ladder",
+    "requestHash": "5a34ae79b4ae4ee6f0723618bc9459a90eb4216d5108c2489f5fb454e8b47909",
+    "usage": {
+      "input": 1163,
+      "output": 1717,
+      "cached": 0,
+      "reasoning": 1357
+    },
+    "costUsd": 0.008751,
+    "latencyMs": 6364,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "Look at tiny inputs",
+        "body_md": "Your decision is made in the if in the middle of main. Try mentally testing the smallest values that pass that check. What is the smallest total you can split into two positive parts?",
+        "question_back": "What is the smallest total you can split?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Even is not enough",
+        "body_md": "Being even is only one requirement. Each part must also be positive and even. Think about the smallest total that allows two such parts.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Your if misses minimum",
+        "body_md": "The problem is in `L6` where you test only `w % 2 == 0`. That test accepts every even number with no lower bound. It therefore accepts a tiny even value that cannot be made from two positive evens.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Require sum of two evens",
+        "body_md": "Each part must be a positive even number, so each part is at least 2. That means the total must be at least 4 as well as even. Your version fails because it returns YES for the smallest even number, which would need two positive evens summing to it. Fix it by keeping your line `L6` but also requiring in words that `w` is greater than two. This keeps the logic `O(1)` time and memory.",
+        "question_back": null
+      }
+    ]
+  }
+}

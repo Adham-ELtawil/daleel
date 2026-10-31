@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:56:03.101Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "ladder",
+    "requestHash": "e3e73ad68e2ebabee5d7c1e953b9a18a9938634f1655adc26d72738924e3e1ed",
+    "usage": {
+      "input": 1177,
+      "output": 1707,
+      "cached": 0,
+      "reasoning": 1351
+    },
+    "costUsd": 0.008726,
+    "latencyMs": 5756,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "Check the smallest cases",
+        "body_md": "Look closely at your if condition and what it allows. Try thinking about very small weights first. What is the smallest weight that can really be split?",
+        "question_back": "What is the smallest weight that can really be split?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Two positive evens need size",
+        "body_md": "Remember both parts must be positive and even. The smallest positive even number is 2. So the total must be at least 4 to work.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Line 6 misses small case",
+        "body_md": "Your check on `L6` with `w % 2 == 0` is too loose. For input `2`, your code prints `YES` but the expected output is `NO`. This is because 2 cannot be made from two positive evens.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Require weight above two",
+        "body_md": "Both parts must be at least 2, so the sum must be at least 4. Odd numbers can never work, and even numbers work except the smallest one. Your `L6` accepts all evens, so `2` wrongly gives `YES`. Fix it by also requiring `w` to be greater than 2 on the same line. This keeps everything `O(1)` time and memory.",
+        "question_back": null
+      }
+    ]
+  }
+}

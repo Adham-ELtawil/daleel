@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:56:08.293Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "ladder",
+    "requestHash": "06520f35ff55d8fb2e7b58b07a525244c4ccfb1a610ce3fb339339045dca02a3",
+    "usage": {
+      "input": 1205,
+      "output": 1597,
+      "cached": 625,
+      "reasoning": 1266
+    },
+    "costUsd": 0.007606,
+    "latencyMs": 5187,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "Check the smallest cases",
+        "body_md": "Look closely at your if condition and think about very small weights. What happens when the weight is even but too small to split into two parts?",
+        "question_back": "What happens with the smallest even weight?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Positive evens need minimum sum",
+        "body_md": "Each part must be positive and even, so each part needs a minimum size. Think about what that implies for the total weight.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Your check misses size limit",
+        "body_md": "Your test in `L6` with `w % 2 == 0` checks only parity and forgets size. For input `2` your program prints `YES` but the expected output is `NO`.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Require parity plus enough weight",
+        "body_md": "Two positive even parts must each be at least 2, so the total must be at least 4. Your version accepts every even `w`, so it wrongly accepts the too-small even case. Fix it by keeping your parity test in `L6` and also requiring `w` to be larger than 2. This stays `O(1)` time and memory.",
+        "question_back": null
+      }
+    ]
+  }
+}

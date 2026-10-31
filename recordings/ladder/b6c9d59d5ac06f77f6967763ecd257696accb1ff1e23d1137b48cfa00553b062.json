@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:59:44.206Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "ladder",
+    "requestHash": "b6c9d59d5ac06f77f6967763ecd257696accb1ff1e23d1137b48cfa00553b062",
+    "usage": {
+      "input": 1383,
+      "output": 1167,
+      "cached": 0,
+      "reasoning": 768
+    },
+    "costUsd": 0.0066885,
+    "latencyMs": 4526,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "Look at your print statement",
+        "body_md": "Look closely at the part where you print the answer inside the loop. Compare what the problem asks for with what your loop variable holds. What does your loop start from?",
+        "question_back": "What should the answer be if the match is the very first choice?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Zero based versus one based",
+        "body_md": "The key concept here is indexing. C++ loops often start at 0, but this problem asks for 1-based positions. Think about the difference between position in array and counting from one.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Wrong value printed on line 9",
+        "body_md": "Line `L9` is wrong. You check `choice == a + b` correctly, but you print `i`, which runs from 0 to `n-1`. The problem wants values from 1 to `n`, so the first element should give 1, not 0.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Shift your output by one",
+        "body_md": "You correctly scan all choices and find the one equal to `A + B`. That scan is O(N) time and O(1) memory, which is perfect. The only issue is output format. Since your `i` is 0-based, you need to shift it by one when printing, so the first choice prints as 1, the second as 2, and so on. Keep your loop and check the same, just adjust the printed value described on `L9` to be one larger.",
+        "question_back": null
+      }
+    ]
+  }
+}

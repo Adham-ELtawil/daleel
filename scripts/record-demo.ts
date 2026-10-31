@@ -123,6 +123,8 @@ export async function runRecordDemo(
       replay: {
         mode: config.DEMO_RECORD === "1" ? "record" : "off",
         store: createReplayStore(deps.recordingsDir),
+        // RECORD_REUSE=1 keeps existing recordings (e.g. add runner-free ladders after a local-runner run).
+        reuse: process.env.RECORD_REUSE === "1",
       },
       logCall: async (record) => {
         total += record.costUsd;

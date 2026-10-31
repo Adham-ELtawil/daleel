@@ -1,0 +1,429 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:57:44.390Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "medium",
+    "step": "explain",
+    "requestHash": "cfc9076b842e227814f41ae6b78da6a96116bce85377fbf4b5d06c9c5c940bdd",
+    "usage": {
+      "input": 1617,
+      "output": 3271,
+      "cached": 0,
+      "reasoning": 1785
+    },
+    "costUsd": 0.015923,
+    "latencyMs": 9231,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "explanation_md": "The task asks for the **1-based** index, so answers are `1` to `N`.\n\nYour idea is right: scan choices and check `choice == a + b`.\n\nThe bug is numbering. Your loop uses `i = 0 .. n-1`, which is **0-based**. On the sample, target `300` is at position `i=1`, so you print `1`.\n\nBut the expected answer is `2`. The first element should print `1`, not `0`.\n\nFix: keep the same scan, but print `i + 1` to convert to 1-based.",
+    "fix": [
+      {
+        "line": 9,
+        "old": "        if (choice == a + b) cout << i << '\\n';",
+        "new": "        if (choice == a + b) cout << i + 1 << '\\n';"
+      }
+    ],
+    "complexity_note": "Your code is `O(N)` time and `O(1)` memory, which already fits the limits.",
+    "trace": {
+      "input": "3 125 175\n200 300 400\n",
+      "expected_output": "2",
+      "student_output": "1",
+      "frames": [
+        {
+          "code_line": 5,
+          "caption": "Read `n=3`, `a=125`, `b=175`. Target `a+b` is `300`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [],
+              "pointers": []
+            }
+          ],
+          "vars": [
+            {
+              "name": "n",
+              "value": "3",
+              "changed": true
+            },
+            {
+              "name": "a",
+              "value": "125",
+              "changed": true
+            },
+            {
+              "name": "b",
+              "value": "175",
+              "changed": true
+            }
+          ]
+        },
+        {
+          "code_line": 6,
+          "caption": "Start loop with `i=0`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                0
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 0
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "n",
+              "value": "3",
+              "changed": false
+            },
+            {
+              "name": "a",
+              "value": "125",
+              "changed": false
+            },
+            {
+              "name": "b",
+              "value": "175",
+              "changed": false
+            },
+            {
+              "name": "i",
+              "value": "0",
+              "changed": true
+            }
+          ]
+        },
+        {
+          "code_line": 8,
+          "caption": "Read `choice=200` for `i=0`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                0
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 0
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "0",
+              "changed": false
+            },
+            {
+              "name": "choice",
+              "value": "200",
+              "changed": true
+            }
+          ]
+        },
+        {
+          "code_line": 9,
+          "caption": "`200` != `300`, so nothing is printed.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                0
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 0
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "0",
+              "changed": false
+            },
+            {
+              "name": "choice",
+              "value": "200",
+              "changed": false
+            }
+          ]
+        },
+        {
+          "code_line": 6,
+          "caption": "Next iteration with `i=1`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                1
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 1
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "1",
+              "changed": true
+            },
+            {
+              "name": "choice",
+              "value": "200",
+              "changed": false
+            }
+          ]
+        },
+        {
+          "code_line": 8,
+          "caption": "Read `choice=300` for `i=1`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                1
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 1
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "1",
+              "changed": false
+            },
+            {
+              "name": "choice",
+              "value": "300",
+              "changed": true
+            }
+          ]
+        },
+        {
+          "code_line": 9,
+          "caption": "Found `300` == `300`, so code prints `i` which is `1`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                1
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 1
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "1",
+              "changed": false
+            },
+            {
+              "name": "choice",
+              "value": "300",
+              "changed": false
+            }
+          ]
+        },
+        {
+          "code_line": 6,
+          "caption": "Next iteration with `i=2`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                2
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 2
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "2",
+              "changed": true
+            },
+            {
+              "name": "choice",
+              "value": "300",
+              "changed": false
+            }
+          ]
+        },
+        {
+          "code_line": 8,
+          "caption": "Read `choice=400` for `i=2`.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                2
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 2
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "2",
+              "changed": false
+            },
+            {
+              "name": "choice",
+              "value": "400",
+              "changed": true
+            }
+          ]
+        },
+        {
+          "code_line": 9,
+          "caption": "`400` != `300`, so nothing is printed.",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                2
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 2
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "2",
+              "changed": false
+            },
+            {
+              "name": "choice",
+              "value": "400",
+              "changed": false
+            }
+          ]
+        },
+        {
+          "code_line": 11,
+          "caption": "Loop ends. Student output is `1`, but expected output is `2`. Off by one!",
+          "arrays": [
+            {
+              "name": "C",
+              "values": [
+                "200",
+                "300",
+                "400"
+              ],
+              "highlight": [
+                1
+              ],
+              "pointers": [
+                {
+                  "name": "i",
+                  "index": 1
+                }
+              ]
+            }
+          ],
+          "vars": [
+            {
+              "name": "i",
+              "value": "2",
+              "changed": false
+            },
+            {
+              "name": "choice",
+              "value": "400",
+              "changed": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
