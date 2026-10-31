@@ -1,0 +1,81 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[
+  `snapshots a deterministic DEMO report with five real fixture problems, reused stats and no HTTP 1`
+] = `
+{
+  "attention": [
+    {
+      "handle": "trainee_01",
+      "suggestion": "Review an unsolved attempt together and ask the trainee to explain the first failing case.",
+    },
+    {
+      "handle": "trainee_02",
+      "suggestion": "Ask the trainee to retry a solved problem without hints and explain each decision.",
+    },
+    {
+      "handle": "trainee_06",
+      "suggestion": "Review an unsolved attempt together and ask the trainee to explain the first failing case.",
+    },
+    {
+      "handle": "trainee_07",
+      "suggestion": "Ask the trainee to retry a solved problem without hints and explain each decision.",
+    },
+    {
+      "handle": "trainee_11",
+      "suggestion": "Review an unsolved attempt together and ask the trainee to explain the first failing case.",
+    },
+    {
+      "handle": "trainee_12",
+      "suggestion": "Ask the trainee to retry a solved problem without hints and explain each decision.",
+    },
+    {
+      "handle": "trainee_16",
+      "suggestion": "Review an unsolved attempt together and ask the trainee to explain the first failing case.",
+    },
+    {
+      "handle": "trainee_17",
+      "suggestion": "Ask the trainee to retry a solved problem without hints and explain each decision.",
+    },
+  ],
+  "headline": "36 of 60 attempts were solved this week.",
+  "recommended": [
+    {
+      "problem_id": "50A",
+      "why": "Practise math by checking small cases and numerical boundaries.",
+    },
+    {
+      "problem_id": "231A",
+      "why": "Practise brute force by enumerating small cases systematically.",
+    },
+    {
+      "problem_id": "617A",
+      "why": "Practise math by checking small cases and numerical boundaries.",
+    },
+    {
+      "problem_id": "318A",
+      "why": "Practise math by checking small cases and numerical boundaries.",
+    },
+    {
+      "problem_id": "122A",
+      "why": "Practise brute force by enumerating small cases systematically.",
+    },
+  ],
+  "session_plan": [
+    "Spend 15 minutes reviewing this week's common mistakes.",
+    "Spend 30 minutes on math: solve a problem, then discuss edge cases.",
+    "Spend 30 minutes on brute force: solve a problem, then discuss edge cases.",
+    "Spend 15 minutes reviewing the reasoning and choosing a follow-up exercise.",
+  ],
+  "weak_topics": [
+    {
+      "insight": "Practise math by checking small cases and numerical boundaries.",
+      "topic": "math",
+    },
+    {
+      "insight": "Practise brute force by enumerating small cases systematically.",
+      "topic": "brute force",
+    },
+  ],
+}
+`;
