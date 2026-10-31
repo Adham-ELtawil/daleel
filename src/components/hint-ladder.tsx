@@ -10,6 +10,8 @@ import type { attemptDetail } from "@/src/services/attempt-service";
 import { HttpError } from "@/src/services/http-error";
 import { SafeMd } from "./safe-md";
 import { ReplayBadge } from "./replay-badge";
+import { Explanation } from "./explanation";
+import type { explainAttempt } from "@/src/services/explain-service";
 
 export function HintLadder({
   detail,
@@ -28,6 +30,8 @@ export function HintLadder({
     recordedAt: detail.recordedAt,
   });
   const [canExplain, setCanExplain] = useState(detail.canExplain);
+  const [explanation, setExplanation] = useState<Awaited<ReturnType<typeof explainAttempt>>>();
+  const [explainError, setExplainError] = useState(false);
   const [solved, setSolved] = useState(attempt.status === "solved");
   const [editing, setEditing] = useState(false);
   const [code, setCode] = useState(attempt.code);
@@ -51,9 +55,10 @@ export function HintLadder({
     if (!response.ok) throw new HttpError(response.status, data.error?.code ?? "internal_error");
     return data;
   }
-  async function act(action: "hint" | "stuck" | "solved" | "recheck") {
+  async function act(action: "hint" | "stuck" | "solved" | "recheck" | "explain") {
     setBusy(true);
     setError(undefined);
+    setExplainError(false);
     try {
       const path = `/api/attempts/${attempt.id}`;
       if (action === "hint") {
@@ -65,6 +70,8 @@ export function HintLadder({
         setProvenance({ replay, recordedAt });
         setHints((previous) => appendHint(previous, hint));
         if (hint.level >= 3) setCanExplain(true);
+      } else if (action === "explain") {
+        setExplanation(await post(`${path}/explain`, { locale }));
       } else if (action === "recheck") {
         const { attemptId } = await post<{ attemptId: string }>("/api/attempts", {
           problemId: attempt.problemId,
@@ -79,7 +86,8 @@ export function HintLadder({
         setCanExplain(action === "stuck" || hints.length >= 3);
       }
     } catch (failure) {
-      setError(failure instanceof HttpError ? failure.code : "internal_error");
+      if (action === "explain") setExplainError(true);
+      else setError(failure instanceof HttpError ? failure.code : "internal_error");
     } finally {
       setBusy(false);
     }
@@ -100,8 +108,19 @@ export function HintLadder({
         {solved && <p role="status">{t("solved_note", locale)}</p>}
         {canExplain && <p>{t("explanation_unlocked", locale)}</p>}
         {error && <p role="alert">{t(error, locale)}</p>}
+        {explainError && <p role="alert">{t("load_error", locale, "walkthrough")}</p>}
       </div>
       <div className="flex flex-wrap gap-3">
+        {canExplain && !explanation && (
+          <button
+            type="button"
+            disabled={busy}
+            className="rounded border p-2"
+            onClick={() => act("explain")}
+          >
+            {busy ? t("pending", locale) : t("full_explanation", locale, "walkthrough")}
+          </button>
+        )}
         {ready && next !== null && (
           <button
             type="button"
@@ -124,6 +143,9 @@ export function HintLadder({
           </button>
         ))}
       </div>
+      {canExplain && explanation && (
+        <Explanation {...explanation} code={attempt.code} locale={locale} />
+      )}
       {editing && (
         <form
           className="space-y-3"
