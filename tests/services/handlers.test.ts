@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createCfApi, createRateLimiter } from "@/src/judges/cf-api";
+import type { CurlRunner } from "@/src/judges/fetch-page";
 import { getProblemByExternalId, type Problem } from "@/src/db/repo/problems";
 import { attempts, problems, users } from "@/src/db/schema";
 import { seed } from "@/src/db/seed";
@@ -38,7 +39,8 @@ function setup() {
     contestList: vi.fn(api.contestList),
     problemsetProblems: vi.fn(api.problemsetProblems),
   };
-  const deps = { db: async () => store.db, fetch, cfApi, now: () => 1000, log: vi.fn() };
+  const curl = vi.fn<CurlRunner>().mockResolvedValue({ status: 403, body: "Forbidden" });
+  const deps = { db: async () => store.db, fetch, curl, cfApi, now: () => 1000, log: vi.fn() };
   return { deps, handlers: createHandlers(deps) };
 }
 beforeEach(async () => {
@@ -74,6 +76,19 @@ it.each([403, 200])(
     });
   },
 );
+it("resolves via the curl fallback when Cloudflare returns 403 to fetch", async () => {
+  await store.db.delete(problems);
+  const { handlers, deps } = setup();
+  deps.fetch.mockResolvedValueOnce(new Response("Forbidden", { status: 403 }));
+  deps.curl.mockResolvedValueOnce({
+    status: 200,
+    body: readFileSync("tests/fixtures/judges/cf-4A.html", "utf8"),
+  });
+  const response = await handlers.resolve(request({ url }));
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ problem: { title: "Watermelon" } });
+  expect(deps.curl).toHaveBeenCalledOnce();
+});
 it.each([
   ["https://unsupported.example/task", 422, "unsupported_url"],
   ["https://codeforces.com/gym/4/problem/A", 502, "fetch_failed"],

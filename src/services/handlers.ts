@@ -60,6 +60,7 @@ async function body<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
 export function createHandlers(deps: {
   db: () => Promise<Db>;
   fetch?: typeof fetch;
+  curl?: Parameters<typeof resolveProblem>[1]["curl"];
   cfApi?: Parameters<typeof resolveProblem>[1]["cfApi"];
   now?: () => number;
   log?: (event: { requestId: string; code: string }) => void;
@@ -127,6 +128,7 @@ export function createHandlers(deps: {
           problem: await resolveProblem(input, {
             db: await deps.db(),
             fetch: deps.fetch ?? globalThis.fetch,
+            curl: deps.curl,
             cfApi: deps.cfApi ?? defaultCfApi,
             now,
             log,

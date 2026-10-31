@@ -7,7 +7,7 @@ import {
   type NewProblem,
 } from "@/src/db/repo/problems";
 import { parseProblemUrl } from "@/src/judges/parse-url";
-import { fetchProblemHtml } from "@/src/judges/fetch-page";
+import { type CurlRunner, fetchProblemHtml } from "@/src/judges/fetch-page";
 import { parseCodeforcesHtml } from "@/src/judges/codeforces";
 import { parseAtcoderHtml } from "@/src/judges/atcoder";
 import { createCfApi, ratingAndTags } from "@/src/judges/cf-api";
@@ -19,6 +19,7 @@ export async function resolveProblem(
   deps: {
     db: Db;
     fetch: typeof fetch;
+    curl?: CurlRunner;
     cfApi: Pick<ReturnType<typeof createCfApi>, "contestList" | "problemsetProblems">;
     now: () => number;
     log?: (code: string) => void;
@@ -66,6 +67,7 @@ export async function resolveProblem(
   try {
     const html = await fetchProblemHtml(url, {
       fetch: deps.fetch,
+      curl: deps.curl,
       userAgent: process.env.SCRAPER_USER_AGENT ?? "Mozilla/5.0",
     });
     page = (parsed.judge === "codeforces" ? parseCodeforcesHtml : parseAtcoderHtml)(html);
