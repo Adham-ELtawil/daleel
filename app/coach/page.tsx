@@ -3,7 +3,7 @@ import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { connect, getDb } from "@/src/db/client";
 import { teams } from "@/src/db/schema";
-import { localeAttrs, t } from "@/src/i18n";
+import { bugClassLabel, localeAttrs, t } from "@/src/i18n";
 import { getCurrentUser } from "@/src/services/current-user";
 import { HttpError } from "@/src/services/http-error";
 import { teamStats } from "@/src/services/teams";
@@ -20,7 +20,9 @@ export default async function CoachPage({
   const message = (text: string) => (
     <main {...localeAttrs(locale)} className={layout}>
       <h1 className="text-2xl font-bold">{tr("title")}</h1>
-      <p role="status">{text}</p>
+      <p role="status" className="rounded border p-4">
+        {text}
+      </p>
     </main>
   );
   const db = await connect(getDb());
@@ -126,7 +128,11 @@ export default async function CoachPage({
             ))}
           </tbody>
         </table>
-        {!stats.attempts && <p>{tr("empty")}</p>}
+        {!stats.attempts && (
+          <p role="status" className="rounded border p-4">
+            {tr("empty")}
+          </p>
+        )}
       </div>
       <section aria-labelledby="attention" className="space-y-2">
         <h2 id="attention" className="text-xl font-semibold">
@@ -156,7 +162,10 @@ export default async function CoachPage({
           <ul>
             {items.map(([label, count]) => (
               <li key={label}>
-                <bdi dir="ltr">{label}</bdi>: {number.format(count)}
+                <bdi dir={key === "bugs" ? "auto" : "ltr"}>
+                  {key === "bugs" ? bugClassLabel(label, locale) : label}
+                </bdi>
+                : {number.format(count)}
               </li>
             ))}
           </ul>

@@ -289,19 +289,43 @@ it("switches locale on GET with one generation, preserves reveals and reuses tha
   await handlers.nextHint(request(), id);
   await handlers.nextHint(request(), id);
   const before = await reveals(id);
-  llm.mockResolvedValue({ levels: ladder.levels.map((hint) => ({
-    ...hint, title: "hint هنا", body_md: "input هنا", question_back: "edge case هنا؟",
-  })) });
-  const expected = { attempt: { maxHintLevel: 2 }, revealedHints: [
-    { level: 1, title: "الـ hint هنا", body_md: "الـ input هنا", question_back: "الـ edge case هنا؟" },
-    { level: 2, title: "الـ hint هنا", body_md: "الـ input هنا", question_back: "الـ edge case هنا؟" },
-  ] };
-  expect(await (await handlers.getAttempt(get("?locale=ar-EG"), id)).json()).toMatchObject(expected);
+  llm.mockResolvedValue({
+    levels: ladder.levels.map((hint) => ({
+      ...hint,
+      title: "hint هنا",
+      body_md: "input هنا",
+      question_back: "edge case هنا؟",
+    })),
+  });
+  const expected = {
+    attempt: { maxHintLevel: 2 },
+    revealedHints: [
+      {
+        level: 1,
+        title: "الـ hint هنا",
+        body_md: "الـ input هنا",
+        question_back: "الـ edge case هنا؟",
+      },
+      {
+        level: 2,
+        title: "الـ hint هنا",
+        body_md: "الـ input هنا",
+        question_back: "الـ edge case هنا؟",
+      },
+    ],
+  };
+  expect(await (await handlers.getAttempt(get("?locale=ar-EG"), id)).json()).toMatchObject(
+    expected,
+  );
   expect(llm).toHaveBeenCalledTimes(2);
-  expect(await (await handlers.getAttempt(get("?locale=ar-EG"), id)).json()).toMatchObject(expected);
+  expect(await (await handlers.getAttempt(get("?locale=ar-EG"), id)).json()).toMatchObject(
+    expected,
+  );
   expect(llm).toHaveBeenCalledTimes(2);
   expect(await reveals(id)).toEqual(before);
-  expect(await (await handlers.getAttempt(get("?locale=en"), id)).json()).toMatchObject({ revealedHints: publicHints.slice(0, 2) });
+  expect(await (await handlers.getAttempt(get("?locale=en"), id)).json()).toMatchObject({
+    revealedHints: publicHints.slice(0, 2),
+  });
   expect(llm).toHaveBeenCalledTimes(2);
 });
 it("links a re-check child and rejects missing or different-problem parents with 400", async () => {
@@ -373,6 +397,7 @@ it("paginates local guest history by createdAt + id newest first without leaking
     expect(page.items).toHaveLength(size);
     for (const item of page.items) {
       expect(Object.keys(item).sort()).toEqual([
+        "bugClass",
         "createdAt",
         "id",
         "maxHintLevel",

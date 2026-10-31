@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { attempts, diagnoses, problems, stressRuns, users } from "@/src/db/schema";
@@ -11,6 +11,7 @@ import { tempDb } from "@/tests/db/helpers";
 import rows from "@/tests/fixtures/llm/ladder-service.json";
 import fixture from "@/tests/fixtures/llm/diagnosis-a.json";
 import planFixture from "@/tests/fixtures/llm/stress-a.json";
+import atcoder from "@/tests/fixtures/eval/atcoder-abc303_a/problem.json";
 
 let store: Awaited<ReturnType<typeof tempDb>>;
 const id = rows.attempt.id;
@@ -163,6 +164,41 @@ it("requires the brute to pass ALL samples before running the student", async ()
   expect(d.runner.dispose).toHaveBeenCalledTimes(2);
   expect(await saved()).toMatchObject({ status: "brute_untrusted", expectedOutput: null });
 });
+it.each(["sample", "test", "brute"] as const)(
+  "checks abc303_a casing in the %s comparison",
+  async (phase) => {
+    const d = await deps();
+    await store.db.update(problems).set({
+      judge: "atcoder",
+      externalId: atcoder.externalId,
+      samplesJson: JSON.stringify(phase === "test" ? [] : atcoder.samples),
+    });
+    await store.db.update(attempts).set({
+      code: readFileSync("tests/fixtures/eval/atcoder-abc303_a/code.cpp", "utf8"),
+    });
+    await setDiagnosis({ bug_class: "output_format" });
+    d.llm.mockResolvedValue({
+      ...plan,
+      tests: [{ input: atcoder.samples[0].input, purpose: "casing" }],
+    });
+    d.runner.run.mockImplementation(async (binary, input) => {
+      const expected = atcoder.samples.find((sample) => sample.input === input)!.output;
+      return output(binary === "student" || phase === "brute" ? expected.toUpperCase() : expected);
+    });
+    const result = await (await api()).stressAttempt(d, id);
+    expect(result).toMatchObject(
+      phase === "brute"
+        ? { status: "brute_untrusted" }
+        : {
+            status: "verified",
+            source: phase,
+            failing_input: atcoder.samples[0].input,
+            expected_output: "Yes\n",
+            actual_output: "YES\n",
+          },
+    );
+  },
+);
 it.each(["tle", "re"] as const)("does not trust a brute with sample status %s", async (status) => {
   const d = await deps();
   d.runner.run.mockResolvedValue(output("YES\n", status));

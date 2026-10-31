@@ -86,8 +86,9 @@ it.each(["en", "ar-EG"] as const)(
     expect(html).toMatch(/<bdi dir="ltr">/);
     expect(html).toContain("trainee_01");
     expect(html).toContain("trainee_17");
-    expect(html).toContain("edge_case");
-    expect(html).toContain("overflow");
+    expect(html).toContain(locale === "en" ? "Missed edge case" : "حالة خاصة فاتتك");
+    expect(html).toContain(locale === "en" ? "Number overflow" : "تجاوز سعة الرقم");
+    expect(html).not.toContain("edge_case");
     expect(html).toMatch(/<button[^>]*type="button"/);
     expect(html).not.toMatch(/brute_code|root_cause_internal|fix_internal|codeHash/);
     expect(html).toContain('href="/coach?team=demo_team&amp;week=2026-10-26"');

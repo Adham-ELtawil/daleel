@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { connect, getDb } from "@/src/db/client";
 import { formatAttemptDate } from "@/src/domain/attempt-ui";
-import { t } from "@/src/i18n";
+import { bugClassLabel, t } from "@/src/i18n";
 import { attemptHistory } from "@/src/services/attempt-service";
 import { uiLocale } from "@/src/services/ui-locale";
 
@@ -21,7 +21,14 @@ export default async function HistoryPage({
   return (
     <main className="ms-auto me-auto max-w-3xl space-y-4 ps-6 pe-6 py-10">
       <h1 className="text-2xl font-bold">{t("history", locale)}</h1>
-      {!items.length && <p>{t("history_empty", locale)}</p>}
+      {!items.length && (
+        <section role="status" className="space-y-3 rounded border p-4">
+          <p>{t("history_empty", locale)}</p>
+          <Link href="/problem" className="inline-block rounded border p-2">
+            {t("title", locale)}
+          </Link>
+        </section>
+      )}
       <ul className="space-y-3">
         {items.map((item) => (
           <li key={item.id} className="space-y-2 rounded border p-4">
@@ -31,6 +38,7 @@ export default async function HistoryPage({
             <p>
               {t(`status_${item.status}`, locale)} · {t("max_hint", locale)}: {item.maxHintLevel}
             </p>
+            {item.bugClass && <p>{bugClassLabel(item.bugClass, locale)}</p>}
             <time dateTime={new Date(item.createdAt).toISOString()}>
               {formatAttemptDate(item.createdAt, locale)}
             </time>

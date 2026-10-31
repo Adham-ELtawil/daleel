@@ -74,6 +74,8 @@ async function executePlan(
   signal: AbortSignal,
 ): Promise<StressPublic> {
   if (plan.checker === "any_valid") return empty("skipped");
+  const matches = (expected: string, actual: string) =>
+    compareOutputs(expected, actual, plan.checker, problem.judge);
   const compile = async (source: string) => {
     signal.throwIfAborted();
     const compiled = await runner.compile(source, "cpp17");
@@ -117,19 +119,19 @@ async function executePlan(
   // Complete the entire trust gate before accepting even an official sample failure.
   for (const sample of problem.samples) {
     const output = await run(brute.binaryId, sample.input, bruteLimits);
-    if (output.status !== "ok" || !compareOutputs(sample.output, output.stdout, plan.checker))
+    if (output.status !== "ok" || !matches(sample.output, output.stdout))
       return empty("brute_untrusted");
   }
   for (const sample of problem.samples) {
     const output = await run(student.binaryId, sample.input, limits);
-    if (output.status !== "ok" || !compareOutputs(sample.output, output.stdout, plan.checker))
+    if (output.status !== "ok" || !matches(sample.output, output.stdout))
       return verified(sample.input, sample.output, output, "sample");
   }
   for (const test of tests) {
     const expected = await run(brute.binaryId, test.input, bruteLimits);
     if (expected.status !== "ok") continue;
     const actual = await run(student.binaryId, test.input, limits);
-    if (actual.status !== "ok" || !compareOutputs(expected.stdout, actual.stdout, plan.checker))
+    if (actual.status !== "ok" || !matches(expected.stdout, actual.stdout))
       return verified(test.input, expected.stdout, actual, "test");
   }
   return { ...empty("no_mismatch"), contradiction: diagnosis.confidence < 0.4 };

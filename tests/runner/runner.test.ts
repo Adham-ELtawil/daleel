@@ -29,8 +29,19 @@ describe("compareOutputs", () => {
     ["same", "same", "any_valid", null],
     ["one", "two", "any_valid", null],
   ] as const)("%j vs %j (%s)", async (expected, actual, checker, match) => {
-    expect((await api()).compareOutputs(expected, actual, checker)).toBe(match);
+    expect((await api()).compareOutputs(expected, actual, checker, "codeforces")).toBe(match);
   });
+  it.each(["codeforces", "atcoder", "custom", undefined] as const)(
+    "folds Yes/No casing only for Codeforces: %s",
+    async (judge) => {
+      const { compareOutputs } = await api();
+      for (const checker of ["exact_tokens", "float_1e6"] as const) {
+        expect(compareOutputs("Yes No", "YES no", checker, judge)).toBe(judge === "codeforces");
+        expect(compareOutputs(" Yes\nNo ", "Yes No", checker, judge)).toBe(true);
+        expect(compareOutputs("Word", "word", checker, judge)).toBe(false);
+      }
+    },
+  );
 });
 
 describe("Runner contract using a fake execution boundary", () => {

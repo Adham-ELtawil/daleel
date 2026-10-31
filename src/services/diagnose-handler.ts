@@ -19,8 +19,10 @@ export function createDiagnoseHandler(
     const requestId = request.headers.get("x-request-id") ?? ulid();
     const log = (code: string) => (deps.log ?? console.error)({ requestId, code });
     try {
-      if (!z.strictObject({}).safeParse(await request.json().catch(() => null)).success)
-        throw new HttpError(400, "invalid");
+      const body = z
+        .strictObject({ retry: z.boolean().default(false) })
+        .safeParse(await request.json().catch(() => null));
+      if (!body.success) throw new HttpError(400, "invalid");
       const db = await deps.db();
       const attempt = await ownedAttempt(db, id, request.headers.get("cookie"));
       const problem = await getProblem(db, attempt.problemId);
@@ -37,11 +39,16 @@ export function createDiagnoseHandler(
         },
       });
       await new Promise<void>((resolve, reject) => {
-        void diagnoseAttempt({ ...deps, db, log }, id, (event) => {
-          if (event.event === "error") log(event.data.code);
-          if (!cancelled) controller.enqueue(new TextEncoder().encode(serializeSse(event)));
-          resolve();
-        })
+        void diagnoseAttempt(
+          { ...deps, db, log },
+          id,
+          (event) => {
+            if (event.event === "error") log(event.data.code);
+            if (!cancelled) controller.enqueue(new TextEncoder().encode(serializeSse(event)));
+            resolve();
+          },
+          body.data.retry,
+        )
           .catch(reject)
           .finally(() => {
             if (!cancelled) controller.close();

@@ -53,6 +53,7 @@ export function compareOutputs(
   expected: string,
   actual: string,
   checker: "exact_tokens" | "float_1e6" | "any_valid",
+  judge: "codeforces" | "atcoder" | "custom" = "custom",
 ): boolean | null {
   if (checker === "any_valid") return null;
   const tokens = (text: string) => (text.trim() ? text.trim().split(/\s+/) : []);
@@ -62,7 +63,8 @@ export function compareOutputs(
   return (
     a.length === b.length &&
     a.every((token, i) => {
-      if (/^(yes|no)$/i.test(token)) return token.toLowerCase() === b[i].toLowerCase();
+      if (judge === "codeforces" && /^(yes|no)$/i.test(token))
+        return token.toLowerCase() === b[i].toLowerCase();
       if (checker === "exact_tokens") return token === b[i];
       if (numeric.test(token) && numeric.test(b[i])) {
         const x = Number(token),
