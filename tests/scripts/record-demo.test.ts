@@ -2,15 +2,18 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { z } from "zod";
 import { chatCompletion, createFakeFetch, noNetworkFetch } from "@/tests/llm/fake-fetch";
 import diagnosis from "@/tests/fixtures/llm/diagnosis-a.json";
 import ladder from "@/tests/fixtures/llm/ladder-a.json";
 import diagnosisB from "@/tests/fixtures/llm/diagnosis-b.json";
 import ladderB from "@/tests/fixtures/llm/ladder-b.json";
+import explanation from "@/tests/fixtures/llm/explanation-a.json";
+import explanationB from "@/tests/fixtures/llm/explanation-b.json";
 import { tempDb } from "@/tests/db/helpers";
 import { seed } from "@/src/db/seed";
 import { createMetaClient } from "@/src/llm/meta-client";
-import { stressRuns } from "@/src/db/schema";
+import { attempts, stressRuns, walkthroughs } from "@/src/db/schema";
 import { fakeStressRunner } from "@/tests/runner/stress-fake";
 import stressPlan from "@/tests/fixtures/llm/stress-a.json";
 
@@ -57,9 +60,9 @@ it.each(["0", "invalid", ""])("rejects invalid cap %s without network", async (c
   expect(fetch).not.toHaveBeenCalled();
 });
 it.each(["none", "local"])(
-  "records and replays all demo flows with runner %s and no replay key",
+  "runDemoFlows unlocks, records and replays explain for each example with runner %s and no replay key",
   async (provider) => {
-    const env = { RUNNER_PROVIDER: provider, EFFORT_STRESS: "low" };
+    const env = { RUNNER_PROVIDER: provider, EFFORT_STRESS: "low", EFFORT_EXPLAIN: "low" };
     const stress = provider === "local" ? [stream(stressPlan)] : [];
     const fixed = {
       ...diagnosis,
@@ -81,16 +84,54 @@ it.each(["none", "local"])(
       ...stress,
       { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
     ]);
+    const explanations = createFakeFetch([
+      stream(explanation),
+      stream(explanationB),
+      stream(explanation),
+    ]);
+    const steps: string[] = [];
+    const transport: typeof globalThis.fetch = async (input, init) => {
+      const request = new Request(input, init);
+      const body = z
+        .object({
+          response_format: z.object({ json_schema: z.object({ name: z.string() }) }),
+        })
+        .parse(await request.clone().json());
+      const name = body.response_format.json_schema.name;
+      steps.push(name);
+      return (name === "Explanation" ? explanations : fake).fetch(request);
+    };
     const print = vi.fn<(line: string) => void>();
     const { runRecordDemo: run, runDemoFlows } = await runner();
     expect(
       await run(
         { ...env, MODEL_API_KEY: "test-key" },
-        { fetch: fake.fetch, print, recordingsDir: dir },
+        { fetch: transport, print, recordingsDir: dir },
       ),
     ).toBe(0);
-    const count = provider === "local" ? 11 : 8;
-    expect(fake.requests).toHaveLength(count);
+    expect(
+      explanations.requests,
+      "Each demo needs its explanation and walkthrough recording",
+    ).toHaveLength(3);
+    for (const request of explanations.requests) {
+      expect(request.body.reasoning_effort).toBe("low");
+      expect(request.body.stream).toBe(true);
+    }
+    expect(steps.filter((step) => step !== "StressPlan")).toEqual([
+      "Diagnosis",
+      "HintLadder",
+      "Explanation",
+      "Diagnosis",
+      "HintLadder",
+      "Diagnosis",
+      "HintLadder",
+      "Explanation",
+      "Diagnosis",
+      "HintLadder",
+      "Explanation",
+    ]);
+    const count = provider === "local" ? 14 : 11;
+    expect(fake.requests).toHaveLength(count - 3);
     expect(JSON.stringify(fake.requests[2 + stress.length].body.messages)).toContain(
       "w % 2 == 0 && w > 2",
     );
@@ -105,6 +146,7 @@ it.each(["none", "local"])(
       String(name).endsWith(".json"),
     );
     expect(files).toHaveLength(count);
+    expect(files.filter((name) => String(name).startsWith("explain/"))).toHaveLength(3);
     expect(files.filter((name) => String(name).startsWith("stress/"))).toHaveLength(
       provider === "local" ? 3 : 0,
     );
@@ -134,6 +176,15 @@ it.each(["none", "local"])(
       const runs = await db.db.select().from(stressRuns);
       expect(runs).toHaveLength(provider === "local" ? 3 : 0);
       if (provider === "local") expect(runs.some((run) => run.status === "verified")).toBe(true);
+      const traces = await db.db.select().from(walkthroughs);
+      expect(traces).toHaveLength(3);
+      expect(traces.map((row) => JSON.parse(row.traceJson).frames.length)).toEqual([4, 5, 4]);
+      const recordedAttempts = await db.db.select().from(attempts);
+      expect(
+        recordedAttempts.filter(
+          (attempt) => attempt.status === "stuck" || attempt.maxHintLevel >= 3,
+        ),
+      ).toHaveLength(3);
       expect(logs.every((log) => log.status === "replay" && log.costUsd === 0)).toBe(true);
     } finally {
       db.cleanup();
