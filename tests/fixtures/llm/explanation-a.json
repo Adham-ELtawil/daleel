@@ -1,0 +1,72 @@
+{
+  "explanation_md": "The key observation: an even weight w ≥ 4 can always be cut into `2` and `w - 2`, both even and positive. But `w = 2` can only be cut into `1 + 1`. Your condition `w % 2 == 0` is true for 2, so you print YES while the answer is NO.",
+  "fix": [
+    {
+      "line": 6,
+      "old": "if (w % 2 == 0) cout << \"YES\";",
+      "new": "if (w % 2 == 0 && w > 2) cout << \"YES\";"
+    }
+  ],
+  "complexity_note": "O(1) time and memory.",
+  "trace": {
+    "input": "2",
+    "expected_output": "NO",
+    "student_output": "YES",
+    "frames": [
+      {
+        "code_line": 5,
+        "caption": "Read w = 2.",
+        "arrays": [],
+        "vars": [
+          {
+            "name": "w",
+            "value": "2",
+            "changed": true
+          }
+        ]
+      },
+      {
+        "code_line": 6,
+        "caption": "Check w % 2 == 0: 2 % 2 is 0, so the condition is true.",
+        "arrays": [],
+        "vars": [
+          {
+            "name": "w",
+            "value": "2",
+            "changed": false
+          },
+          {
+            "name": "w % 2",
+            "value": "0",
+            "changed": true
+          }
+        ]
+      },
+      {
+        "code_line": 6,
+        "caption": "Your program prints YES, but the only split of 2 is 1 + 1 and both are odd.",
+        "arrays": [
+          {
+            "name": "parts",
+            "values": ["1", "1"],
+            "highlight": [0, 1],
+            "pointers": []
+          }
+        ],
+        "vars": [
+          {
+            "name": "w",
+            "value": "2",
+            "changed": false
+          }
+        ]
+      },
+      {
+        "code_line": null,
+        "caption": "Your output: YES. Expected: NO.",
+        "arrays": [],
+        "vars": []
+      }
+    ]
+  }
+}
