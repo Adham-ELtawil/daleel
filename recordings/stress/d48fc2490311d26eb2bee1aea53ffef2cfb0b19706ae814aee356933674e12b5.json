@@ -1,0 +1,65 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:56:35.990Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "medium",
+    "step": "stress",
+    "requestHash": "d48fc2490311d26eb2bee1aea53ffef2cfb0b19706ae814aee356933674e12b5",
+    "usage": {
+      "input": 963,
+      "output": 1282,
+      "cached": 0,
+      "reasoning": 887
+    },
+    "costUsd": 0.00665225,
+    "latencyMs": 3868,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "brute_cpp": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    long long n, m, a;\n    if (!(cin >> n >> m >> a)) return 0;\n    long long x = (n + a - 1) / a;\n    long long y = (m + a - 1) / a;\n    cout << x * y << \"\\n\";\n    return 0;\n}\n",
+    "tests": [
+      {
+        "input": "6 6 4",
+        "purpose": "sample from statement"
+      },
+      {
+        "input": "1 1 1",
+        "purpose": "minimum values"
+      },
+      {
+        "input": "1 1 1000000000",
+        "purpose": "minimum n m with maximum a"
+      },
+      {
+        "input": "1000000000 1000000000 1",
+        "purpose": "suspect max overflow 1e18"
+      },
+      {
+        "input": "1000000000 1000000000 2",
+        "purpose": "suspect max overflow 2.5e17"
+      },
+      {
+        "input": "1000000000 1000000000 1000000000",
+        "purpose": "maximum values single stone"
+      },
+      {
+        "input": "1000000000 1 1",
+        "purpose": "max n strip overflow check"
+      },
+      {
+        "input": "1 1000000000 1",
+        "purpose": "max m strip overflow check"
+      },
+      {
+        "input": "10 10 3",
+        "purpose": "small ceil both dims 16"
+      },
+      {
+        "input": "2 3 10",
+        "purpose": "a larger than n and m"
+      }
+    ],
+    "checker": "exact_tokens",
+    "brute_complexity": "O(1) time, O(1) memory"
+  }
+}

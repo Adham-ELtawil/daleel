@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:56:24.482Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "ladder",
+    "requestHash": "01f23f030e51a70a966b169d3dedc0134e15d74499fd82e0f9ba3d0ff8bc500e",
+    "usage": {
+      "input": 1110,
+      "output": 1576,
+      "cached": 625,
+      "reasoning": 1212
+    },
+    "costUsd": 0.007398,
+    "latencyMs": 5490,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "Check Your Edge Cases First",
+        "body_md": "Look closely at how your program handles the smallest weights. Does your check give the right answer for the smallest even weight?",
+        "question_back": "Does your check give the right answer for the smallest even weight?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Sum Of Two Positive Evens",
+        "body_md": "Think about what numbers can be written as a sum of two positive even numbers. Why must such a total be even and larger than two.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Your Condition Is Correct",
+        "body_md": "Your test in `w % 2 == 0 && w > 2` on `L6` covers this perfectly. Odd weights fail the first part, and weight two fails the second part, so no failing input exists.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Why Your Logic Works",
+        "body_md": "Any split needs `w = a + b` with `a` and `b` both positive and even. The smallest such sum is `2 + 2 = 4`, so `w` must be even and greater than `2`. Your `L6` checks exactly that, so `8` gives `YES` and `1`, `2`, `3` give `NO` correctly. No change is needed to your lines. This is `O(1)` time and `O(1)` memory.",
+        "question_back": null
+      }
+    ]
+  }
+}

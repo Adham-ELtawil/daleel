@@ -140,3 +140,21 @@ it("refuses to persist an API key echoed in model content", async () => {
   );
   expect(await store.read("diagnose", logs[0].requestHash)).toBeNull();
 });
+it("record mode with reuse returns an existing recording without a live call", async () => {
+  await record();
+  const s = await setup("record");
+  const client = createMetaClient({
+    apiKey: "fake-secret-pr22",
+    baseURL: "https://meta.test/v1",
+    fetch: s.fetch,
+    now: () => Date.UTC(2026, 9, 30),
+    dailyBudgetUsd: 10,
+    getSpentTodayUsd: async () => 0,
+    logCall: () => {},
+    replay: { mode: "record", store: s.store, reuse: true },
+  });
+  await expect(client.callStructured(cfg, [...messages], { zod: schema })).resolves.toEqual(
+    response,
+  );
+  expect(s.fetch).not.toHaveBeenCalled();
+});

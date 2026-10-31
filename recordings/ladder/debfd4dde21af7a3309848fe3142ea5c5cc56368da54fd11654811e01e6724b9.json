@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-10-31T18:57:35.146Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "ladder",
+    "requestHash": "debfd4dde21af7a3309848fe3142ea5c5cc56368da54fd11654811e01e6724b9",
+    "usage": {
+      "input": 1410,
+      "output": 2150,
+      "cached": 0,
+      "reasoning": 1779
+    },
+    "costUsd": 0.0109,
+    "latencyMs": 6749,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "Check How You Print Answer",
+        "body_md": "Look at the line where you print the answer inside the loop. The problem asks for positions starting from one, not zero. What should you print when the very first choice matches?",
+        "question_back": "What should the first position print?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Zero Based Versus One Based",
+        "body_md": "C++ loop counters often start at zero. Problem positions often start at one. Think about the shift between these two ways of counting.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Your Print Line Is Off",
+        "body_md": "The issue is on `L9` with `cout << i`. Your check `choice == a + b` is right, but `i` runs from `0` to `n-1`. For input `3 125 175` with choices `200 300 400`, your code prints `1` but expected is `2`.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Fix Output To Be One Based",
+        "body_md": "You scan each choice and compare it to the sum. Your loop starts at zero, so the first element is zero. The problem wants the first element to count as one. So your answer is always one less than needed. To fix, keep your loop and check the same on `L9`, but add one when printing. This keeps time `O(N)` and memory `O(1)`.",
+        "question_back": null
+      }
+    ]
+  }
+}
