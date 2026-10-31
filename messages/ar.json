@@ -220,5 +220,15 @@
     "ui_language": "لغة الواجهة",
     "english": "لغة English",
     "arabic": "لغة العربية"
+  },
+  "attemptFlow": {
+    "progress": "مراحل المحاولة",
+    "diagnosis": "التشخيص",
+    "counterexample": "مثال يوقع الكود",
+    "hints": "التلميحات",
+    "explanation": "الشرح",
+    "complete": "خلصت",
+    "current": "الخطوة الحالية",
+    "pending": "الخطوة الجاية"
   }
 }

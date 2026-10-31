@@ -13,6 +13,7 @@ import { HintLadder } from "./hint-ladder";
 import { ReplayBadge } from "./replay-badge";
 import { StressResult } from "./stress-result";
 import { DiagnosisError, LoadingSkeleton } from "./attempt-feedback";
+import { AttemptStepper, StepHeading } from "./attempt-steps";
 
 export function DiagnosisCard({
   detail,
@@ -39,6 +40,7 @@ export function DiagnosisCard({
     status === "error" ? "llm_error" : undefined,
   );
   const [reset, setReset] = useState(false);
+  const [progress, setProgress] = useState({ hints: detail.canExplain, explanation: false });
   const extensions = useMemo(
     () => [
       ...(language === "cpp17" ? [cpp()] : []),
@@ -51,6 +53,7 @@ export function DiagnosisCard({
     async (retry = false) => {
       setBusy(true);
       setReset(true);
+      setProgress({ hints: false, explanation: false });
       setError(undefined);
       setResult(undefined);
       setStress(undefined);
@@ -106,10 +109,22 @@ export function DiagnosisCard({
   }, [autostart, status, initial, diagnose]);
   const ready = ladderReady || (Boolean(result) && !busy);
   return (
-    <section dir={locale === "en" ? "ltr" : "rtl"} className="space-y-4">
-      <label id="attempt-code-label">{t("code", locale)}</label>
-      <div dir="ltr" className="overflow-hidden rounded border">
+    <section dir={locale === "en" ? "ltr" : "rtl"} className="attempt-flow space-y-6">
+      <AttemptStepper
+        complete={[
+          Boolean(result),
+          Boolean(result && (stress || (!busy && !error))),
+          progress.hints,
+          progress.explanation,
+        ]}
+        locale={locale}
+      />
+      <div className="card overflow-hidden">
+        <h2 id="attempt-code-label" className="border-b border-line p-4 text-lg">
+          {t("code", locale)}
+        </h2>
         <CodeMirror
+          dir="ltr"
           value={code}
           extensions={extensions}
           readOnly
@@ -117,42 +132,49 @@ export function DiagnosisCard({
           indentWithTab={false}
         />
       </div>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => diagnose(Boolean(result || error || reset || status !== "new"))}
-        className="rounded border p-2"
-      >
-        {t(result || error || reset || status !== "new" ? "diagnose_again" : "diagnose", locale)}
-      </button>
-      <div aria-live="polite" className="space-y-2">
+      <section aria-live="polite" className="card space-y-4 p-5">
+        <StepHeading step={1} locale={locale} />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => diagnose(Boolean(result || error || reset || status !== "new"))}
+          className="button button-secondary"
+        >
+          {t(result || error || reset || status !== "new" ? "diagnose_again" : "diagnose", locale)}
+        </button>
         {stage && !result && <LoadingSkeleton label={t(stage, locale)} />}
         {error && <DiagnosisError code={error} locale={locale} />}
         {busy && result && (stress || !result.bug_found) && !ladderReady && !error && (
           <LoadingSkeleton label={t("preparing_hints", locale)} />
         )}
         {result && (
-          <article className="rounded border p-4">
+          <article className="space-y-3">
             <ReplayBadge replay={result.replay} recordedAt={result.recordedAt} locale={locale} />
             <p dir="auto">{result.public_summary}</p>
-            <p>
-              {t("bug_class", locale)}: <bdi>{bugClassLabel(result.bug_class, locale)}</bdi>
-            </p>
-            <p>
-              {t("confidence", locale)}:{" "}
-              <bdi>
-                {new Intl.NumberFormat(locale, { style: "percent" }).format(result.confidence)}
-              </bdi>
-            </p>
+            <div className="flex flex-wrap gap-2">
+              <span className={`badge ${result.bug_found ? "badge-danger" : "badge-neutral"}`}>
+                {t("bug_class", locale)}: <bdi>{bugClassLabel(result.bug_class, locale)}</bdi>
+              </span>
+              <span
+                className={`badge badge-${result.confidence >= 0.8 ? "success" : result.confidence >= 0.5 ? "warning" : "neutral"}`}
+              >
+                {t("confidence", locale)}:{" "}
+                <bdi>
+                  {new Intl.NumberFormat(locale, { style: "percent" }).format(result.confidence)}
+                </bdi>
+              </span>
+            </div>
             {result.confidence < 0.6 && <p>{t("low_confidence", locale)}</p>}
-            <StressResult
-              result={stress}
-              pending={busy && result.bug_found && !ladderReady && !error}
-              locale={locale}
-            />
           </article>
         )}
-      </div>
+      </section>
+      {result && (
+        <StressResult
+          result={stress}
+          pending={busy && result.bug_found && !ladderReady && !error}
+          locale={locale}
+        />
+      )}
       {!busy && !error && (
         <HintLadder
           detail={
@@ -162,6 +184,7 @@ export function DiagnosisCard({
           }
           locale={locale}
           ready={ready}
+          onProgress={setProgress}
         />
       )}
     </section>

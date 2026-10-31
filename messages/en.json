@@ -220,5 +220,15 @@
     "ui_language": "Interface language",
     "english": "English",
     "arabic": "Arabic"
+  },
+  "attemptFlow": {
+    "progress": "Attempt progress",
+    "diagnosis": "Diagnosis",
+    "counterexample": "Counterexample",
+    "hints": "Hints",
+    "explanation": "Explanation",
+    "complete": "Complete",
+    "current": "Current step",
+    "pending": "Upcoming"
   }
 }

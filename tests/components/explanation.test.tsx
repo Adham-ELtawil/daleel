@@ -42,6 +42,12 @@ it("uses SafeMd, shows a small LTR diff of the student's own lines and the compl
 it("omits the complexity section when the API returns null", async () => {
   expect(await render(null)).not.toContain("Complexity");
 });
+it("anchors the explanation card and distinguishes removed and added lines", async () => {
+  const html = await render();
+  expect(html).toMatch(/<article[^>]*id="explanation"[^>]*class="[^"]*card/);
+  expect(html).toMatch(/<del[^>]*class="[^"]*bg-red-50/);
+  expect(html).toMatch(/<ins[^>]*class="[^"]*bg-green-50/);
+});
 it.each(["en", "ar-EG"] as const)("only offers the explanation when canExplain in %s", (locale) => {
   vi.stubGlobal("React", React);
   const detail: Awaited<ReturnType<typeof attemptDetail>> = {

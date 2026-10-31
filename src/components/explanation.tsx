@@ -3,6 +3,7 @@ import type { Explanation as ExplanationData } from "@/src/llm/schemas/explanati
 import { t } from "@/src/i18n";
 import { SafeMd } from "./safe-md";
 import { Walkthrough } from "./walkthrough";
+import { StepHeading } from "./attempt-steps";
 
 export function Explanation({
   explanation,
@@ -16,8 +17,8 @@ export function Explanation({
   locale: "en" | "ar-EG";
 }) {
   return (
-    <article className="space-y-3 rounded border p-4">
-      <h2 className="font-semibold">{t("full_explanation", locale, "walkthrough")}</h2>
+    <article id="explanation" className="card scroll-mt-24 space-y-5 p-5">
+      <StepHeading step={4} locale={locale} />
       <SafeMd text={explanation.explanation_md} />
       {explanation.fix.length > 0 && (
         <section>
@@ -29,9 +30,10 @@ export function Explanation({
                   {t("line", locale, "walkthrough")} {fix.line}:{" "}
                 </span>
                 <code dir="ltr" className="bidi-isolate whitespace-pre-wrap">
-                  <del>{fix.old}</del>
-                  {" → "}
-                  <ins>{fix.new}</ins>
+                  <del className="block rounded bg-red-50 p-2 text-danger">{fix.old}</del>
+                  <ins className="mt-1 block rounded bg-green-50 p-2 text-success no-underline">
+                    {fix.new}
+                  </ins>
                 </code>
               </li>
             ))}

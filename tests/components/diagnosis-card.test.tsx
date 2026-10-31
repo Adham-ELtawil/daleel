@@ -25,6 +25,7 @@ function render(
   stress?: StressPublic,
   locale: "en" | "ar-EG" = "en",
   status: "new" | "diagnosing" | "diagnosed" | "error" = "diagnosed",
+  confidence = fixture.confidence,
 ) {
   const detail: Awaited<ReturnType<typeof attemptDetail>> = {
     attempt: {
@@ -45,7 +46,12 @@ function render(
     problem: undefined,
     diagnosis:
       status === "diagnosed"
-        ? { ...toPublic(DiagnosisSchema.parse(fixture)), replay: false, recordedAt: null }
+        ? {
+            ...toPublic(DiagnosisSchema.parse(fixture)),
+            confidence,
+            replay: false,
+            recordedAt: null,
+          }
         : undefined,
     stress,
     revealedHints: [],
@@ -55,6 +61,28 @@ function render(
   };
   return renderToStaticMarkup(React.createElement(DiagnosisCard, { detail, locale }));
 }
+it.each([
+  [0, "neutral"],
+  [0.499, "neutral"],
+  [0.5, "warning"],
+  [0.799, "warning"],
+  [0.8, "success"],
+  [1, "success"],
+] as const)("colors confidence %s with the %s badge", (confidence, tone) => {
+  for (const locale of ["en", "ar-EG"] as const) {
+    const html = render(undefined, locale, "diagnosed", confidence);
+    const label = locale === "en" ? "Confidence" : "درجة الثقة";
+    expect(html).toMatch(new RegExp(`<span[^>]*class="[^"]*badge-${tone}[^"]*">${label}:`));
+    expect(html).toContain(new Intl.NumberFormat(locale, { style: "percent" }).format(confidence));
+  }
+});
+it("renders the stepper before code and marks persisted diagnosis and stress complete", () => {
+  const html = render(verified);
+  const steps = html.match(/<ol[^>]*aria-label="Attempt progress"[\s\S]*?<\/ol>/)?.[0] ?? "";
+  expect(steps.match(/data-state="complete"/g)).toHaveLength(2);
+  expect(steps).toMatch(/aria-current="step"[^>]*>[\s\S]*?Hints/);
+  expect(html.indexOf(steps)).toBeLessThan(html.indexOf('id="attempt-code-label"'));
+});
 it.each(["en", "ar-EG"] as const)("uses a friendly bug label and retry action in %s", (locale) => {
   expect(render(undefined, locale)).toContain(
     locale === "en" ? "Missed edge case" : "حالة خاصة فاتتك",

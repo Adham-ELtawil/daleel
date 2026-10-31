@@ -61,18 +61,20 @@ export default async function ReportPage({
       <p>
         {coach("week")}: <bdi dir="ltr">{stats.weekStart}</bdi>
       </p>
-      <nav className="flex items-center gap-4">
-        <Link href={`/coach?${selection}`}>{tr("back")}</Link>
+      <nav className="flex flex-wrap items-center gap-4">
+        <Link className="button button-secondary" href={`/coach?${selection}`}>
+          {tr("back")}
+        </Link>
         <PrintReport locale={locale} />
       </nav>
       {team.inviteCode === "DEMO0001" && <p>{coach("synthetic")}</p>}
-      <p>{report.headline}</p>
+      <p className="card border-s-4 border-s-accent p-5 text-xl font-semibold">{report.headline}</p>
       {!stats.attempts && <p>{coach("empty")}</p>}
-      <dl className="grid gap-4 sm:grid-cols-4">
+      <dl className="stat-grid">
         {(["attempts", "solved", "solvedRate", "avgHintLevelAtSolve"] as const).map((key) => (
-          <div key={key}>
-            <dt>{coach(key)}</dt>
-            <dd className="font-bold">
+          <div key={key} className="card p-4">
+            <dt className="text-sm text-muted">{coach(key)}</dt>
+            <dd className="text-3xl font-bold tabular-nums">
               {(key === "solvedRate" ? percent : number).format(stats[key])}
             </dd>
           </div>
@@ -109,7 +111,7 @@ export default async function ReportPage({
         {!report.attention.length && <p>{coach("attention_empty")}</p>}
         <ul className="space-y-2">
           {report.attention.map(({ handle, suggestion }) => (
-            <li key={handle}>
+            <li key={handle} className="card border-s-4 border-s-warning p-4">
               <bdi dir="ltr">{handle}</bdi>: {suggestion}
             </li>
           ))}

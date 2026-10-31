@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
@@ -12,15 +12,18 @@ import { SafeMd } from "./safe-md";
 import { ReplayBadge } from "./replay-badge";
 import { Explanation } from "./explanation";
 import type { explainAttempt } from "@/src/services/explain-service";
+import { StepHeading } from "./attempt-steps";
 
 export function HintLadder({
   detail,
   locale,
   ready,
+  onProgress,
 }: {
   detail: Awaited<ReturnType<typeof attemptDetail>>;
   locale: "en" | "ar-EG";
   ready: boolean;
+  onProgress?: (progress: { hints: boolean; explanation: boolean }) => void;
 }) {
   const router = useRouter();
   const { attempt } = detail;
@@ -31,6 +34,9 @@ export function HintLadder({
   });
   const [canExplain, setCanExplain] = useState(detail.canExplain);
   const [explanation, setExplanation] = useState<Awaited<ReturnType<typeof explainAttempt>>>();
+  useEffect(() => {
+    onProgress?.({ hints: canExplain, explanation: canExplain && Boolean(explanation) });
+  }, [canExplain, explanation, onProgress]);
   const [explainError, setExplainError] = useState(false);
   const [solved, setSolved] = useState(attempt.status === "solved");
   const [editing, setEditing] = useState(false);
@@ -93,14 +99,20 @@ export function HintLadder({
     }
   }
   return (
-    <section className="space-y-4" aria-label={t("hints", locale)}>
-      <div className="space-y-4" aria-live="polite">
+    <>
+      <section className="card space-y-4 p-5" aria-label={t("hints", locale)} aria-live="polite">
+        <StepHeading step={3} locale={locale} />
         {hints.length > 0 && <ReplayBadge {...provenance} locale={locale} />}
         {hints.map((hint) => (
-          <article key={hint.level} data-hint-level={hint.level} className="space-y-2 border p-4">
-            <h2 dir="auto" className="font-semibold">
+          <article
+            key={hint.level}
+            data-hint-level={hint.level}
+            className="space-y-3 rounded-xl border border-line bg-canvas p-4"
+          >
+            <h3 dir="auto" className="flex items-center gap-3">
+              <span className="step-number">{hint.level}</span>
               {hint.title}
-            </h2>
+            </h3>
             <SafeMd text={hint.body_md} />
             {hint.question_back && <SafeMd text={hint.question_back} />}
           </article>
@@ -109,46 +121,46 @@ export function HintLadder({
         {canExplain && <p>{t("explanation_unlocked", locale)}</p>}
         {error && <p role="alert">{t(error, locale)}</p>}
         {explainError && <p role="alert">{t("load_error", locale, "walkthrough")}</p>}
-      </div>
-      <div className="flex flex-wrap gap-3">
-        {canExplain && !explanation && (
-          <button
-            type="button"
-            disabled={busy}
-            className="rounded border p-2"
-            onClick={() => act("explain")}
-          >
-            {busy ? t("pending", locale) : t("full_explanation", locale, "walkthrough")}
-          </button>
-        )}
-        {ready && next !== null && (
-          <button
-            type="button"
-            disabled={busy}
-            className="rounded border p-2"
-            onClick={() => act("hint")}
-          >
-            {t("hint", locale)} {next}
-          </button>
-        )}
-        {(["stuck", "solved", "fixed_recheck"] as const).map((action) => (
-          <button
-            key={action}
-            type="button"
-            disabled={busy || (action === "solved" && solved)}
-            className="rounded border p-2"
-            onClick={() => (action === "fixed_recheck" ? setEditing(!editing) : act(action))}
-          >
-            {t(action === "fixed_recheck" && editing ? "cancel" : action, locale)}
-          </button>
-        ))}
-      </div>
+        <div className="flex flex-wrap gap-3">
+          {canExplain && !explanation && (
+            <button
+              type="button"
+              disabled={busy}
+              className="button button-primary"
+              onClick={() => act("explain")}
+            >
+              {busy ? t("pending", locale) : t("full_explanation", locale, "walkthrough")}
+            </button>
+          )}
+          {ready && next !== null && (
+            <button
+              type="button"
+              disabled={busy}
+              className="button button-primary"
+              onClick={() => act("hint")}
+            >
+              {t("hint", locale)} {next}
+            </button>
+          )}
+          {(["stuck", "solved", "fixed_recheck"] as const).map((action) => (
+            <button
+              key={action}
+              type="button"
+              disabled={busy || (action === "solved" && solved)}
+              className="button button-secondary"
+              onClick={() => (action === "fixed_recheck" ? setEditing(!editing) : act(action))}
+            >
+              {t(action === "fixed_recheck" && editing ? "cancel" : action, locale)}
+            </button>
+          ))}
+        </div>
+      </section>
       {canExplain && explanation && (
         <Explanation {...explanation} code={attempt.code} locale={locale} />
       )}
       {editing && (
         <form
-          className="space-y-3"
+          className="card space-y-3 p-5"
           onSubmit={(event) => {
             event.preventDefault();
             void act("recheck");
@@ -165,11 +177,11 @@ export function HintLadder({
               indentWithTab={false}
             />
           </div>
-          <button type="submit" disabled={busy || !code.trim()} className="rounded border p-2">
+          <button type="submit" disabled={busy || !code.trim()} className="button button-secondary">
             {t(busy ? "pending" : "recheck", locale)}
           </button>
         </form>
       )}
-    </section>
+    </>
   );
 }
