@@ -22,6 +22,7 @@ import { t } from "@/src/i18n";
 import { HttpError } from "./http-error";
 import type { DiagnoseEvent } from "./sse";
 import { ensureLadder, type LadderDeps } from "./ladder-service";
+import { stressAttempt, type StressDeps } from "./stress";
 
 // Keep stale claims older than the 120s LLM deadline.
 export const STALE_MS = 150000;
@@ -36,6 +37,7 @@ export type DiagnoseDeps = {
   config: LlmStepConfig;
   now: () => number;
   ladder: Pick<LadderDeps, "llm" | "config">;
+  stress?: Pick<StressDeps, "llm" | "config" | "runner">;
   log?: (code: string) => void;
 };
 async function withDeadline(job: (signal: AbortSignal) => Promise<Diagnosis>) {
@@ -162,6 +164,14 @@ export async function diagnoseAttempt(
       event: "diagnosis",
       data: { public: toPublic(result), replay: recordedAt !== null, recordedAt },
     });
+    if (deps.stress && result.bug_found) {
+      try {
+        const stress = await stressAttempt({ db, now, log: deps.log, ...deps.stress }, attemptId);
+        emit({ event: "stress", data: { result: stress } });
+      } catch {
+        (deps.log ?? ((code) => console.error({ requestId: attemptId, code })))("stress_error");
+      }
+    }
     try {
       await ensureLadder({ db, now, ...deps.ladder }, attemptId, attempt.locale);
       emit({ event: "ladder_ready", data: { levels: 4 } });

@@ -2,8 +2,16 @@ import { and, count, desc, eq, lt, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
-import { StoredDiagnosisSchema, StoredLadderSchema } from "@/src/db/json";
-import { attempts, diagnoses, hintLadders, hintReveals, problems } from "@/src/db/schema";
+import { StoredDiagnosisSchema, StoredLadderSchema, StoredStressTestsSchema } from "@/src/db/json";
+import {
+  attempts,
+  diagnoses,
+  hintLadders,
+  hintReveals,
+  problems,
+  stressRuns,
+} from "@/src/db/schema";
+import { StressPublicSchema } from "@/src/domain/stress-public";
 import { toPublic } from "@/src/llm/schemas/diagnosis";
 import type { HintLadder } from "@/src/llm/schemas/ladder";
 import { getCurrentUser } from "./current-user";
@@ -107,6 +115,8 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
       ? StoredLadderSchema.parse(JSON.parse(ladderRow.levelsJson)).recordedAt
       : null;
   const result = diagnosis && StoredDiagnosisSchema.parse(JSON.parse(diagnosis.resultJson));
+  const stress = await deps.db.select().from(stressRuns).where(eq(stressRuns.attemptId, id)).get();
+  const metadata = stress && StoredStressTestsSchema.parse(JSON.parse(stress.testsJson));
   const attempt = {
     id: stored.id,
     problemId: stored.problemId,
@@ -125,6 +135,19 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
   return {
     attempt,
     problem,
+    ...(stress && metadata
+      ? {
+          stress: StressPublicSchema.parse({
+            status: stress.status,
+            failing_input: stress.failingInput,
+            expected_output: stress.expectedOutput,
+            actual_output: stress.actualOutput,
+            compile_output: stress.compileOutput,
+            source: metadata.source,
+            contradiction: metadata.contradiction,
+          }),
+        }
+      : {}),
     ...(result
       ? {
           diagnosis: {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DiagnosisSchema } from "@/src/llm/schemas/diagnosis";
+import { StressPublicSchema } from "@/src/domain/stress-public";
 
 const EventSchema = z.discriminatedUnion("event", [
   z.object({
@@ -18,6 +19,7 @@ const EventSchema = z.discriminatedUnion("event", [
       }),
     }),
   }),
+  z.object({ event: z.literal("stress"), data: z.object({ result: StressPublicSchema }) }),
   z.object({ event: z.literal("ladder_ready"), data: z.object({ levels: z.literal(4) }) }),
   z.object({ event: z.literal("done"), data: z.object({}) }),
   z.object({
