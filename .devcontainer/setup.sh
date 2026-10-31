@@ -39,7 +39,8 @@ if ((process.env.SESSION_SECRET || current).length < 32)
   set("SESSION_SECRET", crypto.randomBytes(32).toString("hex"));
 set("MODEL_API_KEY", "");
 set("DAILY_BUDGET_USD", process.env.DAILY_BUDGET_USD || "2");
-fs.writeFileSync(".env.local", text, { mode: 0o600 });
+fs.writeFileSync(".env.local", text);
+fs.chmodSync(".env.local", 0o600);
 NODE
 log ".env.local ready"
 
