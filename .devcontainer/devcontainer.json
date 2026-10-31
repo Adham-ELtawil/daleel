@@ -1,0 +1,36 @@
+{
+  "name": "Daleel",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm",
+  "hostRequirements": { "cpus": 2 },
+  "secrets": {
+    "MODEL_API_KEY": {
+      "description": "Your Meta Model API key (optional). Leave empty to use recorded demo responses.",
+      "documentationUrl": "https://github.com/Adham-ELtawil/daleel#readme"
+    }
+  },
+  "containerEnv": {
+    "DAILY_BUDGET_USD": "2",
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Daleel", "onAutoForward": "openBrowser" }
+  },
+  "otherPortsAttributes": { "onAutoForward": "silent" },
+  "customizations": {
+    "codespaces": { "openFiles": [] },
+    "vscode": {
+      "extensions": [],
+      "settings": {
+        "workbench.startupEditor": "none",
+        "workbench.tips.enabled": false,
+        "git.autofetch": false,
+        "extensions.ignoreRecommendations": true,
+        "telemetry.telemetryLevel": "off"
+      }
+    }
+  }
+}
