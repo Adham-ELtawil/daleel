@@ -1,7 +1,14 @@
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { attempts, diagnoses, hintLadders } from "@/src/db/schema";
+import {
+  attempts,
+  diagnoses,
+  hintLadders,
+  hintReveals,
+  stressRuns,
+  walkthroughs,
+} from "@/src/db/schema";
 import { StoredDiagnosisSchema } from "@/src/db/json";
 import { seed } from "@/src/db/seed";
 import { BudgetReached, SchemaError, OutputTruncated, MetaApiError } from "@/src/llm/meta-client";
@@ -242,6 +249,120 @@ it("reuses an identical normalized attempt with zero LLM calls, including repeat
   expect(await status(second)).toBe("diagnosed");
   expect(await store.db.select().from(diagnoses)).toHaveLength(2);
 });
+
+it.each(["diagnosed", "error"] as const)(
+  "explicit retry resets %s and regenerates diagnosis and hints",
+  async (state) => {
+    const id = await attempt();
+    await diagnoseAttempt(stressDeps(), id, () => {});
+    // A second matching diagnosis must not be reused by an explicit retry.
+    await diagnoseAttempt(deps(), await attempt(), () => {});
+    await store.db.insert(hintReveals).values({ attemptId: id, level: 1, revealedAt: now });
+    await store.db
+      .insert(hintLadders)
+      .values({
+        id: "old-ar",
+        attemptId: id,
+        locale: "ar-EG",
+        levelsJson: JSON.stringify(ladderFixture.levels),
+        createdAt: now,
+      });
+    await store.db
+      .insert(walkthroughs)
+      .values({
+        id: "old-trace",
+        attemptId: id,
+        locale: "en",
+        explanationJson: "{}",
+        traceJson: "{}",
+        createdAt: now,
+      });
+    await store.db
+      .update(attempts)
+      .set({ status: state, maxHintLevel: 1 })
+      .where(eq(attempts.id, id));
+    const d = deps();
+    d.llm.mockImplementationOnce(async () => {
+      expect(await diagnosisState(id)).toEqual({ status: "diagnosing", diagnosingSince: now });
+      for (const table of [diagnoses, hintLadders, hintReveals, stressRuns, walkthroughs])
+        expect(await store.db.select().from(table).where(eq(table.attemptId, id))).toEqual([]);
+      return { ...result, public_summary: "Fresh diagnosis" };
+    });
+    const response = await createDiagnoseHandler({ ...d, log: vi.fn(), db: async () => store.db })(
+      request({ retry: true }),
+      id,
+    );
+    expect(response.status).toBe(200);
+    const events: DiagnoseEvent[] = [];
+    await readSse(response.body!, (event) => events.push(event));
+    expect(d.llm).toHaveBeenCalledOnce();
+    expect(d.ladder.llm).toHaveBeenCalledOnce();
+    expect(events.find((event) => event.event === "diagnosis")).toMatchObject({
+      data: { public: { public_summary: "Fresh diagnosis" } },
+    });
+    expect(await store.db.select().from(attempts).where(eq(attempts.id, id)).get()).toMatchObject({
+      status: "diagnosed",
+      maxHintLevel: 0,
+    });
+    expect(
+      await store.db.select().from(hintLadders).where(eq(hintLadders.attemptId, id)),
+    ).toHaveLength(1);
+  },
+);
+it.each([0, 150000, 150001, null])("retry obeys the stale claim at age %s", async (age) => {
+  const id = await attempt();
+  await diagnoseAttempt(deps(), id, () => {});
+  now = 200000;
+  await store.db
+    .update(attempts)
+    .set({ status: "diagnosing", diagnosingSince: age === null ? null : now - age })
+    .where(eq(attempts.id, id));
+  const d = deps();
+  const response = await createDiagnoseHandler({ ...d, log: vi.fn(), db: async () => store.db })(
+    request({ retry: true }),
+    id,
+  );
+  const stale = age === null || age > 150000;
+  expect(response.status).toBe(stale ? 200 : 409);
+  if (stale) await readSse(response.body!, () => {});
+  expect(d.llm).toHaveBeenCalledTimes(stale ? 1 : 0);
+  expect(await store.db.select().from(diagnoses).where(eq(diagnoses.attemptId, id))).toHaveLength(
+    1,
+  );
+  expect(
+    await store.db.select().from(hintLadders).where(eq(hintLadders.attemptId, id)),
+  ).toHaveLength(1);
+});
+it.each(["stress", "ladder"] as const)(
+  "keeps the claim while %s is still running",
+  async (phase) => {
+    const id = await attempt();
+    const d = stressDeps();
+    let statusCode: number | undefined;
+    const retry = async () => {
+      const response = await createDiagnoseHandler({
+        ...deps(),
+        log: vi.fn(),
+        db: async () => store.db,
+      })(request({ retry: true }), id);
+      statusCode = response.status;
+      if (response.ok) await readSse(response.body!, () => {});
+    };
+    if (phase === "stress")
+      d.stress.llm.mockImplementationOnce(async () => {
+        await retry();
+        return { ...stressPlan, checker: "exact_tokens" };
+      });
+    else
+      d.ladder.llm.mockImplementationOnce(async () => {
+        await retry();
+        return HintLadderSchema.parse(ladderFixture);
+      });
+    await diagnoseAttempt(d, id, () => {});
+    expect(statusCode).toBe(409);
+    expect(await diagnosisState(id)).toEqual({ status: "diagnosed", diagnosingSince: null });
+  },
+);
 
 it("ends a stalled model call after 120 seconds and aborts the request", async () => {
   const id = await attempt();

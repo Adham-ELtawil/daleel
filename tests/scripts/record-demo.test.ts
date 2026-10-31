@@ -10,6 +10,13 @@ import ladderB from "@/tests/fixtures/llm/ladder-b.json";
 import { tempDb } from "@/tests/db/helpers";
 import { seed } from "@/src/db/seed";
 import { createMetaClient } from "@/src/llm/meta-client";
+import { stressRuns } from "@/src/db/schema";
+import { fakeStressRunner } from "@/tests/runner/stress-fake";
+import stressPlan from "@/tests/fixtures/llm/stress-a.json";
+
+vi.mock("@/src/runner/local", () => ({
+  createLocalRunner: () => ({ ...fakeStressRunner(), name: "local" }),
+}));
 
 let dir: string;
 beforeEach(() => {
@@ -49,62 +56,87 @@ it.each(["0", "invalid", ""])("rejects invalid cap %s without network", async (c
   ).toBe(2);
   expect(fetch).not.toHaveBeenCalled();
 });
-it("records all three real service flows and fixed-code re-check; then replays every call with no key", async () => {
-  const fixed = {
-    ...diagnosis,
-    bug_found: false,
-    bug_class: "none",
-    lines: [],
-    suspect_inputs: [],
-  };
-  const fake = createFakeFetch([
-    stream(diagnosis),
-    { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
-    stream(fixed),
-    { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
-    stream(diagnosisB),
-    { status: 200, json: chatCompletion(JSON.stringify(ladderB)) },
-    stream({ ...diagnosis, bug_class: "off_by_one" }),
-    { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
-  ]);
-  const print = vi.fn<(line: string) => void>();
-  const { runRecordDemo: run, runDemoFlows } = await runner();
-  expect(
-    await run({ MODEL_API_KEY: "test-key" }, { fetch: fake.fetch, print, recordingsDir: dir }),
-  ).toBe(0);
-  expect(fake.requests).toHaveLength(8);
-  expect(JSON.stringify(fake.requests[2].body.messages)).toContain("w % 2 == 0 && w > 2");
-  expect(JSON.stringify(fake.requests[4].body.messages)).toContain("Egyptian Arabic");
-  expect(JSON.stringify(fake.requests[6].body.messages)).toContain("abc300_a");
-  const files = readdirSync(dir, { recursive: true }).filter((name) =>
-    String(name).endsWith(".json"),
-  );
-  expect(files).toHaveLength(8);
-  for (const name of files)
-    expect(readFileSync(join(dir, String(name)), "utf8")).not.toContain("test-key");
-  expect(print.mock.calls.map(([line]) => line).join("\n")).toContain("Total cost: $");
-  const fetch = vi.fn(noNetworkFetch);
-  const db = await tempDb();
-  try {
-    await seed(db.db);
-    const { createReplayStore } = await import("@/src/llm/replay/store");
-    const logs: { status: string; costUsd: number }[] = [];
-    const client = createMetaClient({
-      apiKey: "",
-      baseURL: "https://meta.test/v1",
-      fetch,
-      dailyBudgetUsd: 1,
-      getSpentTodayUsd: async () => 0,
-      logCall: (log) => {
-        logs.push(log);
-      },
-      replay: { mode: "replay", store: createReplayStore(dir) },
-    });
-    await runDemoFlows(db.db, client, {});
-    expect(fetch).not.toHaveBeenCalled();
-    expect(logs).toHaveLength(8);
-    expect(logs.every((log) => log.status === "replay" && log.costUsd === 0)).toBe(true);
-  } finally {
-    db.cleanup();
-  }
-});
+it.each(["none", "local"])(
+  "records and replays all demo flows with runner %s and no replay key",
+  async (provider) => {
+    const env = { RUNNER_PROVIDER: provider, EFFORT_STRESS: "low" };
+    const stress = provider === "local" ? [stream(stressPlan)] : [];
+    const fixed = {
+      ...diagnosis,
+      bug_found: false,
+      bug_class: "none",
+      lines: [],
+      suspect_inputs: [],
+    };
+    const fake = createFakeFetch([
+      stream(diagnosis),
+      ...stress,
+      { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
+      stream(fixed),
+      { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
+      stream(diagnosisB),
+      ...stress,
+      { status: 200, json: chatCompletion(JSON.stringify(ladderB)) },
+      stream({ ...diagnosis, bug_class: "off_by_one" }),
+      ...stress,
+      { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
+    ]);
+    const print = vi.fn<(line: string) => void>();
+    const { runRecordDemo: run, runDemoFlows } = await runner();
+    expect(
+      await run(
+        { ...env, MODEL_API_KEY: "test-key" },
+        { fetch: fake.fetch, print, recordingsDir: dir },
+      ),
+    ).toBe(0);
+    const count = provider === "local" ? 11 : 8;
+    expect(fake.requests).toHaveLength(count);
+    expect(JSON.stringify(fake.requests[2 + stress.length].body.messages)).toContain(
+      "w % 2 == 0 && w > 2",
+    );
+    expect(JSON.stringify(fake.requests[4 + stress.length].body.messages)).toContain(
+      "Egyptian Arabic",
+    );
+    expect(JSON.stringify(fake.requests[6 + 2 * stress.length].body.messages)).toContain(
+      "abc300_a",
+    );
+    if (provider === "local") expect(fake.requests[1].body.reasoning_effort).toBe("low");
+    const files = readdirSync(dir, { recursive: true }).filter((name) =>
+      String(name).endsWith(".json"),
+    );
+    expect(files).toHaveLength(count);
+    expect(files.filter((name) => String(name).startsWith("stress/"))).toHaveLength(
+      provider === "local" ? 3 : 0,
+    );
+    for (const name of files)
+      expect(readFileSync(join(dir, String(name)), "utf8")).not.toContain("test-key");
+    expect(print.mock.calls.map(([line]) => line).join("\n")).toContain("Total cost: $");
+    const fetch = vi.fn(noNetworkFetch);
+    const db = await tempDb();
+    try {
+      await seed(db.db);
+      const { createReplayStore } = await import("@/src/llm/replay/store");
+      const logs: { status: string; costUsd: number }[] = [];
+      const client = createMetaClient({
+        apiKey: "",
+        baseURL: "https://meta.test/v1",
+        fetch,
+        dailyBudgetUsd: 1,
+        getSpentTodayUsd: async () => 0,
+        logCall: (log) => {
+          logs.push(log);
+        },
+        replay: { mode: "replay", store: createReplayStore(dir) },
+      });
+      await runDemoFlows(db.db, client, env);
+      expect(fetch).not.toHaveBeenCalled();
+      expect(logs).toHaveLength(count);
+      const runs = await db.db.select().from(stressRuns);
+      expect(runs).toHaveLength(provider === "local" ? 3 : 0);
+      if (provider === "local") expect(runs.some((run) => run.status === "verified")).toBe(true);
+      expect(logs.every((log) => log.status === "replay" && log.costUsd === 0)).toBe(true);
+    } finally {
+      db.cleanup();
+    }
+  },
+);

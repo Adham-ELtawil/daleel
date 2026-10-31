@@ -2,6 +2,25 @@ import { expect, it } from "vitest";
 import * as i18n from "@/src/i18n";
 import en from "@/messages/en.json";
 import ar from "@/messages/ar.json";
+import { DiagnosisSchema } from "@/src/llm/schemas/diagnosis";
+
+it.each(["en", "ar-EG"] as const)("labels every bug class in %s", (locale) => {
+  const messages = locale === "en" ? en : ar;
+  expect(messages).toHaveProperty("bugClasses");
+  const labels = Reflect.get(messages, "bugClasses");
+  expect(Object.keys(labels).sort()).toEqual([...DiagnosisSchema.shape.bug_class.options].sort());
+  for (const bug of DiagnosisSchema.shape.bug_class.options) {
+    const label = i18n.bugClassLabel(bug, locale);
+    expect(label).toBe(Reflect.get(labels, bug));
+    expect(label).not.toBe(bug);
+    expect(label.trim()).not.toBe("");
+    if (locale === "ar-EG") {
+      expect(label).toMatch(/^[\u0600-\u06ff]/);
+      expect(label).not.toMatch(/[()\/→←]/);
+    }
+  }
+  expect(i18n.bugClassLabel("unknown_legacy_class", locale)).toBe(Reflect.get(labels, "other"));
+});
 
 const keys = (value: object, prefix = ""): string[] =>
   Object.entries(value).flatMap(([key, entry]) =>

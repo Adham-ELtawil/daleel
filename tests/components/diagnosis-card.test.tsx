@@ -21,7 +21,11 @@ const verified: StressPublic = {
   source: "test",
   contradiction: false,
 };
-function render(stress?: StressPublic, locale: "en" | "ar-EG" = "en") {
+function render(
+  stress?: StressPublic,
+  locale: "en" | "ar-EG" = "en",
+  status: "new" | "diagnosing" | "diagnosed" | "error" = "diagnosed",
+) {
   const detail: Awaited<ReturnType<typeof attemptDetail>> = {
     attempt: {
       id: "pr16b2-attempt",
@@ -33,13 +37,16 @@ function render(stress?: StressPublic, locale: "en" | "ar-EG" = "en") {
       verdictTestNo: null,
       studentNote: null,
       locale,
-      status: "diagnosed",
+      status,
       maxHintLevel: 0,
       solvedAt: null,
       createdAt: 0,
     },
     problem: undefined,
-    diagnosis: { ...toPublic(DiagnosisSchema.parse(fixture)), replay: false, recordedAt: null },
+    diagnosis:
+      status === "diagnosed"
+        ? { ...toPublic(DiagnosisSchema.parse(fixture)), replay: false, recordedAt: null }
+        : undefined,
     stress,
     revealedHints: [],
     canExplain: false,
@@ -48,6 +55,23 @@ function render(stress?: StressPublic, locale: "en" | "ar-EG" = "en") {
   };
   return renderToStaticMarkup(React.createElement(DiagnosisCard, { detail, locale }));
 }
+it.each(["en", "ar-EG"] as const)("uses a friendly bug label and retry action in %s", (locale) => {
+  expect(render(undefined, locale)).toContain(
+    locale === "en" ? "Missed edge case" : "حالة خاصة فاتتك",
+  );
+  expect(render(undefined, locale)).not.toContain("edge_case");
+  for (const status of ["diagnosed", "error"] as const)
+    expect(render(undefined, locale, status)).toContain(
+      locale === "en" ? "Diagnose again" : "شخّص تاني",
+    );
+  expect(render(undefined, locale, "new")).not.toContain(
+    locale === "en" ? "Diagnose again" : "شخّص تاني",
+  );
+});
+it("shows an accessible skeleton on a diagnosing reload and a card on an error reload", () => {
+  expect(render(undefined, "en", "diagnosing")).toMatch(/role="status"[^>]*aria-busy="true"/);
+  expect(render(undefined, "en", "error")).toMatch(/role="alert"[^>]*class="[^"]*border/);
+});
 it.each(["en", "ar-EG"] as const)(
   "renders the persisted verified counterexample in %s with three LTR blocks",
   (locale) => {
@@ -70,7 +94,7 @@ it.each(["en", "ar-EG"] as const)(
 );
 it.each([
   ["no_mismatch", "No mismatch found in the tests."],
-  ["skipped", "Execution verification was skipped."],
+  ["skipped", "Your code was not run. Treat this diagnosis as a suggestion and test it yourself."],
   ["brute_untrusted", "The reference code failed the sample checks."],
   ["error", "Execution verification could not finish."],
   ["compile_error", "Your code did not compile."],
