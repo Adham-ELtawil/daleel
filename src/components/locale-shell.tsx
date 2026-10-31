@@ -7,7 +7,11 @@ import { t } from "@/src/i18n";
 
 const LocaleContext = createContext<"en" | "ar-EG">("en");
 export const useLocale = () => useContext(LocaleContext);
-export async function switchUiLocale(locale: "en" | "ar-EG", pathname: string, refresh: () => void) {
+export async function switchUiLocale(
+  locale: "en" | "ar-EG",
+  pathname: string,
+  refresh: () => void,
+) {
   const target = locale === "en" ? "ar-EG" : "en";
   document.cookie = `daleel_locale=${target}; Path=/; Max-Age=31536000; SameSite=Lax`;
   const attempt = /^\/attempt\/([^/]+)\/?$/.exec(pathname);
@@ -28,6 +32,7 @@ export function LocaleShell({
       <header className="flex flex-wrap items-center gap-4 border-b ps-6 pe-6 py-3">
         <Link href="/problem">{t("title", locale)}</Link>
         <Link href="/me">{t("history", locale)}</Link>
+        <Link href="/coach">{t("title", locale, "coach")}</Link>
         <button
           type="button"
           className="ms-auto underline"
