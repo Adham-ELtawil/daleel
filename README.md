@@ -28,7 +28,7 @@ Alternatively, set `DEMO_REPLAY=1` in `.env.local` and run `pnpm dev`. Leave `MO
 2. Read the diagnosis and reveal the hints in order. A **Replay** badge shows the original recording date. Keep the example code, locale and model/effort settings unchanged: replay matches the request hash exactly.
 3. Open `/coach` and select **Open demo team as coach_demo**. The seed provides 20 synthetic trainees and 120 attempts across two Cairo weeks. Inspect weak topics, trainees needing attention and the printable weekly report. If the entry is disabled, run `pnpm db:seed --demo-team` and reload.
 
-**Recording coverage in this checkout:** diagnosis and hint ladders are committed, including the fixed Watermelon re-check. Stress and explanation recordings still need the owner's re-recording. The recorder now includes explanation plus walkthrough for all three examples and stress when the local runner is enabled. Once matching explain recordings exist, reveal Hint 3 or choose **I'm stuck**, then open the explanation. Missing recordings produce an error; replay never falls back to a live Meta call.
+**Recording coverage in this checkout:** diagnosis, hint ladders, stress plans and explanation + walkthrough are recorded for all three examples (re-recorded 2026-10-31), plus the fixed Watermelon re-check. Two sets are committed: runner-free (`RUNNER_PROVIDER=none`, the default) and local-runner (`RUNNER_PROVIDER=local`, verified counterexamples). Reveal Hint 3 or choose **I'm stuck**, then open the explanation. Missing recordings produce an error; replay never falls back to a live Meta call.
 
 Recorded responses include date, model, effort, request hash, usage, cost and recording-tool provenance in [`recordings/`](recordings). Coach seed rows are explicitly synthetic. See [replay details](docs/REPLAY.md).
 
@@ -51,11 +51,11 @@ Set `RUNNER_PROVIDER=local` in `.env.local`; `pnpm smoke:runner` checks the sand
 The current runner supports C++17. Replay with the local runner also needs recordings made with that runner enabled. To refresh the judge recordings with your own key:
 
 ```sh
-DEMO_REPLAY=0 RUNNER_PROVIDER=none pnpm record:demo
 DEMO_REPLAY=0 RUNNER_PROVIDER=local pnpm record:demo
+DEMO_REPLAY=0 RUNNER_PROVIDER=none RECORD_REUSE=1 pnpm record:demo
 ```
 
-The second command requires the sandbox. These commands make live, billable Meta calls. `RECORD_MAX_USD` caps each recording run; review the generated files before sharing them. Keep both sets so judges can use the default runner-free path.
+The first command requires the sandbox; the second reuses its diagnoses (`RECORD_REUSE=1`) so both sets stay consistent. These commands make live, billable Meta calls. `RECORD_MAX_USD` caps each recording run; review the generated files before sharing them. Keep both sets so judges can use the default runner-free path.
 
 ## How Meta Muse Spark is used
 
