@@ -18,6 +18,10 @@ import { tempDb } from "@/tests/db/helpers";
 import fixture from "@/tests/fixtures/llm/diagnosis-a.json";
 import ladderFixture from "@/tests/fixtures/llm/ladder-a.json";
 import type { LadderDeps } from "@/src/services/ladder-service";
+import { stressStepConfig } from "@/src/llm/prompts/stress";
+import type { StressDeps } from "@/src/services/stress";
+import { fakeStressRunner } from "@/tests/runner/stress-fake";
+import stressPlan from "@/tests/fixtures/llm/stress-a.json";
 
 const code = readFileSync("docs/examples/cf-4A-watermelon/student.cpp", "utf8");
 const result = DiagnosisSchema.parse(fixture);
@@ -65,11 +69,101 @@ const deps = () => ({
   },
   log: vi.fn<(code: string) => void>(),
 });
+const stressDeps = () => ({
+  ...deps(),
+  stress: {
+    config: stressStepConfig({}),
+    runner: fakeStressRunner(),
+    llm: vi.fn<StressDeps["llm"]>(async () => ({ ...stressPlan, checker: "exact_tokens" })),
+  },
+});
 beforeEach(async () => {
   store = await tempDb();
   now = 1000;
   await seed(store.db, now);
   problemId = (await getProblemByExternalId(store.db, "codeforces", "4A"))!.id;
+});
+
+it("streams diagnosis -> stress -> ladder_ready -> done and reloads the same safe stress result", async () => {
+  const id = await attempt();
+  const d = stressDeps();
+  const events: DiagnoseEvent[] = [];
+  const response = await createDiagnoseHandler({ ...d, log: vi.fn(), db: async () => store.db })(
+    request(),
+    id,
+  );
+  await readSse(response.body!, (event) => events.push(event));
+  expect(events.slice(3).map((event) => event.event)).toEqual([
+    "diagnosis",
+    "stress",
+    "ladder_ready",
+    "done",
+  ]);
+  const verified = {
+    status: "verified",
+    failing_input: "2\n",
+    expected_output: "NO\n",
+    actual_output: "YES\n",
+    compile_output: null,
+    source: "test",
+    contradiction: false,
+  };
+  expect(events[4]).toEqual({ event: "stress", data: { result: verified } });
+  expect(d.ladder.llm.mock.calls[0][1].map((message) => message.content).join("\n")).toContain(
+    '"verified":true',
+  );
+  const detail = await createHandlers({ db: async () => store.db }).getAttempt(
+    new Request("http://localhost/api"),
+    id,
+  );
+  expect(await detail.json()).toMatchObject({ stress: verified });
+  expect(JSON.stringify(events)).not.toContain(stressPlan.brute_cpp);
+  expect(d.stress.llm).toHaveBeenCalledOnce();
+});
+it.each(["no_bug", "no_deps"])("skips stress for %s and still completes", async (reason) => {
+  const id = await attempt();
+  const d = stressDeps();
+  if (reason === "no_bug")
+    d.llm.mockResolvedValue({ ...result, bug_found: false, bug_class: "none" });
+  const events: DiagnoseEvent[] = [];
+  await diagnoseAttempt({ ...d, stress: reason === "no_deps" ? undefined : d.stress }, id, (e) =>
+    events.push(e),
+  );
+  expect(events.slice(3).map((e) => e.event)).toEqual(["diagnosis", "ladder_ready", "done"]);
+  expect(d.stress.llm).not.toHaveBeenCalled();
+  expect(d.stress.runner.compile).not.toHaveBeenCalled();
+});
+it("preserves diagnosis and completes the ladder after a stress runner error", async () => {
+  const id = await attempt();
+  const d = stressDeps();
+  d.stress.runner.compile.mockRejectedValueOnce(new Error("private runner detail"));
+  const events: DiagnoseEvent[] = [];
+  await diagnoseAttempt(d, id, (e) => events.push(e));
+  expect(events.slice(3).map((e) => e.event)).toEqual([
+    "diagnosis",
+    "stress",
+    "ladder_ready",
+    "done",
+  ]);
+  expect(events[4]).toMatchObject({ data: { result: { status: "error" } } });
+  expect(await status(id)).toBe("diagnosed");
+  expect(d.log).toHaveBeenCalledWith("stress_error");
+  expect(JSON.stringify(events)).not.toContain("private runner detail");
+});
+it("preserves stress source and contradiction across GET reload", async () => {
+  const id = await attempt();
+  const d = stressDeps();
+  d.llm.mockResolvedValue({ ...result, bug_class: "time_complexity" });
+  await diagnoseAttempt(d, id, () => {});
+  const response = await createHandlers({ db: async () => store.db }).getAttempt(
+    new Request("http://localhost/api"),
+    id,
+  );
+  const detail = await response.json();
+  expect(detail).toMatchObject({
+    stress: { status: "verified", source: "test", contradiction: true },
+  });
+  expect(JSON.stringify(detail)).not.toContain(stressPlan.brute_cpp);
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -279,25 +373,36 @@ it("prepares the ladder in the attempt locale after successful diagnosis", async
   ]);
   expect(JSON.stringify(d.ladder.llm.mock.calls[0][1])).toContain("Egyptian");
 });
-it.each(["en", "ar-EG"] as const)("post-fixes only Arabic public diagnosis fields in %s", async (locale) => {
-  const id = await attempt({ locale });
-  const d = deps();
-  const raw = {
-    ...result,
-    public_summary: "overflow محتمل",
-    approach: { ...result.approach, student_idea_public: "`w` بيتقسم" },
-  };
-  d.llm.mockResolvedValue(raw);
-  const events: DiagnoseEvent[] = [];
-  await diagnoseAttempt(d, id, (event) => events.push(event));
-  const saved = (await store.db.select().from(diagnoses).where(eq(diagnoses.attemptId, id)).get())!;
-  const value = StoredDiagnosisSchema.parse(JSON.parse(saved.resultJson)).value;
-  expect(value.public_summary).toBe(`${locale === "ar-EG" ? "الـ " : ""}${raw.public_summary}`);
-  expect(value.approach.student_idea_public).toBe(`${locale === "ar-EG" ? "الـ " : ""}${raw.approach.student_idea_public}`);
-  expect(value.root_cause_internal).toBe(raw.root_cause_internal);
-  expect(events.find((event) => event.event === "diagnosis")).toMatchObject({ data: { public: toPublic(value) } });
-  expect(d.llm).toHaveBeenCalledOnce();
-});
+it.each(["en", "ar-EG"] as const)(
+  "post-fixes only Arabic public diagnosis fields in %s",
+  async (locale) => {
+    const id = await attempt({ locale });
+    const d = deps();
+    const raw = {
+      ...result,
+      public_summary: "overflow محتمل",
+      approach: { ...result.approach, student_idea_public: "`w` بيتقسم" },
+    };
+    d.llm.mockResolvedValue(raw);
+    const events: DiagnoseEvent[] = [];
+    await diagnoseAttempt(d, id, (event) => events.push(event));
+    const saved = (await store.db
+      .select()
+      .from(diagnoses)
+      .where(eq(diagnoses.attemptId, id))
+      .get())!;
+    const value = StoredDiagnosisSchema.parse(JSON.parse(saved.resultJson)).value;
+    expect(value.public_summary).toBe(`${locale === "ar-EG" ? "الـ " : ""}${raw.public_summary}`);
+    expect(value.approach.student_idea_public).toBe(
+      `${locale === "ar-EG" ? "الـ " : ""}${raw.approach.student_idea_public}`,
+    );
+    expect(value.root_cause_internal).toBe(raw.root_cause_internal);
+    expect(events.find((event) => event.event === "diagnosis")).toMatchObject({
+      data: { public: toPublic(value) },
+    });
+    expect(d.llm).toHaveBeenCalledOnce();
+  },
+);
 it("ends with diagnosis + done when ladder generation fails and logs a safe ladder error with requestId", async () => {
   const id = await attempt();
   const d = deps();

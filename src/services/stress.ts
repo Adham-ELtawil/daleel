@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem, type Problem } from "@/src/db/repo/problems";
-import { StoredDiagnosisSchema, StressTestsSchema } from "@/src/db/json";
+import { StoredDiagnosisSchema, StoredStressTestsSchema } from "@/src/db/json";
+import type { StressPublic } from "@/src/domain/stress-public";
 import { attempts, diagnoses, stressRuns } from "@/src/db/schema";
 import type { CallOptions, ChatMessage, LlmStepConfig } from "@/src/llm/meta-client";
 import { buildStressMessages } from "@/src/llm/prompts/stress";
@@ -19,15 +20,7 @@ import {
 } from "@/src/runner/runner";
 import { HttpError } from "./http-error";
 
-export type StressPublic = {
-  status: typeof stressRuns.$inferSelect.status;
-  failing_input: string | null;
-  expected_output: string | null;
-  actual_output: string | null;
-  compile_output: string | null;
-  source: "sample" | "test" | null;
-  contradiction: boolean;
-};
+export type { StressPublic } from "@/src/domain/stress-public";
 export type StressDeps = {
   db: Db;
   llm: (
@@ -209,7 +202,13 @@ export async function stressAttempt(
     status: result.status,
     runner: runner.name,
     bruteCode,
-    testsJson: JSON.stringify(StressTestsSchema.parse(tests)),
+    testsJson: JSON.stringify(
+      StoredStressTestsSchema.parse({
+        tests,
+        source: result.source,
+        contradiction: result.contradiction,
+      }),
+    ),
     failingInput: result.failing_input,
     expectedOutput: result.expected_output,
     actualOutput: result.actual_output,

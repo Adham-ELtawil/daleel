@@ -18,6 +18,7 @@
     "smoke:diagnose": "tsx scripts/smoke-diagnose.ts",
     "smoke:ladder": "tsx scripts/smoke-ladder.ts",
     "smoke:recheck": "node --import tsx scripts/smoke-recheck.ts",
+    "smoke:stress": "node --import tsx scripts/smoke-stress.ts",
     "record:demo": "node --import tsx scripts/record-demo.ts",
     "eval": "node --import tsx scripts/eval.ts",
     "db:generate": "drizzle-kit generate",
