@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
+import { z } from "zod";
 import { diagnosisHighlights } from "@/src/domain/diagnosis-highlights";
 import { shouldAutostart } from "@/src/domain/attempt-ui";
 import { t } from "@/src/i18n";
@@ -53,9 +54,17 @@ export function DiagnosisCard({
         headers: { Accept: "text/event-stream", "Content-Type": "application/json" },
         body: "{}",
       });
-      if (!response.ok || !response.body) {
+      if (!response.ok) {
+        const blocked = z
+          .object({ error: z.object({ code: z.literal("contest_running") }) })
+          .safeParse(await response.json().catch(() => null));
+        if (blocked.success) {
+          setError("contest_running");
+          return;
+        }
         throw new Error("diagnosis_failed");
       }
+      if (!response.body) throw new Error("diagnosis_failed");
       await readSse(response.body, (event) => {
         if (event.event === "stage") setStage(event.data.name);
         if (event.event === "diagnosis")

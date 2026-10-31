@@ -1,13 +1,18 @@
 import type { Db } from "@/src/db/client";
+import { getProblem } from "@/src/db/repo/problems";
+import { attempts } from "@/src/db/schema";
+import { eq } from "drizzle-orm";
 import { ulid } from "ulid";
 import { z } from "zod";
 import { diagnoseAttempt, type DiagnoseDeps } from "./diagnose-service";
 import { HttpError } from "./http-error";
+import { guardContest, type ContestGuardDeps } from "./contest-guard";
 import { serializeSse } from "./sse";
 
 export function createDiagnoseHandler(
   deps: Omit<DiagnoseDeps, "db" | "log"> & {
     db: () => Promise<Db>;
+    cfApi?: ContestGuardDeps["cfApi"];
     log?: (event: { requestId: string; code: string }) => void;
   },
 ) {
@@ -18,6 +23,10 @@ export function createDiagnoseHandler(
       if (!z.strictObject({}).safeParse(await request.json().catch(() => null)).success)
         throw new HttpError(400, "invalid");
       const db = await deps.db();
+      const attempt = await db.select().from(attempts).where(eq(attempts.id, id)).get();
+      const problem = attempt && (await getProblem(db, attempt.problemId));
+      if (!problem) throw new HttpError(404, "not_found");
+      await guardContest(problem, { cfApi: deps.cfApi, log });
       let controller!: ReadableStreamDefaultController<Uint8Array>;
       let cancelled = false;
       const stream = new ReadableStream<Uint8Array>({

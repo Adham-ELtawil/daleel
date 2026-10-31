@@ -5,13 +5,13 @@ import { z } from "zod";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
 import { attempts } from "@/src/db/schema";
-import { createCfApi } from "@/src/judges/cf-api";
 import { resolveLocale } from "@/src/i18n";
 import { BudgetReached } from "@/src/llm/meta-client";
 import { explainAttempt, type ExplainDeps } from "./explain-service";
 import { getCurrentUser } from "./current-user";
 import { demoSession } from "./demo-service";
 import { HttpError } from "./http-error";
+import { defaultCfApi, guardContest } from "./contest-guard";
 import { resolveProblem } from "./problem-service";
 import {
   attemptDetail,
@@ -54,7 +54,6 @@ async function body<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
     );
   return result.data;
 }
-const defaultCfApi = createCfApi({ userAgent: process.env.SCRAPER_USER_AGENT ?? "Mozilla/5.0" });
 export function createHandlers(deps: {
   db: () => Promise<Db>;
   fetch?: typeof fetch;
@@ -65,15 +64,16 @@ export function createHandlers(deps: {
   explain?: Pick<ExplainDeps, "llm" | "config">;
 }) {
   const now = deps.now ?? Date.now;
-  async function run(request: Request, job: () => Promise<unknown>) {
+  async function run(request: Request, job: (log: (code: string) => void) => Promise<unknown>) {
     const requestId = request.headers.get("x-request-id") ?? ulid();
+    const log = (code: string) => (deps.log ?? console.error)({ requestId, code });
     const json = (data: unknown, status = 200) =>
       Response.json(data, { status, headers: { "x-request-id": requestId } });
     try {
-      return json(await job());
+      return json(await job(log));
     } catch (error) {
       const failure = error instanceof HttpError ? error : new HttpError(500, "internal_error");
-      if (failure.status >= 500) (deps.log ?? console.error)({ requestId, code: failure.code });
+      if (failure.status >= 500) log(failure.code);
       return json({ error: { code: failure.code, message: failure.message } }, failure.status);
     }
   }
@@ -90,7 +90,7 @@ export function createHandlers(deps: {
         return demoSession(await deps.db());
       }),
     resolve: (request: Request) =>
-      run(request, async () => {
+      run(request, async (log) => {
         const input = await body(request, resolveSchema);
         return {
           problem: await resolveProblem(input, {
@@ -98,6 +98,7 @@ export function createHandlers(deps: {
             fetch: deps.fetch ?? globalThis.fetch,
             cfApi: deps.cfApi ?? defaultCfApi,
             now,
+            log,
           }),
         };
       }),
@@ -108,10 +109,12 @@ export function createHandlers(deps: {
         return { problem };
       }),
     attempt: (request: Request) =>
-      run(request, async () => {
+      run(request, async (log) => {
         const fields = await body(request, attemptSchema);
         const db = await deps.db();
-        if (!(await getProblem(db, fields.problemId))) throw new HttpError(404, "not_found");
+        const problem = await getProblem(db, fields.problemId);
+        if (!problem) throw new HttpError(404, "not_found");
+        await guardContest(problem, { cfApi: deps.cfApi, log });
         const user = await getCurrentUser(db);
         if (fields.parentAttemptId) {
           const parent = await db

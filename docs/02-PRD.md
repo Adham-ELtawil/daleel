@@ -114,6 +114,7 @@ Layout rule: in Arabic mode the whole UI is `dir="rtl"`; **code, problem stateme
 
 ### US-9 Live-contest guard (M)
 - AC1: For a CF problem whose contest has `phase` ∈ {`BEFORE`, `CODING`} in `contest.list` (cached 10 min), diagnosis is refused with a friendly message. Unit-tested with a fixture.
+- PR-21: Resolve, attempt creation and diagnosis return 423 `contest_running`; creation and diagnosis recheck cached problems before saving or reusing a diagnosis. Intake and diagnosis show the localized message. Unknown phases and CF API failures allow the request; failures log `contest_check_failed` with `requestId`. AtCoder is skipped because contest phase data is unavailable from the current adapter.
 
 ### US-10 History (M)
 - AC1: `/me` lists the trainee's attempts newest first with problem, status, max hint level, date.

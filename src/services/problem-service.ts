@@ -10,7 +10,8 @@ import { parseProblemUrl } from "@/src/judges/parse-url";
 import { fetchProblemHtml } from "@/src/judges/fetch-page";
 import { parseCodeforcesHtml } from "@/src/judges/codeforces";
 import { parseAtcoderHtml } from "@/src/judges/atcoder";
-import { createCfApi, isContestRunning, ratingAndTags } from "@/src/judges/cf-api";
+import { createCfApi, ratingAndTags } from "@/src/judges/cf-api";
+import { guardContest } from "./contest-guard";
 import { HttpError } from "./http-error";
 
 export async function resolveProblem(
@@ -20,6 +21,7 @@ export async function resolveProblem(
     fetch: typeof fetch;
     cfApi: Pick<ReturnType<typeof createCfApi>, "contestList" | "problemsetProblems">;
     now: () => number;
+    log?: (code: string) => void;
   },
 ) {
   const save = async (problem: NewProblem) => {
@@ -59,13 +61,9 @@ export async function resolveProblem(
   if (new URL(url).pathname.startsWith("/gym/")) throw new HttpError(502, "fetch_failed");
   const cached = await getProblemByExternalId(deps.db, parsed.judge, parsed.externalId);
   if (cached) return cached;
+  await guardContest(parsed, deps);
   let page: ReturnType<typeof parseCodeforcesHtml>;
   try {
-    if (
-      parsed.judge === "codeforces" &&
-      isContestRunning(Number(parsed.contestId), await deps.cfApi.contestList())
-    )
-      throw new HttpError(423, "contest_running");
     const html = await fetchProblemHtml(url, {
       fetch: deps.fetch,
       userAgent: process.env.SCRAPER_USER_AGENT ?? "Mozilla/5.0",
