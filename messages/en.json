@@ -37,6 +37,26 @@
     "missing": "No execution result is available.",
     "contradiction": "The diagnosis may be off; check the counterexample."
   },
+  "walkthrough": {
+    "title": "Walkthrough",
+    "full_explanation": "Full explanation",
+    "fix": "Fix your lines",
+    "line": "Line",
+    "complexity": "Complexity",
+    "previous": "← Previous",
+    "next": "Next →",
+    "play": "Play",
+    "pause": "Pause",
+    "speed": "Speed",
+    "slow": "0.5x",
+    "normal": "1x",
+    "fast": "2x",
+    "frame": "Frame",
+    "variables": "Variables",
+    "name": "Name",
+    "value": "Value",
+    "load_error": "We could not load the explanation. Please try again."
+  },
   "intake": {
     "title": "New attempt",
     "url": "Problem link",
