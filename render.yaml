@@ -1,0 +1,28 @@
+# Render Blueprint: one free web service built from ./Dockerfile.
+# Data is an ephemeral SQLite file (reset on every deploy/restart).
+services:
+  - type: web
+    name: daleel
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: MODEL_API_KEY
+        sync: false # paste your Meta Model API key when Render asks
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DAILY_BUDGET_USD
+        value: "2"
+      - key: MAX_ATTEMPTS_PER_USER_PER_DAY
+        value: "30"
+      - key: DEMO_REPLAY
+        value: "0"
+      - key: RUNNER_PROVIDER
+        value: auto # local if the sandbox works in the container, otherwise none
+      - key: DEFAULT_LOCALE
+        value: ar-EG
+      - key: MODEL_API_BASE_URL
+        value: https://api.meta.ai/v1
