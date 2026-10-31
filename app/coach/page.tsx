@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { connect, getDb } from "@/src/db/client";
-import { teams } from "@/src/db/schema";
+import { teams, users } from "@/src/db/schema";
+import { DemoCoach } from "@/src/components/demo-coach";
 import { bugClassLabel, localeAttrs, t } from "@/src/i18n";
 import { getCurrentUser } from "@/src/services/current-user";
 import { HttpError } from "@/src/services/http-error";
@@ -17,17 +18,26 @@ export default async function CoachPage({
   const locale = await uiLocale();
   const tr = (key: Parameters<typeof t<"coach">>[0]) => t(key, locale, "coach");
   const layout = "ms-auto me-auto max-w-5xl space-y-6 ps-6 pe-6 py-10";
-  const message = (text: string) => (
+  const message = (text: string, demoAvailable?: boolean) => (
     <main {...localeAttrs(locale)} className={layout}>
       <h1 className="text-2xl font-bold">{tr("title")}</h1>
       <p role="status" className="rounded border p-4">
         {text}
       </p>
+      {demoAvailable !== undefined && <DemoCoach locale={locale} available={demoAvailable} />}
     </main>
   );
   const db = await connect(getDb());
   const user = await getCurrentUser(db, (await headers()).get("cookie"));
-  if (user.role !== "coach" || user.isGuest) return message(tr("coach_only"));
+  if (user.role !== "coach" || user.isGuest) {
+    const demo = await db
+      .select({ id: teams.id })
+      .from(teams)
+      .innerJoin(users, eq(users.id, teams.coachId))
+      .where(and(eq(users.handle, "coach_demo"), eq(teams.inviteCode, "DEMO0001")))
+      .get();
+    return message(tr("coach_only"), Boolean(demo));
+  }
   const owned = await db
     .select()
     .from(teams)

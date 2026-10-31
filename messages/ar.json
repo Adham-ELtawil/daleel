@@ -1,6 +1,7 @@
 {
   "landing": {
     "title": "Daleel",
+    "navigation": "التنقل الرئيسي",
     "tagline": "كوتش AI للـ competitive programming.",
     "description": "حط مسألة Codeforces أو AtCoder والكود بتاعك. دليل بيساعدك تلاقي الـ bug بواحدة واحدة من غير ما يحرق الفكرة.",
     "status": "لسه بنبني النسخة الأولى."
@@ -59,6 +60,8 @@
   },
   "coach": {
     "title": "متابعة الفريق",
+    "demo_entry": "افتح الفريق التجريبي باسم coach_demo",
+    "demo_seed_hint": "شغّل `pnpm db:seed --demo-team` وبعدين حمّل الصفحة تاني.",
     "team": "الفريق",
     "week": "الأسبوع بيبدأ يوم الاتنين بتوقيت القاهرة",
     "show": "اعرض الإحصائيات",
@@ -122,6 +125,12 @@
     "runtime_error": "الكود بيقع وقت التشغيل",
     "other": "مشكلة تانية",
     "none": "مفيش bug واضح"
+  },
+  "statement": {
+    "title": "نص المسألة",
+    "inputSpecMd": "وصف الـ input",
+    "outputSpecMd": "وصف الـ output",
+    "sample": "المثال"
   },
   "intake": {
     "diagnose_again": "شخّص تاني",

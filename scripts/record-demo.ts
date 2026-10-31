@@ -14,11 +14,14 @@ import { RecordEnvSchema } from "@/src/env";
 import { createMetaClient } from "@/src/llm/meta-client";
 import { diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { explainStepConfig } from "@/src/llm/prompts/explain";
 import { stressStepConfig } from "@/src/llm/prompts/stress";
 import { createRunner } from "@/src/runner/factory";
 import { createReplayStore } from "@/src/llm/replay/store";
 import { getCurrentUser } from "@/src/services/current-user";
 import { diagnoseAttempt } from "@/src/services/diagnose-service";
+import { markAttempt } from "@/src/services/attempt-service";
+import { explainAttempt } from "@/src/services/explain-service";
 import { createHandlers } from "@/src/services/handlers";
 
 /** Shared real service flow, also used for offline verification against recordings. */
@@ -78,6 +81,11 @@ export async function runDemoFlows(
     };
     const parent = await create("student.cpp");
     await diagnose(parent, true);
+    await markAttempt({ db, now }, parent, "stuck");
+    await explainAttempt(
+      { db, now, llm: client.callStructured, config: explainStepConfig(env) },
+      parent,
+    );
     if (example.id === "4A") await diagnose(await create("fixed.cpp", parent), false);
   }
 }
