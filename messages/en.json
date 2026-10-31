@@ -92,6 +92,8 @@
     "fetch_failed": "We could not read the problem page. Paste the statement below to continue.",
     "contest_running": "This contest is still running. Please come back after it ends.",
     "internal_error": "Something went wrong. Please try again.",
+    "forbidden": "This session cannot access that team or action.",
+    "role_conflict": "This handle already belongs to a different role.",
     "diagnose": "Diagnose",
     "try_again": "Try again",
     "reading": "Reading the problem…",

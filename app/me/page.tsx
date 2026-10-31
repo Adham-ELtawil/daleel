@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { connect, getDb } from "@/src/db/client";
 import { formatAttemptDate } from "@/src/domain/attempt-ui";
 import { t } from "@/src/i18n";
@@ -15,6 +16,7 @@ export default async function HistoryPage({
   const { items, nextCursor } = await attemptHistory(
     await connect(getDb()),
     typeof cursor === "string" ? cursor : null,
+    (await headers()).get("cookie"),
   );
   return (
     <main className="ms-auto me-auto max-w-3xl space-y-4 ps-6 pe-6 py-10">

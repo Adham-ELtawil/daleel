@@ -20,11 +20,12 @@ import { ensureLadder, type LadderDeps } from "./ladder-service";
 
 export type AttemptDeps = {
   db: Db;
+  cookie?: string | null;
   now: () => number;
   ladder?: Pick<LadderDeps, "llm" | "config">;
 };
-export async function ownedAttempt(db: Db, id: string) {
-  const user = await getCurrentUser(db);
+export async function ownedAttempt(db: Db, id: string, cookie?: string | null) {
+  const user = await getCurrentUser(db, cookie);
   const attempt = await db
     .select()
     .from(attempts)
@@ -50,7 +51,7 @@ function publicHint(hint: HintLadder["levels"][number]) {
 }
 export async function revealHint(deps: AttemptDeps, id: string, locale?: "en" | "ar-EG") {
   const { db, now } = deps;
-  const attempt = await ownedAttempt(db, id);
+  const attempt = await ownedAttempt(db, id, deps.cookie);
   if (
     !(await db
       .select({ id: diagnoses.id })
@@ -96,7 +97,7 @@ export async function revealHint(deps: AttemptDeps, id: string, locale?: "en" | 
   };
 }
 export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en" | "ar-EG") {
-  const stored = await ownedAttempt(deps.db, id);
+  const stored = await ownedAttempt(deps.db, id, deps.cookie);
   const problem = await getProblem(deps.db, stored.problemId);
   const diagnosis = await deps.db.select().from(diagnoses).where(eq(diagnoses.attemptId, id)).get();
   const reveals = await deps.db
@@ -167,7 +168,7 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
   };
 }
 export async function markAttempt(deps: AttemptDeps, id: string, status: "stuck" | "solved") {
-  await ownedAttempt(deps.db, id);
+  await ownedAttempt(deps.db, id, deps.cookie);
   await deps.db
     .update(attempts)
     .set({ status, solvedAt: status === "solved" ? deps.now() : null })
@@ -175,8 +176,8 @@ export async function markAttempt(deps: AttemptDeps, id: string, status: "stuck"
   return status === "stuck" ? { canExplain: true } : { ok: true };
 }
 const CursorSchema = z.tuple([z.number().int().nonnegative(), z.string().min(1)]);
-export async function attemptHistory(db: Db, cursor: string | null) {
-  const user = await getCurrentUser(db);
+export async function attemptHistory(db: Db, cursor: string | null, cookie?: string | null) {
+  const user = await getCurrentUser(db, cookie);
   let before: SQL | undefined;
   if (cursor !== null) {
     let raw: unknown;

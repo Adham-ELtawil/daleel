@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { connect, getDb } from "@/src/db/client";
 import { DiagnosisCard } from "@/src/components/diagnosis-card";
 import { attemptDetail } from "@/src/services/attempt-service";
@@ -20,6 +21,7 @@ export default async function AttemptPage({
   const detail = await attemptDetail(
     {
       db: await connect(getDb()),
+      cookie: (await headers()).get("cookie"),
       now: Date.now,
       ladder: { llm: callModel, config: ladderStepConfig(process.env) },
     },
