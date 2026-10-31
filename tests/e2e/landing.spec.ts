@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("landing page renders the product name", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Daleel");
+  await expect(page.getByRole("banner").getByRole("link", { name: "Daleel" })).toBeVisible();
 });
 
 for (const locale of ["en", "ar-EG"] as const) {

@@ -29,34 +29,39 @@ export function LocaleShell({
   const router = useRouter();
   return (
     <LocaleContext.Provider value={locale}>
-      <header className="flex flex-wrap items-center gap-4 border-b ps-6 pe-6 py-3">
-        <Link href="/" className="flex items-center gap-2 font-bold">
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            viewBox="0 0 24 24"
-            className="size-7 text-teal-600"
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-soft backdrop-blur">
+        <div className="ms-auto me-auto flex max-w-6xl flex-wrap items-center gap-5 ps-6 pe-6 py-4">
+          <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-bold text-ink">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              viewBox="0 0 24 24"
+              className="size-8 text-accent"
+            >
+              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+              <path d="m16 8-2 6-6 2 2-6Z" fill="currentColor" />
+            </svg>
+            <bdi dir="ltr">{t("title", locale, "landing")}</bdi>
+          </Link>
+          <nav
+            aria-label={t("navigation", locale, "landing")}
+            className="order-last flex basis-full flex-wrap gap-4 text-sm font-medium sm:order-none sm:basis-auto"
           >
-            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
-            <path d="m16 8-2 6-6 2 2-6Z" fill="currentColor" />
-          </svg>
-          <bdi dir="ltr">{t("title", locale, "landing")}</bdi>
-        </Link>
-        <nav aria-label={t("navigation", locale, "landing")} className="flex flex-wrap gap-4">
-          <Link href="/problem">{t("title", locale)}</Link>
-          <Link href="/me">{t("history", locale)}</Link>
-          <Link href="/coach">{t("title", locale, "coach")}</Link>
-        </nav>
-        <button
-          type="button"
-          className="ms-auto underline"
-          aria-label={t("ui_language", locale)}
-          onClick={() => {
-            void switchUiLocale(locale, window.location.pathname, () => router.refresh());
-          }}
-        >
-          {t(locale === "en" ? "arabic" : "english", locale)}
-        </button>
+            <Link href="/problem">{t("title", locale)}</Link>
+            <Link href="/me">{t("history", locale)}</Link>
+            <Link href="/coach">{t("title", locale, "coach")}</Link>
+          </nav>
+          <button
+            type="button"
+            className="ms-auto button button-secondary shrink-0"
+            aria-label={t("ui_language", locale)}
+            onClick={() => {
+              void switchUiLocale(locale, window.location.pathname, () => router.refresh());
+            }}
+          >
+            {t(locale === "en" ? "arabic" : "english", locale)}
+          </button>
+        </div>
       </header>
       {children}
     </LocaleContext.Provider>

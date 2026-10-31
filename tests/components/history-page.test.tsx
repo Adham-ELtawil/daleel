@@ -17,15 +17,13 @@ beforeEach(async () => {
   vi.stubGlobal("React", React);
   store = await tempDb();
   vi.stubEnv("DATABASE_URL", store.url);
-  await store.db
-    .insert(users)
-    .values({
-      ...rows.user,
-      id: "guest_local",
-      handle: "guest_local",
-      role: "student",
-      locale: "en",
-    });
+  await store.db.insert(users).values({
+    ...rows.user,
+    id: "guest_local",
+    handle: "guest_local",
+    role: "student",
+    locale: "en",
+  });
   await store.db.insert(problems).values({ ...rows.problem, judge: "codeforces" });
 });
 afterEach(() => {
@@ -43,15 +41,13 @@ async function render() {
 }
 it.each(["en", "ar-EG"])("shows localized bug classes in history in %s", async (locale) => {
   request.locale = locale;
-  await store.db
-    .insert(attempts)
-    .values({
-      ...rows.attempt,
-      userId: "guest_local",
-      language: "cpp17",
-      locale: "en",
-      status: "diagnosed",
-    });
+  await store.db.insert(attempts).values({
+    ...rows.attempt,
+    userId: "guest_local",
+    language: "cpp17",
+    locale: "en",
+    status: "diagnosed",
+  });
   await store.db.insert(diagnoses).values(rows.diagnosis);
   const html = await render();
   expect(html).toContain(locale === "en" ? "Missed edge case" : "حالة خاصة فاتتك");
@@ -60,7 +56,7 @@ it.each(["en", "ar-EG"])("shows localized bug classes in history in %s", async (
 it.each(["en", "ar-EG"])("links the empty history to a new attempt in %s", async (locale) => {
   request.locale = locale;
   const html = await render();
-  expect(html).toMatch(/role="status"[^>]*class="[^"]*border/);
+  expect(html).toMatch(/role="status"[^>]*class="[^"]*\bcard\b/);
   expect(html).toContain('href="/problem"');
   expect(html).toContain(locale === "en" ? "New attempt" : "محاولة جديدة");
 });
