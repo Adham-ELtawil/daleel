@@ -9,6 +9,8 @@ import { resolveLocale } from "@/src/i18n";
 import { BudgetReached } from "@/src/llm/meta-client";
 import { explainAttempt, type ExplainDeps } from "./explain-service";
 import { getCurrentUser } from "./current-user";
+import { SessionSchema, startSession } from "./session";
+import { createTeam, InviteSchema, joinTeam, teamStats } from "./teams";
 import { demoSession } from "./demo-service";
 import { HttpError } from "./http-error";
 import { defaultCfApi, guardContest } from "./contest-guard";
@@ -43,6 +45,7 @@ const attemptSchema = z.strictObject({
   parentAttemptId: z.string().min(1).optional(),
 });
 const localeSchema = z.strictObject({ locale: z.enum(["en", "ar-EG"]).optional() });
+const teamSchema = z.strictObject({ name: z.string().trim().min(1).max(100) });
 async function body<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
   const result = schema.safeParse(await request.json().catch(() => null));
   if (!result.success)
@@ -70,20 +73,48 @@ export function createHandlers(deps: {
     const json = (data: unknown, status = 200) =>
       Response.json(data, { status, headers: { "x-request-id": requestId } });
     try {
-      return json(await job(log));
+      const result = await job(log);
+      if (!(result instanceof Response)) return json(result);
+      result.headers.set("x-request-id", requestId);
+      return result;
     } catch (error) {
       const failure = error instanceof HttpError ? error : new HttpError(500, "internal_error");
       if (failure.status >= 500) log(failure.code);
       return json({ error: { code: failure.code, message: failure.message } }, failure.status);
     }
   }
-  const attemptDeps = async () => ({ ...deps, db: await deps.db(), now });
+  const attemptDeps = async (request: Request) => ({
+    ...deps,
+    db: await deps.db(),
+    now,
+    cookie: request.headers.get("cookie"),
+  });
   const mark = (request: Request, id: string, status: "stuck" | "solved") =>
     run(request, async () => {
       await body(request, z.strictObject({}));
-      return markAttempt(await attemptDeps(), id, status);
+      return markAttempt(await attemptDeps(request), id, status);
     });
   return {
+    session: (request: Request) =>
+      run(request, async () => startSession(await deps.db(), await body(request, SessionSchema))),
+    createTeam: (request: Request) =>
+      run(request, async () => {
+        const { name } = await body(request, teamSchema);
+        const { db, cookie } = await attemptDeps(request);
+        return createTeam(db, await getCurrentUser(db, cookie), name);
+      }),
+    joinTeam: (request: Request) =>
+      run(request, async () => {
+        const { inviteCode } = await body(request, z.strictObject({ inviteCode: InviteSchema }));
+        const { db, cookie } = await attemptDeps(request);
+        return { team: await joinTeam(db, await getCurrentUser(db, cookie), inviteCode) };
+      }),
+    teamStats: (request: Request, id: string) =>
+      run(request, async () => {
+        const { db, cookie } = await attemptDeps(request);
+        const week = new URL(request.url).searchParams.get("week");
+        return teamStats(db, await getCurrentUser(db, cookie), id, week);
+      }),
     demo: (request: Request) =>
       run(request, async () => {
         await body(request, z.strictObject({}));
@@ -115,7 +146,7 @@ export function createHandlers(deps: {
         const problem = await getProblem(db, fields.problemId);
         if (!problem) throw new HttpError(404, "not_found");
         await guardContest(problem, { cfApi: deps.cfApi, log });
-        const user = await getCurrentUser(db);
+        const user = await getCurrentUser(db, request.headers.get("cookie"));
         if (fields.parentAttemptId) {
           const parent = await db
             .select({ problemId: attempts.problemId })
@@ -143,14 +174,15 @@ export function createHandlers(deps: {
     nextHint: (request: Request, id: string) =>
       run(request, async () => {
         const { locale } = await body(request, localeSchema);
-        return revealHint(await attemptDeps(), id, locale);
+        return revealHint(await attemptDeps(request), id, locale);
       }),
     explain: (request: Request, id: string) =>
       run(request, async () => {
         const { locale } = await body(request, localeSchema);
         if (!deps.explain) throw new HttpError(500, "internal_error");
         try {
-          return await explainAttempt({ db: await deps.db(), now, ...deps.explain }, id, locale);
+          const options = { ...(await attemptDeps(request)), ...deps.explain };
+          return await explainAttempt(options, id, locale);
         } catch (error) {
           if (error instanceof BudgetReached) throw new HttpError(503, "budget_reached");
           throw error;
@@ -162,13 +194,17 @@ export function createHandlers(deps: {
           locale: new URL(request.url).searchParams.get("locale") ?? undefined,
         });
         if (!parsed.success) throw new HttpError(400, "invalid");
-        return attemptDetail(await attemptDeps(), id, parsed.data.locale);
+        return attemptDetail(await attemptDeps(request), id, parsed.data.locale);
       }),
     stuck: (request: Request, id: string) => mark(request, id, "stuck"),
     solved: (request: Request, id: string) => mark(request, id, "solved"),
     history: (request: Request) =>
       run(request, async () =>
-        attemptHistory(await deps.db(), new URL(request.url).searchParams.get("cursor")),
+        attemptHistory(
+          await deps.db(),
+          new URL(request.url).searchParams.get("cursor"),
+          request.headers.get("cookie"),
+        ),
       ),
   };
 }

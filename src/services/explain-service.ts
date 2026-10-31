@@ -19,6 +19,7 @@ import { HttpError } from "./http-error";
 
 export type ExplainDeps = {
   db: Db;
+  cookie?: string | null;
   now: () => number;
   config: LlmStepConfig;
   llm: (
@@ -39,11 +40,11 @@ function readWalkthrough(row: typeof walkthroughs.$inferSelect) {
   };
 }
 export async function explainAttempt(
-  { db, now, config, llm }: ExplainDeps,
+  { db, now, config, llm, cookie }: ExplainDeps,
   id: string,
   locale?: "en" | "ar-EG",
 ) {
-  const attempt = await ownedAttempt(db, id);
+  const attempt = await ownedAttempt(db, id, cookie);
   const [{ total }] = await db
     .select({ total: count() })
     .from(hintReveals)

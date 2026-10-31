@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+export const SessionEnvSchema = z
+  .object({
+    SESSION_SECRET: z.string().default(""),
+    NODE_ENV: z.string().optional(),
+  })
+  .refine(
+    ({ SESSION_SECRET, NODE_ENV }) =>
+      SESSION_SECRET.length >= 32 || (!SESSION_SECRET && NODE_ENV !== "production"),
+    { path: ["SESSION_SECRET"], message: "SESSION_SECRET must contain at least 32 characters" },
+  );
+
 export const RunnerEnvSchema = z.object({
   RUNNER_PROVIDER: z.enum(["local", "none"]).default("none"),
 });
