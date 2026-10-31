@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { connect, getDb } from "@/src/db/client";
 import { DiagnosisCard } from "@/src/components/diagnosis-card";
+import { StatementPanel } from "@/src/components/statement-panel";
 import { attemptDetail } from "@/src/services/attempt-service";
 import { HttpError } from "@/src/services/http-error";
 import { callModel } from "@/src/services/runtime";
@@ -43,6 +44,7 @@ export default async function AttemptPage({
           {id}
         </code>
       </p>
+      <StatementPanel problem={detail.problem} locale={locale} />
       <DiagnosisCard
         key={`${id}:${locale}`}
         detail={detail}

@@ -1,6 +1,7 @@
 {
   "landing": {
     "title": "Daleel",
+    "navigation": "Main navigation",
     "tagline": "An AI training coach for competitive programmers.",
     "description": "Paste a Codeforces or AtCoder problem and your C++ code. Daleel finds where it breaks, proves it with a failing test, and teaches the fix through a hint ladder, without spoiling the solution.",
     "status": "Early preview: the coach is under construction."
@@ -59,6 +60,8 @@
   },
   "coach": {
     "title": "Coach dashboard",
+    "demo_entry": "Open demo team as coach_demo",
+    "demo_seed_hint": "Run `pnpm db:seed --demo-team`, then reload this page.",
     "team": "Team",
     "week": "Week starting Monday, Cairo time",
     "show": "Show stats",
@@ -122,6 +125,12 @@
     "runtime_error": "Code crashes while running",
     "other": "Another issue",
     "none": "No bug found"
+  },
+  "statement": {
+    "title": "Problem statement",
+    "inputSpecMd": "Input specification",
+    "outputSpecMd": "Output specification",
+    "sample": "Sample"
   },
   "intake": {
     "diagnose_again": "Diagnose again",

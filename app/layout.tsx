@@ -6,7 +6,19 @@ import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await uiLocale();
-  return { title: t("title", locale, "landing"), description: t("description", locale, "landing") };
+  const title = t("title", locale, "landing");
+  const description = t("description", locale, "landing");
+  return {
+    title,
+    description,
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      siteName: title,
+      locale: locale === "en" ? "en_US" : "ar_EG",
+    },
+  };
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

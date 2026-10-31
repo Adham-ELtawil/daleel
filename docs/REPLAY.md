@@ -55,7 +55,14 @@ DEMO_REPLAY=0 RECORD_MAX_USD=0.50 pnpm record:demo
 ```
 
 The script enables `DEMO_RECORD=1`, migrates/seeds a temporary database, runs
-diagnose and ladder for all three examples, then also re-checks fixed 4A code.
+diagnose and ladder for all three examples, marks each stuck and records its
+explanation plus walkthrough. It also re-checks fixed 4A code. With
+`RUNNER_PROVIDER=local`, it records stress before each buggy attempt's ladder.
+Record once with `RUNNER_PROVIDER=none` and again with `local` to retain both
+judge paths: stress changes the ladder and explanation request hashes.
+Committed explanation replay tests skip when the matching recording is absent;
+fake-transport tests always cover the complete flow. The owner will re-record
+stress and explain after PR-24B; no live calls were made in that change.
 It removes the temporary DB, prints per-call and total costs, and exits 2 without
 a key or valid configuration. Record mode reserves uncached input at one token
 per UTF-8 byte plus envelope overhead and maximum completion tokens before

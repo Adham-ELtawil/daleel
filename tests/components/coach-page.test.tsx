@@ -17,6 +17,7 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers({ cookie: request.cookie }),
   cookies: async () => ({ get: () => ({ value: request.locale }) }),
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 let store: Awaited<ReturnType<typeof tempDb>>;
 let closePageDb: (() => void) | undefined;
 let sign: (id: string) => string;
@@ -197,6 +198,33 @@ it.each([{}, { team: "private" }, { week: "2026-10-27" }, { week: "bad" }])(
 it("does not expose dashboard data to a signed trainee", async () => {
   request.cookie = `daleel_session=${sign("trainee_01")}`;
   expect(await render({ team: "team_a" })).not.toContain("<table");
+});
+it.each(["en", "ar-EG"] as const)(
+  "offers demo coach entry with a seed hint when unavailable in %s",
+  async (locale) => {
+    request.locale = locale;
+    request.cookie = "";
+    const html = await render();
+    expect(html).toContain(
+      locale === "en" ? "Open demo team as coach_demo" : "افتح الفريق التجريبي باسم coach_demo",
+    );
+    expect(html).toMatch(/<button[^>]*disabled=""/);
+    expect(html).toMatch(/<code[^>]*dir="ltr"[^>]*>pnpm db:seed --demo-team<\/code>/);
+    expect(html).not.toContain("<table");
+  },
+);
+it("enables demo entry for a trainee after seeding, then shows the demo coach dashboard", async () => {
+  await seed(store.db, Date.now(), true);
+  request.cookie = `daleel_session=${sign("trainee_01")}`;
+  const entry = await render();
+  expect(entry).toContain("Open demo team as coach_demo");
+  expect(entry).not.toMatch(/<button[^>]*disabled=""/);
+  expect(entry).not.toContain("pnpm db:seed --demo-team");
+  request.cookie = `daleel_session=${sign("coach_demo")}`;
+  const dashboard = await render();
+  expect(dashboard).toContain("DEMO0001");
+  expect(dashboard).toContain("<table");
+  expect(dashboard).not.toContain("Open demo team as coach_demo");
 });
 it("has nonempty Egyptian Arabic copy, matching English keys", () => {
   expect(en).toHaveProperty("coach");

@@ -30,9 +30,23 @@ export function LocaleShell({
   return (
     <LocaleContext.Provider value={locale}>
       <header className="flex flex-wrap items-center gap-4 border-b ps-6 pe-6 py-3">
-        <Link href="/problem">{t("title", locale)}</Link>
-        <Link href="/me">{t("history", locale)}</Link>
-        <Link href="/coach">{t("title", locale, "coach")}</Link>
+        <Link href="/" className="flex items-center gap-2 font-bold">
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            viewBox="0 0 24 24"
+            className="size-7 text-teal-600"
+          >
+            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="m16 8-2 6-6 2 2-6Z" fill="currentColor" />
+          </svg>
+          <bdi dir="ltr">{t("title", locale, "landing")}</bdi>
+        </Link>
+        <nav aria-label={t("navigation", locale, "landing")} className="flex flex-wrap gap-4">
+          <Link href="/problem">{t("title", locale)}</Link>
+          <Link href="/me">{t("history", locale)}</Link>
+          <Link href="/coach">{t("title", locale, "coach")}</Link>
+        </nav>
         <button
           type="button"
           className="ms-auto underline"

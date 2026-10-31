@@ -12,6 +12,9 @@ import { seed } from "@/src/db/seed";
 import { createMetaClient, type ChatMessage, type LlmStepConfig } from "@/src/llm/meta-client";
 import { buildDiagnoseMessages, diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
 import { buildLadderMessages, ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { buildExplainMessages, explainStepConfig } from "@/src/llm/prompts/explain";
+import { ExplanationSchema } from "@/src/llm/schemas/explanation";
+import { validateExplanation } from "@/src/domain/explanation-validate";
 import { DiagnosisSchema } from "@/src/llm/schemas/diagnosis";
 import { HintLadderSchema } from "@/src/llm/schemas/ladder";
 import { validateDiagnosis } from "@/src/domain/diagnosis-validate";
@@ -79,6 +82,20 @@ const ladder = await findRecording(
   }),
   HintLadderSchema,
 );
+const explainConfig = explainStepConfig({});
+const explanation = await createReplayStore().read(
+  "explain",
+  hashFor(
+    explainConfig,
+    buildExplainMessages({
+      problem,
+      attempt: student,
+      diagnosis: validateDiagnosis(diagnosis.response, code),
+      stress: null,
+      locale: "en",
+    }),
+  ),
+);
 
 let store: Awaited<ReturnType<typeof tempDb>>;
 const now = () => Date.UTC(2026, 9, 30, 13);
@@ -110,7 +127,12 @@ function setup(mode: "replay" | "off", fetch = vi.fn(noNetworkFetch), db = store
   const ladderDeps = { llm: client.callStructured, config: ladderStepConfig({}) };
   return {
     fetch,
-    handlers: createHandlers({ db: async () => db, now, ladder: ladderDeps }),
+    handlers: createHandlers({
+      db: async () => db,
+      now,
+      ladder: ladderDeps,
+      explain: { llm: client.callStructured, config: explainConfig },
+    }),
     diagnose: createDiagnoseHandler({
       db: async () => db,
       now,
@@ -156,6 +178,24 @@ it("replays the committed 4A diagnosis and ladder with no key or network calls",
   });
   expect(flow.fetch).not.toHaveBeenCalled();
 });
+it.skipIf(!explanation)(
+  "replays the committed explanation and walkthrough after unlocking, when recorded",
+  async () => {
+    const flow = setup("replay");
+    const id = await attempt(flow.handlers);
+    await diagnose(flow, id);
+    expect((await flow.handlers.stuck(request(), id)).status).toBe(200);
+    const response = await flow.handlers.explain(request(), id);
+    expect(response.status).toBe(200);
+    const { trace, ...expected } = validateExplanation(
+      ExplanationSchema.parse(explanation!.response),
+      code,
+      null,
+    );
+    expect(await response.json()).toEqual({ explanation: expected, trace });
+    expect(flow.fetch).not.toHaveBeenCalled();
+  },
+);
 it("finds re-recorded 4A content using its current provenance rather than an old filename", async () => {
   const root = mkdtempSync(join(tmpdir(), "pr16-replay-"));
   try {
