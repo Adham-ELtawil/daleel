@@ -1,0 +1,51 @@
+[
+  {
+    "userId": "trainee_01",
+    "status": "new",
+    "maxHintLevel": 0,
+    "topics": ["math"],
+    "bugClass": "edge_case"
+  },
+  {
+    "userId": "trainee_01",
+    "status": "stuck",
+    "maxHintLevel": 3,
+    "topics": ["math"],
+    "bugClass": "edge_case"
+  },
+  {
+    "userId": "trainee_01",
+    "status": "diagnosed",
+    "maxHintLevel": 1,
+    "topics": ["math"],
+    "bugClass": "edge_case"
+  },
+  {
+    "userId": "trainee_02",
+    "status": "solved",
+    "maxHintLevel": 3,
+    "topics": ["binary search"],
+    "bugClass": "off_by_one"
+  },
+  {
+    "userId": "trainee_02",
+    "status": "solved",
+    "maxHintLevel": 4,
+    "topics": ["binary search"],
+    "bugClass": "off_by_one"
+  },
+  {
+    "userId": "trainee_03",
+    "status": "solved",
+    "maxHintLevel": 1,
+    "topics": ["math"],
+    "bugClass": "overflow"
+  },
+  {
+    "userId": "trainee_03",
+    "status": "stuck",
+    "maxHintLevel": 2,
+    "topics": ["math"],
+    "bugClass": "overflow"
+  }
+]
