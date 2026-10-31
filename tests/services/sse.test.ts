@@ -45,3 +45,26 @@ it("reads fragmented UTF-8 events and detects premature EOF", async () => {
     ),
   ).rejects.toThrow();
 });
+it("accepts the public stress event before ladder_ready and done", async () => {
+  const result = {
+    status: "verified",
+    failing_input: "2\n",
+    expected_output: "NO\n",
+    actual_output: "YES\n",
+    compile_output: null,
+    source: "test",
+    contradiction: true,
+  };
+  const received: DiagnoseEvent[] = [];
+  await readSse(
+    new Response(
+      `event: stress\ndata: ${JSON.stringify({ result })}\n\nevent: ladder_ready\ndata: {"levels":4}\n\nevent: done\ndata: {}\n\n`,
+    ).body!,
+    (event) => received.push(event),
+  );
+  expect(received).toEqual([
+    { event: "stress", data: { result } },
+    { event: "ladder_ready", data: { levels: 4 } },
+    { event: "done", data: {} },
+  ]);
+});

@@ -10,6 +10,7 @@ import type { attemptDetail } from "@/src/services/attempt-service";
 import { readSse } from "@/src/services/sse";
 import { HintLadder } from "./hint-ladder";
 import { ReplayBadge } from "./replay-badge";
+import { StressResult } from "./stress-result";
 
 export function DiagnosisCard({
   detail,
@@ -25,6 +26,7 @@ export function DiagnosisCard({
     diagnosis: initial,
   } = detail;
   const [result, setResult] = useState(initial);
+  const [stress, setStress] = useState(detail.stress);
   const [ladderReady, setLadderReady] = useState(false);
   const autoStarted = useRef(false);
   const [busy, setBusy] = useState(false);
@@ -42,6 +44,7 @@ export function DiagnosisCard({
     setBusy(true);
     setError(undefined);
     setResult(undefined);
+    setStress(undefined);
     setLadderReady(false);
     setStage("reading");
     try {
@@ -62,6 +65,7 @@ export function DiagnosisCard({
             recordedAt: event.data.recordedAt,
           });
         if (event.event === "ladder_ready") setLadderReady(true);
+        if (event.event === "stress") setStress(event.data.result);
         if (event.event === "error") setError(event.data.code);
       });
     } catch {
@@ -94,7 +98,7 @@ export function DiagnosisCard({
         {t(error ? "try_again" : "diagnose", locale)}
       </button>
       <div aria-live="polite" className="space-y-2">
-        {stage && <p>{t(stage, locale)}</p>}
+        {stage && !result && <p>{t(stage, locale)}</p>}
         {error && <p role="alert">{t(error, locale)}</p>}
         {result && (
           <article className="rounded border p-4">
@@ -110,6 +114,11 @@ export function DiagnosisCard({
               </bdi>
             </p>
             {result.confidence < 0.6 && <p>{t("low_confidence", locale)}</p>}
+            <StressResult
+              result={stress}
+              pending={busy && !ladderReady && !error}
+              locale={locale}
+            />
           </article>
         )}
       </div>

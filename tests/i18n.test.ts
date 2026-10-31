@@ -13,6 +13,35 @@ it("has every English key in Arabic, including the intake UI", () => {
   expect(en).toHaveProperty("intake");
   expect(keys(ar).sort()).toEqual(keys(en).sort());
 });
+it("has complete stress copy in both locales with Arabic-first lines", () => {
+  const stressKeys = [
+    "pending",
+    "verified",
+    "input",
+    "expected",
+    "actual",
+    "verified_note",
+    "not_verified",
+    "compile_error",
+    "no_mismatch",
+    "skipped",
+    "brute_untrusted",
+    "error",
+    "missing",
+    "contradiction",
+  ];
+  for (const messages of [en, ar]) {
+    expect(messages).toHaveProperty("stress");
+    const stress = messages.stress;
+    expect(Object.keys(stress).sort()).toEqual([...stressKeys].sort());
+    for (const text of Object.values(stress)) expect(text.trim()).not.toBe("");
+  }
+  const stress = ar.stress;
+  for (const text of Object.values(stress)) {
+    expect(text).toMatch(/^[\u0600-\u06ff]/);
+    expect(text).not.toMatch(/[()\/→←]/);
+  }
+});
 it.each([
   ["en", { lang: "en", dir: "ltr" }],
   ["ar-EG", { lang: "ar", dir: "rtl" }],

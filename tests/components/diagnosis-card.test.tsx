@@ -1,0 +1,129 @@
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { DiagnosisCard } from "@/src/components/diagnosis-card";
+import { StressResult } from "@/src/components/stress-result";
+import type { StressPublic } from "@/src/domain/stress-public";
+import { DiagnosisSchema, toPublic } from "@/src/llm/schemas/diagnosis";
+import type { attemptDetail } from "@/src/services/attempt-service";
+import fixture from "@/tests/fixtures/llm/diagnosis-a.json";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+beforeEach(() => vi.stubGlobal("React", React));
+afterEach(() => vi.unstubAllGlobals());
+
+const verified: StressPublic = {
+  status: "verified",
+  failing_input: "2\n",
+  expected_output: "NO\n",
+  actual_output: "YES\n",
+  compile_output: null,
+  source: "test",
+  contradiction: false,
+};
+function render(stress?: StressPublic, locale: "en" | "ar-EG" = "en") {
+  const detail: Awaited<ReturnType<typeof attemptDetail>> = {
+    attempt: {
+      id: "pr16b2-attempt",
+      problemId: "cf-4A",
+      parentAttemptId: null,
+      language: "cpp17",
+      code: "int main() {}",
+      verdictReported: "WA",
+      verdictTestNo: null,
+      studentNote: null,
+      locale,
+      status: "diagnosed",
+      maxHintLevel: 0,
+      solvedAt: null,
+      createdAt: 0,
+    },
+    problem: undefined,
+    diagnosis: { ...toPublic(DiagnosisSchema.parse(fixture)), replay: false, recordedAt: null },
+    stress,
+    revealedHints: [],
+    canExplain: false,
+    replay: false,
+    recordedAt: null,
+  };
+  return renderToStaticMarkup(React.createElement(DiagnosisCard, { detail, locale }));
+}
+it.each(["en", "ar-EG"] as const)(
+  "renders the persisted verified counterexample in %s with three LTR blocks",
+  (locale) => {
+    const html = render(verified, locale);
+    expect(html).toContain(
+      locale === "en" ? "Verified counterexample" : "مثال counterexample متأكدين منه",
+    );
+    for (const text of locale === "en"
+      ? ["Input", "Expected", "Your output"]
+      : ["الـ input", "الـ output المتوقع", "الـ output بتاعك"])
+      expect(html).toContain(text);
+    expect(
+      [...html.matchAll(/<pre\b[^>]*dir="ltr"[^>]*>([\s\S]*?)<\/pre>/g)].map((match) => match[1]),
+    ).toEqual(["2\n", "NO\n", "YES\n"]);
+    expect(html).toContain(
+      locale === "en" ? "verified by running your code" : "اتأكدنا بتشغيل الكود بتاعك",
+    );
+    expect(html).not.toContain(locale === "en" ? "Not verified" : "لسه مش متأكدين بالتشغيل");
+  },
+);
+it.each([
+  ["no_mismatch", "No mismatch found in the tests."],
+  ["skipped", "Execution verification was skipped."],
+  ["brute_untrusted", "The reference code failed the sample checks."],
+  ["error", "Execution verification could not finish."],
+  ["compile_error", "Your code did not compile."],
+  [undefined, "No execution result is available."],
+] as const)("shows a small not-verified badge and a reason for %s", (status, reason) => {
+  const html = render(status ? { ...verified, status } : undefined);
+  expect(html).toMatch(/<span\b[^>]*class="[^"]*text-xs[^>]*>Not verified<\/span>/);
+  expect(html).toContain(reason);
+  expect(html).not.toContain("Verified counterexample");
+});
+it("caps compiler output at 30 lines, keeps it LTR and escapes HTML", () => {
+  const lines = Array.from({ length: 32 }, (_, index) => `compiler line ${index + 1}`);
+  lines[0] = "<script>compiler</script>";
+  const html = render({ ...verified, status: "compile_error", compile_output: lines.join("\r\n") });
+  expect(html).toMatch(/<pre\b[^>]*dir="ltr"/);
+  expect(html).toContain("&lt;script&gt;compiler&lt;/script&gt;");
+  expect(html).toContain("compiler line 30");
+  expect(html).not.toContain("compiler line 31");
+  expect(html).not.toContain("compiler line 32");
+});
+it.each(["en", "ar-EG"] as const)(
+  "localizes the contradiction note in %s only when flagged",
+  (locale) => {
+    const note =
+      locale === "en"
+        ? "The diagnosis may be off; check the counterexample."
+        : "ممكن التشخيص يكون مش دقيق؛ راجع الـ counterexample.";
+    expect(render({ ...verified, contradiction: true }, locale)).toContain(note);
+    expect(render(verified, locale)).not.toContain(note);
+  },
+);
+it("never renders private reference code or hidden diagnosis fields", () => {
+  const privateResult = { ...verified, brute_code: "PRIVATE_REFERENCE_PROGRAM" };
+  const html = render(privateResult);
+  expect(html).not.toContain("PRIVATE_REFERENCE_PROGRAM");
+  expect(html).not.toContain(fixture.fix_internal);
+  expect(html).not.toContain(fixture.root_cause_internal);
+});
+it.each(["en", "ar-EG"] as const)(
+  "shows the waiting stress stage in %s until a result arrives",
+  (locale) => {
+    const pending = renderToStaticMarkup(
+      React.createElement(StressResult, { pending: true, locale }),
+    );
+    expect(pending).toContain(
+      locale === "en" ? "Trying to break your code" : "بنجرّب نلاقي input يوقع الكود بتاعك",
+    );
+    expect(pending).not.toContain(locale === "en" ? "Not verified" : "لسه مش متأكدين بالتشغيل");
+    const complete = renderToStaticMarkup(
+      React.createElement(StressResult, { result: verified, pending: true, locale }),
+    );
+    expect(complete).not.toContain(
+      locale === "en" ? "Trying to break your code" : "بنجرّب نلاقي input يوقع الكود بتاعك",
+    );
+  },
+);
