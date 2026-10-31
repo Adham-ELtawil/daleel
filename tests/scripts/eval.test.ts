@@ -7,6 +7,8 @@ import { EvalEnvSchema } from "@/src/env";
 import example from "@/tests/fixtures/llm/diagnosis-a.json";
 import record from "@/tests/fixtures/llm/eval-synthetic-call.json";
 import { createFakeFetch, noNetworkFetch } from "../llm/fake-fetch";
+import { fakeStressRunner } from "@/tests/runner/stress-fake";
+import plan from "@/tests/fixtures/llm/stress-a.json";
 
 let resultsDir: string;
 const env = { MODEL_API_KEY: "test-key", MODEL_API_BASE_URL: "https://meta.test/v1" };
@@ -106,6 +108,28 @@ it("validates the budget env with a $1 default", () => {
   expect(EvalEnvSchema.parse({}).EVAL_MAX_USD).toBe(1);
   for (const value of ["-1", "NaN", "Infinity", ""])
     expect(EvalEnvSchema.safeParse({ EVAL_MAX_USD: value }).success).toBe(false);
+});
+it("runs --stress with fakes, reports verified counterexamples and accounts for both calls", async () => {
+  const print = vi.fn();
+  const status = await runEval(["--only", "cf-4A", "--stress"], env, {
+    print,
+    resultsDir,
+    now,
+    runner: fakeStressRunner(),
+    createClient: (deps) => ({
+      callStructured: async (cfg, _messages, opts) => {
+        await deps.logCall({ ...record, step: cfg.step, status: "ok" });
+        return opts.zod.parse(cfg.step === "stress" ? plan : example);
+      },
+    }),
+  });
+  expect(status).toBe(0);
+  const report = JSON.parse(read("json"));
+  expect(report.results[0].stress).toMatchObject({ status: "verified", failing_input: "2\n" });
+  expect(report.results[0].records).toHaveLength(2);
+  expect(report.totals).toMatchObject({ verified: 1 });
+  expect(print.mock.calls.flat().join("\n")).toContain("counterexample: verified 1/1");
+  expect(read("md")).toContain("| verified |");
 });
 it("blocks repair retries when a paid response reaches the cap", async () => {
   const sse = readFileSync("tests/fixtures/llm/eval-synthetic.sse", "utf8");

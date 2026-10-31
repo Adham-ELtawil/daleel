@@ -2,11 +2,10 @@ import { existsSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { attempts, diagnoses, problems, stressRuns, users } from "@/src/db/schema";
-import { StoredDiagnosisSchema } from "@/src/db/json";
+import { StoredDiagnosisSchema, StoredStressTestsSchema } from "@/src/db/json";
 import { createNoneRunner } from "@/src/runner/none";
 import { RunnerError, type Runner, type RunResult } from "@/src/runner/runner";
 import { DiagnosisSchema, type Diagnosis } from "@/src/llm/schemas/diagnosis";
-import type { StressPlan } from "@/src/llm/schemas/stress";
 import type { StressDeps } from "@/src/services/stress";
 import { tempDb } from "@/tests/db/helpers";
 import rows from "@/tests/fixtures/llm/ladder-service.json";
@@ -209,7 +208,11 @@ it("skips runner none without an LLM call", async () => {
     status: "skipped",
     runner: "none",
     bruteCode: null,
-    testsJson: "[]",
+  });
+  expect(StoredStressTestsSchema.parse(JSON.parse((await saved())!.testsJson))).toEqual({
+    tests: [],
+    source: null,
+    contradiction: false,
   });
 });
 it("skips Python attempts because the runner supports only C++17", async () => {
@@ -244,7 +247,7 @@ it("prioritizes diagnosis suspects, deduplicates plan inputs and caps them at 12
     failing_input: "2\n",
     expected_output: "NO\n",
   });
-  const tests: StressPlan["tests"] = JSON.parse((await saved())!.testsJson);
+  const { tests } = StoredStressTestsSchema.parse(JSON.parse((await saved())!.testsJson));
   expect(tests).toHaveLength(12);
   expect(tests[0]).toEqual({ input: "2\n", purpose: "suspect" });
   expect(tests.filter((test) => test.input === "2\n")).toHaveLength(1);
