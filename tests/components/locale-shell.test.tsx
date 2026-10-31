@@ -6,6 +6,7 @@ import { t } from "@/src/i18n";
 
 let locale: "en" | "ar-EG" = "en";
 vi.mock("@/app/globals.css", () => ({}));
+vi.mock("next/font/local", () => ({ default: () => ({ variable: "font-daleel" }) }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => ({ value: locale }) }),
   headers: async () => new Headers(),
