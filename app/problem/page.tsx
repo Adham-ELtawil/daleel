@@ -68,8 +68,12 @@ export default function ProblemPage() {
   return (
     <main className="intake ms-auto me-auto max-w-3xl space-y-6 ps-6 pe-6 py-10">
       <h1 className="text-3xl font-bold">{t("title")}</h1>
-      {error && <p role="alert">{t(error)}</p>}
-      <form onSubmit={(event) => submit(event, "resolve")}>
+      {error && (
+        <p role="alert" className="text-danger">
+          {t(error)}
+        </p>
+      )}
+      <form onSubmit={(event) => submit(event, "resolve")} className="card p-6">
         <fieldset disabled={busy} className="grid gap-3">
           <label>
             {t("url")}
@@ -86,7 +90,7 @@ export default function ProblemPage() {
           {!paste && (
             <button
               type="button"
-              className="justify-self-start underline"
+              className="button button-secondary justify-self-start"
               onClick={() => {
                 setPaste(true);
                 setProblem(undefined);
@@ -101,14 +105,14 @@ export default function ProblemPage() {
               <textarea name="statement" dir="ltr" required maxLength={20000} rows={8} />
             </label>
           )}
-          <button type="submit" className="rounded border p-2">
+          <button type="submit" className="button button-primary justify-self-start">
             {t(busy ? "pending" : "resolve")}
           </button>
         </fieldset>
       </form>
       {problem && (
         <>
-          <section dir="ltr" className="space-y-3">
+          <section dir="ltr" className="card space-y-3 p-6">
             <h2 className="text-2xl font-semibold">{problem.title}</h2>
             <dl>
               {(["timeLimitMs", "memoryLimitMb"] as const).map((key) => (
@@ -137,9 +141,9 @@ export default function ProblemPage() {
               </div>
             ))}
           </section>
-          <form onSubmit={(event) => submit(event, "attempt")} className="grid gap-3">
+          <form onSubmit={(event) => submit(event, "attempt")} className="card grid gap-4 p-6">
             <label id="code-label">{t("code")}</label>
-            <div dir="ltr" className="overflow-hidden rounded border">
+            <div dir="ltr" className="overflow-hidden rounded-lg border border-line">
               <CodeMirror
                 value={code}
                 onChange={setCode}
@@ -170,7 +174,11 @@ export default function ProblemPage() {
                 {t("studentNote")}
                 <textarea name="studentNote" maxLength={1000} rows={3} />
               </label>
-              <button type="submit" disabled={!code} className="rounded border p-2">
+              <button
+                type="submit"
+                disabled={!code}
+                className="button button-primary justify-self-start"
+              >
                 {t(busy ? "pending" : "submit")}
               </button>
             </fieldset>

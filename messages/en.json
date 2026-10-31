@@ -2,9 +2,16 @@
   "landing": {
     "title": "Daleel",
     "navigation": "Main navigation",
-    "tagline": "An AI training coach for competitive programmers.",
-    "description": "Paste a Codeforces or AtCoder problem and your C++ code. Daleel finds where it breaks, proves it with a failing test, and teaches the fix through a hint ladder, without spoiling the solution.",
-    "status": "Early preview: the coach is under construction."
+    "tagline": "Your competitive programming coach",
+    "headline": "Understand the bug. Find your own fix.",
+    "description": "Bring a Codeforces or AtCoder problem and your code. Learn what went wrong, one hint at a time, without spoiling the solution.",
+    "how_it_works": "How it works",
+    "diagnose": "Diagnose",
+    "diagnose_description": "Spot the gap between your idea and your code.",
+    "verify": "Verify",
+    "verify_description": "Check a failing input when code execution is available.",
+    "hint": "Hint",
+    "hint_description": "Reveal a little at a time, and work out the fix yourself."
   },
   "ladder_fallback_1": {
     "title": "Check the boundaries",

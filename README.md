@@ -122,3 +122,5 @@ Product scope: [PRD](docs/02-PRD.md). External evidence: [VERIFIED.md](docs/VERI
 ## License
 
 [MIT](LICENSE), copyright Daleel contributors.
+
+Credits: IBM Plex Sans Arabic, SIL OFL 1.1. Font license: [app/fonts/OFL.txt](app/fonts/OFL.txt).

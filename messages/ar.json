@@ -2,9 +2,16 @@
   "landing": {
     "title": "Daleel",
     "navigation": "التنقل الرئيسي",
-    "tagline": "كوتش AI للـ competitive programming.",
+    "tagline": "كوتشك في الـ competitive programming",
+    "headline": "افهم الغلطة. وصلّحها بنفسك.",
     "description": "حط مسألة Codeforces أو AtCoder والكود بتاعك. دليل بيساعدك تلاقي الـ bug بواحدة واحدة من غير ما يحرق الفكرة.",
-    "status": "لسه بنبني النسخة الأولى."
+    "how_it_works": "إزاي دليل بيساعدك؟",
+    "diagnose": "شخّص",
+    "diagnose_description": "شوف الفرق بين فكرتك واللي الكود بيعمله.",
+    "verify": "اتأكد",
+    "verify_description": "جرّب input صغير يوقع الكود، لما التشغيل يكون متاح.",
+    "hint": "خد تلميح",
+    "hint_description": "خد تلميح كل مرة، ووصل للتصليح بتفكيرك."
   },
   "ladder_fallback_1": {
     "title": "راجع أصغر قيم",

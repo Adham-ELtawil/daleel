@@ -54,29 +54,39 @@ export function DemoChoices({ locale }: { locale: "en" | "ar-EG" }) {
     }
   }
   return (
-    <section className="space-y-3" aria-labelledby="demo-heading">
+    <section className="space-y-5" aria-labelledby="demo-heading">
       <h2 id="demo-heading" className="text-2xl font-semibold">
         {t("try_demo", locale)}
       </h2>
-      {!examples.length && !error && <p role="status">{t("pending", locale)}</p>}
-      <ul className="flex flex-wrap gap-3">
+      {!examples.length && !error && (
+        <p role="status" className="text-muted">
+          {t("pending", locale)}
+        </p>
+      )}
+      <ul className="grid gap-4 sm:grid-cols-3">
         {examples.map((example) => (
           <li key={example.problemId}>
             <button
               type="button"
               disabled={busy}
               onClick={() => start(example)}
-              className="rounded border p-3"
+              className="card flex h-full w-full cursor-pointer flex-col items-start gap-4 p-6 text-start transition-colors hover:border-accent hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <bdi dir="ltr">{example.title}</bdi>{" "}
-              <span className="text-sm">
+              <bdi dir="ltr" className="text-lg font-semibold">
+                {example.title}
+              </bdi>
+              <span className="badge">
                 {t(example.locale === "en" ? "english" : "arabic", locale)}
               </span>
             </button>
           </li>
         ))}
       </ul>
-      {error && <p role="alert">{t("internal_error", locale)}</p>}
+      {error && (
+        <p role="alert" className="text-danger">
+          {t("internal_error", locale)}
+        </p>
+      )}
     </section>
   );
 }
