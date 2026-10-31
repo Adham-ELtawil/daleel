@@ -21,6 +21,22 @@
     "title": "Review the reasoning",
     "body": "Write down why each step should work, then check the boundaries and time complexity. Change only the lines that do not match that reasoning."
   },
+  "stress": {
+    "pending": "Trying to break your code",
+    "verified": "Verified counterexample",
+    "input": "Input",
+    "expected": "Expected",
+    "actual": "Your output",
+    "verified_note": "verified by running your code",
+    "not_verified": "Not verified",
+    "compile_error": "Your code did not compile.",
+    "no_mismatch": "No mismatch found in the tests.",
+    "skipped": "Execution verification was skipped.",
+    "brute_untrusted": "The reference code failed the sample checks.",
+    "error": "Execution verification could not finish.",
+    "missing": "No execution result is available.",
+    "contradiction": "The diagnosis may be off; check the counterexample."
+  },
   "intake": {
     "title": "New attempt",
     "url": "Problem link",
