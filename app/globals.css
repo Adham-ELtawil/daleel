@@ -45,3 +45,22 @@ body {
 .intake pre {
   overflow: auto;
 }
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  header,
+  .report nav {
+    display: none;
+  }
+  .report {
+    max-width: none;
+    padding: 0;
+  }
+  .report li,
+  .report dl {
+    break-inside: avoid;
+  }
+}

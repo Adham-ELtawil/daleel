@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { connect, getDb } from "@/src/db/client";
 import { teams } from "@/src/db/schema";
@@ -84,6 +85,12 @@ export default async function CoachPage({
         {tr("invite")}: <bdi dir="ltr">{team.inviteCode}</bdi>
       </p>
       {team.inviteCode === "DEMO0001" && <p>{tr("synthetic")}</p>}
+      <Link
+        className="inline-block underline"
+        href={`/coach/report?${new URLSearchParams({ team: team.id, week: stats.weekStart })}`}
+      >
+        {t("title", locale, "report")}
+      </Link>
       <dl className="grid gap-4 sm:grid-cols-4">
         {columns.map((key) => (
           <div key={key} className="rounded border p-3">
