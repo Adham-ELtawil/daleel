@@ -155,7 +155,7 @@ Behaviour (each line = a unit test):
 |---|---|---|---|---|---|
 | normalize (paste/image → Problem) | `muse-spark-1.3` | low | 4,000 | no | paste or screenshot only |
 | diagnose | `muse-spark-1.3` | high | 16,000 (`MAXTOK_DIAGNOSE`) | yes | every new attempt; budget includes reasoning tokens |
-| stress (brute + tests) | `muse-spark-1.3` | medium | 5,000 | yes | if runner ≠ none and diagnosis.bug_found |
+| stress (brute + tests) | `muse-spark-1.3` | medium | 16,000 (`MAXTOK_STRESS`, includes reasoning tokens) | yes | if runner ≠ none and diagnosis.bug_found |
 | ladder (4 hints) | `muse-spark-1.3` | low | 8,000 (`MAXTOK_LADDER`, includes reasoning tokens) | no | after diagnose (+ stress result) |
 | explain (+ trace) | `muse-spark-1.3` | medium | 8,000 | yes | on demand |
 | report | `muse-spark-1.3` | medium | 4,000 | no | coach button |

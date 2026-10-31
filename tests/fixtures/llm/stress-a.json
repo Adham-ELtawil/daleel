@@ -1,0 +1,13 @@
+{
+  "brute_cpp": "#include <bits/stdc++.h>\nusing namespace std;\nint main(){int w;cin>>w;bool ok=false;for(int a=1;a<w;a++) if(a%2==0&&(w-a)%2==0) ok=true; cout<<(ok?\"YES\":\"NO\")<<\"\\n\";}",
+  "tests": [
+    { "input": "1\n", "purpose": "minimum" },
+    { "input": "2\n", "purpose": "smallest even" },
+    { "input": "3\n", "purpose": "odd" },
+    { "input": "4\n", "purpose": "smallest YES" },
+    { "input": "99\n", "purpose": "large odd" },
+    { "input": "100\n", "purpose": "maximum" }
+  ],
+  "checker": "exact_tokens",
+  "brute_complexity": "O(w)"
+}

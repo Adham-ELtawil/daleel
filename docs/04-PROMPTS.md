@@ -137,7 +137,7 @@ Server-side validation after zod: every `lines[].end ≥ start` and ≤ number o
 
 ---
 
-## 2. STRESS  (`muse-spark-1.3`, effort `medium`, stream, max 5000)
+## 2. STRESS  (`muse-spark-1.3`, effort `medium`, stream, max 16000 via `MAXTOK_STRESS`; includes reasoning tokens)
 
 ### 2.1 Developer prompt
 ```text
@@ -167,6 +167,8 @@ User message: PROBLEM BLOCK is already the 2nd developer message; user = ATTEMPT
 ```
 
 ### 2.3 Deterministic runner logic (no LLM; `src/services/stress.ts`)
+PR-16A uses diagnosis suspect inputs first, then plan tests, retaining the first occurrence of each input and at most 12 proposed tests. Student time/memory limits come from the problem, capped at 2 s / 256 MB; brute time is doubled within the same 2 s ceiling. The complete step has a 30 s deadline. The current runner supports C++17 only, so Python attempts are skipped.
+
 1. If `checker = any_valid` → status `skipped` (can't verify by comparison).
 2. Compile brute + student (`g++ -O2 -std=c++17`). Student CE → `compile_error` with output. Brute CE → `brute_untrusted`.
 3. **Trust gate:** run brute on every official sample; any mismatch with the official output → `brute_untrusted`.
@@ -174,6 +176,7 @@ User message: PROBLEM BLOCK is already the 2nd developer message; user = ATTEMPT
 5. For each test (in order): run brute (2 s); if brute TLE/RE → skip the test; run student; compare with the checker. First mismatch (or student TLE/RE where brute is fine) → `verified` with that input.
 6. No mismatch → `no_mismatch`.
 7. If verified and the failing input contradicts `diagnosis.lines` (heuristic: the diagnosis was `time_complexity` but the student produced a wrong answer, or vice versa) → trigger one re-diagnose with `<runner_result>` appended (see §1, same prompt).
+PR-16A returns a `contradiction` flag for that heuristic, verified evidence with `bug_found=false`, or `no_mismatch` with confidence below 0.4. TODO PR-16B: wire at most one re-diagnosis with the counterexample in the student note; no re-diagnosis occurs in the stress service.
 
 ---
 

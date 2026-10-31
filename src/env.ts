@@ -17,6 +17,12 @@ export const LadderEnvSchema = z.object({
   MAXTOK_LADDER: z.coerce.number().int().positive().default(8000),
 });
 
+export const StressEnvSchema = z.object({
+  MODEL_STRESS: z.string().min(1).default("muse-spark-1.3"),
+  EFFORT_STRESS: z.enum(["minimal", "low", "medium", "high", "xhigh"]).default("medium"),
+  MAXTOK_STRESS: z.coerce.number().int().positive().default(16000),
+});
+
 export const MetaEnvSchema = z.object({
   MODEL_API_KEY: z.string().default(""),
   MODEL_API_BASE_URL: z.url().default("https://api.meta.ai/v1"),

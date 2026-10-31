@@ -1,20 +1,84 @@
-import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { ZodType } from "zod";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { connect, createDb } from "@/src/db/client";
 import { recordLlmCall } from "@/src/db/repo/llm-calls";
 import { getProblemByExternalId } from "@/src/db/repo/problems";
 import { seed } from "@/src/db/seed";
-import { createMetaClient } from "@/src/llm/meta-client";
-import { diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
-import { ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { createMetaClient, type ChatMessage, type LlmStepConfig } from "@/src/llm/meta-client";
+import { buildDiagnoseMessages, diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
+import { buildLadderMessages, ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { DiagnosisSchema } from "@/src/llm/schemas/diagnosis";
+import { HintLadderSchema } from "@/src/llm/schemas/ladder";
+import { validateDiagnosis } from "@/src/domain/diagnosis-validate";
 import { createReplayStore } from "@/src/llm/replay/store";
 import { createDiagnoseHandler } from "@/src/services/diagnose-handler";
 import { createHandlers } from "@/src/services/handlers";
 import { readSse, type DiagnoseEvent } from "@/src/services/sse";
 import { tempDb } from "@/tests/db/helpers";
 import { chatCompletion, createFakeFetch, noNetworkFetch } from "@/tests/llm/fake-fetch";
-import diagnosis from "@/recordings/diagnose/1ad7a81ef1d0795cc50c790900f20dd82e482aec57113692dcfd3522c3103df8.json";
-import ladder from "@/recordings/ladder/b841dcb1e9c6f5ed7b76470d664db6843c61614649a1902e65abed224cb3e7d4.json";
+import problems from "@/src/db/seed-fixtures/problems.json";
+
+const hashFor = (config: LlmStepConfig, messages: ChatMessage[]) =>
+  createHash("sha256")
+    .update(
+      JSON.stringify([
+        config.model,
+        config.reasoningEffort,
+        config.schemaName,
+        config.schema,
+        messages,
+      ]),
+    )
+    .digest("hex");
+async function findRecording<T>(
+  config: LlmStepConfig,
+  messages: ChatMessage[],
+  schema: ZodType<T>,
+  root = "recordings",
+) {
+  const hash = hashFor(config, messages);
+  const replay = createReplayStore(root);
+  for (const file of await readdir(join(root, config.step))) {
+    if (!/^[a-f0-9]{64}\.json$/.test(file)) continue;
+    const recording = await replay.read(config.step, file.slice(0, -5));
+    if (
+      recording?.provenance.requestHash === hash &&
+      recording.provenance.model === config.model &&
+      recording.provenance.reasoningEffort === config.reasoningEffort
+    ) {
+      return { ...recording, response: schema.parse(recording.response) };
+    }
+  }
+  throw new Error(`Missing matching 4A ${config.step} recording`);
+}
+const code = readFileSync("docs/examples/cf-4A-watermelon/student.cpp", "utf8");
+const problem = { ...problems[0], judge: "codeforces" as const };
+const student = {
+  code,
+  language: "cpp17" as const,
+  verdictReported: null,
+  verdictTestNo: null,
+  studentNote: null,
+};
+const diagnosisConfig = diagnoseStepConfig({});
+const diagnosisMessages = buildDiagnoseMessages({ problem, attempt: student, locale: "en" });
+const diagnosis = await findRecording(diagnosisConfig, diagnosisMessages, DiagnosisSchema);
+const ladder = await findRecording(
+  ladderStepConfig({}),
+  buildLadderMessages({
+    problem,
+    code,
+    diagnosis: validateDiagnosis(diagnosis.response, code),
+    runnerResult: null,
+    locale: "en",
+  }),
+  HintLadderSchema,
+);
 
 let store: Awaited<ReturnType<typeof tempDb>>;
 const now = () => Date.UTC(2026, 9, 30, 13);
@@ -91,6 +155,26 @@ it("replays the committed 4A diagnosis and ladder with no key or network calls",
     data: { replay: true, recordedAt: diagnosis.provenance.recordedAt },
   });
   expect(flow.fetch).not.toHaveBeenCalled();
+});
+it("finds re-recorded 4A content using its current provenance rather than an old filename", async () => {
+  const root = mkdtempSync(join(tmpdir(), "pr16-replay-"));
+  try {
+    const messages = buildDiagnoseMessages({
+      problem,
+      attempt: { ...student, studentNote: "Check the minimum weight" },
+      locale: "en",
+    });
+    const updated = {
+      ...diagnosis,
+      provenance: { ...diagnosis.provenance, requestHash: hashFor(diagnosisConfig, messages) },
+    };
+    const replay = createReplayStore(root);
+    await replay.write(diagnosis);
+    await replay.write(updated);
+    expect(await findRecording(diagnosisConfig, messages, DiagnosisSchema, root)).toEqual(updated);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 it("reports replay:false for a live transport fake even when DEMO_REPLAY is set", async () => {
   vi.stubEnv("DEMO_REPLAY", "1");
