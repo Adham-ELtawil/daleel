@@ -38,6 +38,8 @@ Set `MODEL_API_KEY` in the ignored `.env.local`, set `DEMO_REPLAY=0`, and run `p
 
 For production, set a persistent **`SESSION_SECRET` of at least 32 characters** before `pnpm build` and `pnpm start`. Development generates a temporary secret if it is empty; restarting invalidates those sessions.
 
+Optional hosted trial: `render.yaml` + `Dockerfile` deploy a free Render web service; see [docs/DEPLOY-RENDER.md](docs/DEPLOY-RENDER.md).
+
 ### Optional local verification
 
 On Linux, install the compiler and sandbox:

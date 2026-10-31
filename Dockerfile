@@ -15,7 +15,9 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm build
+# Module-level env validation runs during "Collecting page data"; this throwaway value is
+# only for the build (not inlined into .next). The real SESSION_SECRET comes from Render at runtime.
+RUN SESSION_SECRET=build-only-placeholder-not-a-real-secret-0000 pnpm build
 
 # Ephemeral SQLite file; recreated (migrate + seed) on every container start.
 ENV NODE_ENV=production DATABASE_URL=file:/tmp/daleel/daleel.db PORT=10000
