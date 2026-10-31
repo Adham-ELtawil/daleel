@@ -1,8 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[
-  `snapshots a deterministic DEMO report with five real fixture problems, reused stats and no HTTP 1`
-] = `
+exports[`snapshots a deterministic DEMO report with five real fixture problems, reused stats and no HTTP 1`] = `
 {
   "attention": [
     {

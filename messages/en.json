@@ -81,6 +81,31 @@
     "no_teams": "You have no teams yet.",
     "invalid_selection": "Choose one of your teams and a Monday date."
   },
+  "report": {
+    "title": "Weekly report",
+    "headline": "{solved} of {attempts} attempts were solved this week.",
+    "back": "Back to coach dashboard",
+    "print": "Print report",
+    "recommended": "Recommended problems",
+    "session": "Session plan",
+    "empty": "No matching unattempted problems in this rating band.",
+    "limited": "Only {count} matching unattempted problems are available in this rating band.",
+    "attention_unsolved": "Review an unsolved attempt together and ask the trainee to explain the first failing case.",
+    "attention_hints": "Ask the trainee to retry a solved problem without hints and explain each decision.",
+    "session_review": "Spend 15 minutes reviewing this week's common mistakes.",
+    "session_topic": "Spend {minutes} minutes on {tag}: solve a problem, then discuss edge cases.",
+    "session_practice": "Spend 60 minutes on a practice problem and discuss the approach together.",
+    "session_reflect": "Spend 15 minutes reviewing the reasoning and choosing a follow-up exercise."
+  },
+  "report_why": {
+    "math": "Practise math by checking small cases and numerical boundaries.",
+    "brute force": "Practise brute force by enumerating small cases systematically.",
+    "implementation": "Practise implementation by tracing state changes against the statement.",
+    "binary search": "Practise binary search by checking boundaries and the monotonic condition.",
+    "dp": "Practise dp by defining states and checking base cases.",
+    "greedy": "Practise greedy by testing each choice on small counterexamples.",
+    "other": "Practise {tag} by tracing a small case and checking edge cases."
+  },
   "intake": {
     "title": "New attempt",
     "url": "Problem link",
