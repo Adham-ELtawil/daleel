@@ -34,11 +34,11 @@ export default async function AttemptPage({
   });
   if (!detail.problem) notFound();
   return (
-    <main className="ms-auto me-auto max-w-3xl space-y-4 ps-6 pe-6 py-10">
+    <main className="ms-auto me-auto max-w-5xl space-y-6 ps-6 pe-6 py-10">
       <h1 dir="ltr" className="text-2xl font-bold">
         {detail.problem.title}
       </h1>
-      <p>
+      <p className="text-sm text-muted">
         {t("attemptId", locale)}:{" "}
         <code dir="ltr" className="bidi-isolate">
           {id}

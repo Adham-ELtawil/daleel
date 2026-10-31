@@ -2,6 +2,7 @@ import React from "react";
 import type { StressPublic } from "@/src/domain/stress-public";
 import { t } from "@/src/i18n";
 import { LoadingSkeleton } from "./attempt-feedback";
+import { StepHeading } from "./attempt-steps";
 
 export function StressResult({
   result,
@@ -13,17 +14,20 @@ export function StressResult({
   locale: "en" | "ar-EG";
 }) {
   if (!result && pending) {
-    return <LoadingSkeleton label={t("pending", locale, "stress")} />;
+    return (
+      <section aria-live="polite" className="card space-y-4 p-5">
+        <StepHeading step={2} locale={locale} />
+        <LoadingSkeleton label={t("pending", locale, "stress")} />
+      </section>
+    );
   }
   const verified = result?.status === "verified";
   return (
-    <div className="mt-3 space-y-2">
+    <section aria-live="polite" className="card space-y-4 p-5">
+      <StepHeading step={2} locale={locale} />
       {verified ? (
-        <section
-          className="space-y-2 rounded border p-3"
-          aria-label={t("verified", locale, "stress")}
-        >
-          <h2 className="font-semibold">{t("verified", locale, "stress")}</h2>
+        <section className="space-y-3" aria-label={t("verified", locale, "stress")}>
+          <span className="badge badge-success">{t("verified", locale, "stress")}</span>
           {(
             [
               ["input", result.failing_input],
@@ -42,9 +46,7 @@ export function StressResult({
         </section>
       ) : (
         <>
-          <span className="inline-block rounded border ps-2 pe-2 py-1 text-xs">
-            {t("not_verified", locale, "stress")}
-          </span>
+          <span className="badge badge-neutral text-xs">{t("not_verified", locale, "stress")}</span>
           <p className="text-xs text-gray-600">
             {t(result?.status ?? "missing", locale, "stress")}
           </p>
@@ -58,6 +60,6 @@ export function StressResult({
       {result?.contradiction && (
         <p className="text-xs text-gray-600">{t("contradiction", locale, "stress")}</p>
       )}
-    </div>
+    </section>
   );
 }

@@ -17,7 +17,7 @@ export default async function CoachPage({
 }) {
   const locale = await uiLocale();
   const tr = (key: Parameters<typeof t<"coach">>[0]) => t(key, locale, "coach");
-  const layout = "ms-auto me-auto max-w-5xl space-y-6 ps-6 pe-6 py-10";
+  const layout = "coach ms-auto me-auto max-w-5xl space-y-6 ps-6 pe-6 py-10";
   const message = (text: string, demoAvailable?: boolean) => (
     <main {...localeAttrs(locale)} className={layout}>
       <h1 className="text-2xl font-bold">{tr("title")}</h1>
@@ -89,7 +89,7 @@ export default async function CoachPage({
             className="ms-2 rounded border p-2"
           />
         </label>
-        <button type="submit" className="rounded border p-2">
+        <button type="submit" className="button button-secondary">
           {tr("show")}
         </button>
       </form>
@@ -98,26 +98,30 @@ export default async function CoachPage({
       </p>
       {team.inviteCode === "DEMO0001" && <p>{tr("synthetic")}</p>}
       <Link
-        className="inline-block underline"
+        className="button button-primary"
         href={`/coach/report?${new URLSearchParams({ team: team.id, week: stats.weekStart })}`}
       >
         {t("title", locale, "report")}
       </Link>
-      <dl className="grid gap-4 sm:grid-cols-4">
+      <dl className="stat-grid">
         {columns.map((key) => (
-          <div key={key} className="rounded border p-3">
-            <dt>{tr(key)}</dt>
-            <dd className="text-xl font-bold">{format(key, stats[key])}</dd>
+          <div key={key} className="card p-4">
+            <dt className="text-sm text-muted">{tr(key)}</dt>
+            <dd className="text-3xl font-bold tabular-nums">{format(key, stats[key])}</dd>
           </div>
         ))}
       </dl>
-      <div className="overflow-x-auto">
+      <div className="card max-h-[32rem] overflow-auto">
         <table className="w-full text-start">
           <caption className="pb-3 text-start text-xl font-semibold">{tr("trainees")}</caption>
           <thead>
             <tr>
               {(["handle", ...columns] as const).map((key) => (
-                <th key={key} scope="col" className="border-b p-2 text-start">
+                <th
+                  key={key}
+                  scope="col"
+                  className={`border-b border-line p-3 ${key === "handle" ? "text-start" : "text-end"}`}
+                >
                   {tr(key)}
                 </th>
               ))}
@@ -126,12 +130,14 @@ export default async function CoachPage({
           <tbody>
             {stats.trainees.map((row) => (
               <tr key={row.userId}>
-                <th scope="row" className="border-b p-2 text-start">
+                <th scope="row" className="border-b border-line p-3 text-start">
                   <bdi dir="ltr">{row.handle}</bdi>
                 </th>
                 {columns.map((key) => (
-                  <td key={key} className="border-b p-2">
-                    {format(key, row[key])}
+                  <td key={key} className="border-b border-line p-3 text-end tabular-nums">
+                    <span className={key === "solvedRate" ? "badge badge-neutral" : undefined}>
+                      {format(key, row[key])}
+                    </span>
                   </td>
                 ))}
               </tr>
@@ -150,9 +156,9 @@ export default async function CoachPage({
         </h2>
         <p>{tr("attention_rule")}</p>
         {!stats.attention.length && <p>{tr("attention_empty")}</p>}
-        <ul className="space-y-2">
+        <ul className="grid gap-3 sm:grid-cols-2">
           {stats.attention.map((row) => (
-            <li key={row.userId}>
+            <li key={row.userId} className="card border-s-4 border-s-warning p-4">
               <bdi dir="ltr">{row.handle}</bdi> · {tr("unsolved")}: {number.format(row.unsolved)} ·{" "}
               {tr("avgHintLevelAtSolve")}: {number.format(row.avgHintLevelAtSolve)}
             </li>

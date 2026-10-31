@@ -50,7 +50,7 @@ export function Walkthrough({
       tabIndex={0}
       aria-label={t("title", locale, "walkthrough")}
       aria-keyshortcuts="ArrowLeft ArrowRight Space"
-      className="space-y-3 rounded border p-4"
+      className="space-y-4 rounded-xl border border-line bg-canvas p-4"
       onKeyDown={(event) => {
         if (
           event.target instanceof HTMLElement &&
@@ -74,7 +74,7 @@ export function Walkthrough({
             dir="ltr"
             data-code-line={index + 1}
             data-active={frame.code_line === index + 1}
-            className={`bidi-isolate block ${frame.code_line === index + 1 ? "bg-amber-200 font-bold" : ""}`}
+            className={`bidi-isolate block ${frame.code_line === index + 1 ? "bg-amber-100 font-bold text-ink" : ""}`}
           >
             <span className="inline-block w-8 select-none text-gray-600" aria-hidden="true">
               {index + 1}
@@ -89,16 +89,16 @@ export function Walkthrough({
           <code dir="ltr" className="bidi-isolate">
             {array.name}
           </code>
-          <div className="flex gap-1">
+          <div className="mt-2 flex gap-2">
             {array.values.map((value, cell) => (
               <div
                 key={cell}
                 data-array-cell={cell}
                 data-highlighted={array.highlight.includes(cell)}
-                className="min-w-12 text-center"
+                className="min-w-12 shrink-0 text-center"
               >
                 <div
-                  className={`border p-2 font-mono ${array.highlight.includes(cell) ? "bg-amber-200 font-bold" : ""}`}
+                  className={`rounded-lg border border-line p-3 font-mono ${array.highlight.includes(cell) ? "bg-amber-100 font-bold text-ink" : "bg-surface"}`}
                 >
                   {value}
                 </div>
@@ -110,7 +110,7 @@ export function Walkthrough({
                       key={index}
                       dir="ltr"
                       data-pointer={pointer.name}
-                      className="bidi-isolate block font-bold"
+                      className="bidi-isolate block font-bold text-accent"
                     >
                       {pointer.name}
                     </code>
@@ -143,7 +143,9 @@ export function Walkthrough({
                 <td>
                   <code dir="ltr" className="bidi-isolate">
                     {variable.changed ? (
-                      <strong className="bg-amber-200">{variable.value}</strong>
+                      <strong className="rounded bg-amber-100 ps-2 pe-2 text-ink">
+                        {variable.value}
+                      </strong>
                     ) : (
                       variable.value
                     )}
@@ -175,7 +177,7 @@ export function Walkthrough({
       <div dir="ltr" data-controls className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className="rounded border p-2"
+          className="button button-secondary"
           disabled={state.index === 0}
           onClick={() => step(-1)}
         >
@@ -183,7 +185,7 @@ export function Walkthrough({
         </button>
         <button
           type="button"
-          className="rounded border p-2"
+          className="button button-secondary"
           disabled={trace.frames.length === 1}
           onClick={() => dispatch({ type: "play", playing: !state.playing })}
         >
@@ -191,7 +193,7 @@ export function Walkthrough({
         </button>
         <button
           type="button"
-          className="rounded border p-2"
+          className="button button-secondary"
           disabled={last}
           onClick={() => step(1)}
         >
@@ -200,6 +202,7 @@ export function Walkthrough({
         <label>
           {t("speed", locale, "walkthrough")}{" "}
           <select
+            className="rounded-lg border border-line bg-surface p-2"
             aria-label={t("speed", locale, "walkthrough")}
             value={state.speed}
             onChange={(event) =>
@@ -226,6 +229,7 @@ export function Walkthrough({
           {t("frame", locale, "walkthrough")}{" "}
           <input
             type="range"
+            className="align-middle accent-accent"
             aria-label={t("frame", locale, "walkthrough")}
             min={0}
             max={trace.frames.length - 1}

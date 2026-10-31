@@ -65,7 +65,63 @@
     @apply border border-line bg-surface text-ink hover:border-accent hover:text-accent;
   }
   .badge {
-    @apply inline-flex rounded-full bg-accent-soft ps-3 pe-3 py-1 text-sm font-medium text-accent;
+    @apply inline-flex gap-1 rounded-full bg-accent-soft ps-3 pe-3 py-1 text-sm font-medium text-accent;
+  }
+  .badge-success {
+    @apply bg-green-50 text-success;
+  }
+  .badge-warning {
+    @apply bg-amber-50 text-warning;
+  }
+  .badge-neutral {
+    @apply bg-slate-100 text-muted;
+  }
+  .badge-danger {
+    @apply bg-red-50 text-danger;
+  }
+  .badge-info {
+    @apply bg-sky-50 text-sky-800;
+  }
+  .step-number {
+    @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent;
+  }
+  .step-heading {
+    @apply flex items-center gap-3 border-b border-line pb-4 text-lg;
+  }
+  .attempt-stepper {
+    @apply grid grid-cols-2 gap-2 sm:grid-cols-4;
+  }
+  .attempt-stepper li {
+    @apply flex flex-col items-start gap-2 rounded-lg border border-line p-3 text-sm text-muted md:flex-row md:items-center;
+  }
+  .attempt-stepper [data-state="current"] {
+    @apply border-accent bg-accent-soft font-semibold text-accent-strong;
+  }
+  .attempt-stepper [data-state="complete"] .step-number {
+    @apply bg-success text-white;
+  }
+  .attempt-stepper [data-state="pending"] .step-number {
+    @apply bg-line text-muted;
+  }
+  .stat-grid {
+    @apply grid grid-cols-2 gap-4 sm:grid-cols-4;
+  }
+  .coach thead {
+    @apply sticky top-0 bg-surface;
+  }
+  .coach tbody tr {
+    @apply even:bg-canvas hover:bg-accent-soft;
+  }
+  .coach caption {
+    @apply p-4;
+  }
+  .coach > section,
+  .report > section {
+    @apply space-y-3;
+  }
+  .coach > section:not([aria-labelledby="attention"]),
+  .report > section:not([aria-labelledby="attention"]) {
+    @apply rounded-card border border-line bg-surface p-5 shadow-soft;
   }
 }
 
@@ -111,5 +167,12 @@
   .report li,
   .report dl {
     break-inside: avoid;
+  }
+  .report .card,
+  .report > section {
+    box-shadow: none;
+  }
+  .report .stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
