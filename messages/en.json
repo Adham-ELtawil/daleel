@@ -99,6 +99,7 @@
     "cancel": "Cancel",
     "solved_note": "Nice work! Your attempt is marked solved.",
     "explanation_unlocked": "Full explanation is unlocked.",
+    "locked": "Reveal hint 3 or choose I'm stuck to unlock the explanation.",
     "history": "My attempts",
     "history_empty": "No attempts yet. Open a new attempt to get started.",
     "max_hint": "Max hint level",

@@ -23,7 +23,7 @@ export type AttemptDeps = {
   now: () => number;
   ladder?: Pick<LadderDeps, "llm" | "config">;
 };
-async function ownedAttempt(db: Db, id: string) {
+export async function ownedAttempt(db: Db, id: string) {
   const user = await getCurrentUser(db);
   const attempt = await db
     .select()
@@ -32,6 +32,9 @@ async function ownedAttempt(db: Db, id: string) {
     .get();
   if (!attempt) throw new HttpError(404, "not_found");
   return attempt;
+}
+export function canExplain(revealed: number, status: string) {
+  return revealed >= 3 || status === "stuck";
 }
 function ladderFor(deps: AttemptDeps, id: string, locale: "en" | "ar-EG") {
   if (!deps.ladder) throw new HttpError(500, "internal_error");
@@ -160,7 +163,7 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
     replay: recordedAt !== null,
     recordedAt,
     revealedHints: ladder ? reveals.map((r) => publicHint(ladder.levels[r.level - 1])) : [],
-    canExplain: reveals.length >= 3 || stored.status === "stuck",
+    canExplain: canExplain(reveals.length, stored.status),
   };
 }
 export async function markAttempt(deps: AttemptDeps, id: string, status: "stuck" | "solved") {

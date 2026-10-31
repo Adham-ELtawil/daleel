@@ -1,0 +1,92 @@
+{
+  "explanation_md": "الفكرة الأساسية إن عدد البلاطات على الضلع الأول هو `ceil(n / a)` وعلى التاني `ceil(m / a)`، والإجابة حاصل ضربهم. المشكلة إن الضرب بيحصل جوه `int` اللي أقصاه حوالي اتنين مليار، فلما الناتج يكبر عن كده بيلف ويطلع رقم غلط.",
+  "fix": [
+    {
+      "line": 6,
+      "old": "int x = (n + a - 1) / a;",
+      "new": "long long x = (n + a - 1) / a;"
+    },
+    {
+      "line": 7,
+      "old": "int y = (m + a - 1) / a;",
+      "new": "long long y = (m + a - 1) / a;"
+    }
+  ],
+  "complexity_note": "الحل O(1) في الوقت والذاكرة.",
+  "trace": {
+    "input": "100000 100000 1",
+    "expected_output": "10000000000",
+    "student_output": "1410065408",
+    "frames": [
+      {
+        "code_line": 5,
+        "caption": "قرينا n و m و a.",
+        "arrays": [],
+        "vars": [
+          {
+            "name": "n",
+            "value": "100000",
+            "changed": true
+          },
+          {
+            "name": "m",
+            "value": "100000",
+            "changed": true
+          },
+          {
+            "name": "a",
+            "value": "1",
+            "changed": true
+          }
+        ]
+      },
+      {
+        "code_line": 6,
+        "caption": "عدد البلاطات على الضلع الأول طلع مية ألف.",
+        "arrays": [],
+        "vars": [
+          {
+            "name": "x",
+            "value": "100000",
+            "changed": true
+          }
+        ]
+      },
+      {
+        "code_line": 7,
+        "caption": "وعلى الضلع التاني برضه مية ألف.",
+        "arrays": [],
+        "vars": [
+          {
+            "name": "y",
+            "value": "100000",
+            "changed": true
+          }
+        ]
+      },
+      {
+        "code_line": 8,
+        "caption": "الضرب المفروض يطلع عشرة مليار، لكن ده أكبر من أقصى قيمة للـ int فحصل overflow.",
+        "arrays": [],
+        "vars": [
+          {
+            "name": "x * y",
+            "value": "1410065408",
+            "changed": true
+          },
+          {
+            "name": "INT_MAX",
+            "value": "2147483647",
+            "changed": false
+          }
+        ]
+      },
+      {
+        "code_line": null,
+        "caption": "الكود طلّع 1410065408 والإجابة الصح 10000000000.",
+        "arrays": [],
+        "vars": []
+      }
+    ]
+  }
+}

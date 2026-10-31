@@ -7,6 +7,8 @@ import { getProblem } from "@/src/db/repo/problems";
 import { attempts } from "@/src/db/schema";
 import { createCfApi } from "@/src/judges/cf-api";
 import { resolveLocale } from "@/src/i18n";
+import { BudgetReached } from "@/src/llm/meta-client";
+import { explainAttempt, type ExplainDeps } from "./explain-service";
 import { getCurrentUser } from "./current-user";
 import { demoSession } from "./demo-service";
 import { HttpError } from "./http-error";
@@ -60,6 +62,7 @@ export function createHandlers(deps: {
   now?: () => number;
   log?: (event: { requestId: string; code: string }) => void;
   ladder?: AttemptDeps["ladder"];
+  explain?: Pick<ExplainDeps, "llm" | "config">;
 }) {
   const now = deps.now ?? Date.now;
   async function run(request: Request, job: () => Promise<unknown>) {
@@ -138,6 +141,17 @@ export function createHandlers(deps: {
       run(request, async () => {
         const { locale } = await body(request, localeSchema);
         return revealHint(await attemptDeps(), id, locale);
+      }),
+    explain: (request: Request, id: string) =>
+      run(request, async () => {
+        const { locale } = await body(request, localeSchema);
+        if (!deps.explain) throw new HttpError(500, "internal_error");
+        try {
+          return await explainAttempt({ db: await deps.db(), now, ...deps.explain }, id, locale);
+        } catch (error) {
+          if (error instanceof BudgetReached) throw new HttpError(503, "budget_reached");
+          throw error;
+        }
       }),
     getAttempt: (request: Request, id: string) =>
       run(request, async () => {

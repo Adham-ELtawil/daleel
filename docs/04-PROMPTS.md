@@ -223,7 +223,7 @@ User message: `<diagnosis>` (public + internal fields) + `<runner_result>` (`ver
 
 ---
 
-## 4. EXPLAIN + TRACE  (`muse-spark-1.3`, effort `medium`, stream, max 8000)
+## 4. EXPLAIN + TRACE  (`muse-spark-1.3`, effort `medium`, stream, max 16000 via `MAXTOK_EXPLAIN`)
 
 ### 4.1 Developer prompt
 ```text
