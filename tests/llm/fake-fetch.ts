@@ -1,10 +1,14 @@
 import { z } from "zod";
+import contests from "@/tests/fixtures/cf-api/contest.list.json";
 
 export type FakeResponse = { status: number; headers?: HeadersInit } & (
   { json: unknown } | { sse: string }
 );
 
-export const noNetworkFetch: typeof fetch = async () => {
+export const noNetworkFetch: typeof fetch = async (input) => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  if (url.hostname === "codeforces.com" && url.pathname === "/api/contest.list")
+    return Response.json(contests);
   throw new Error("Unexpected real network request");
 };
 
