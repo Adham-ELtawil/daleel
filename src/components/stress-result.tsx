@@ -1,6 +1,7 @@
 import React from "react";
 import type { StressPublic } from "@/src/domain/stress-public";
 import { t } from "@/src/i18n";
+import { LoadingSkeleton } from "./attempt-feedback";
 
 export function StressResult({
   result,
@@ -12,7 +13,7 @@ export function StressResult({
   locale: "en" | "ar-EG";
 }) {
   if (!result && pending) {
-    return <p>{t("pending", locale, "stress")}</p>;
+    return <LoadingSkeleton label={t("pending", locale, "stress")} />;
   }
   const verified = result?.status === "verified";
   return (

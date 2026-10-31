@@ -14,6 +14,8 @@ import { RecordEnvSchema } from "@/src/env";
 import { createMetaClient } from "@/src/llm/meta-client";
 import { diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { stressStepConfig } from "@/src/llm/prompts/stress";
+import { createRunner } from "@/src/runner/factory";
 import { createReplayStore } from "@/src/llm/replay/store";
 import { getCurrentUser } from "@/src/services/current-user";
 import { diagnoseAttempt } from "@/src/services/diagnose-service";
@@ -27,6 +29,10 @@ export async function runDemoFlows(
 ) {
   const now = Date.now;
   const ladder = { config: ladderStepConfig(env), llm: client.callStructured };
+  const stress =
+    env.RUNNER_PROVIDER === "local"
+      ? { config: stressStepConfig(env), llm: client.callStructured, runner: createRunner(env) }
+      : undefined;
   const handlers = createHandlers({ db: async () => db, now, ladder });
   const user = await getCurrentUser(db);
   for (const example of examples) {
@@ -57,6 +63,7 @@ export async function runDemoFlows(
           db,
           now,
           ladder,
+          stress,
           llm: client.callStructured,
           config: diagnoseStepConfig(env),
           log: () => {},

@@ -1,5 +1,14 @@
 import en from "@/messages/en.json";
 import ar from "@/messages/ar.json";
+import type { Diagnosis } from "@/src/llm/schemas/diagnosis";
+
+export function bugClassLabel(bug: string, locale: "en" | "ar-EG") {
+  const labels = (locale === "en" ? en : ar).bugClasses satisfies Record<
+    Diagnosis["bug_class"],
+    string
+  >;
+  return labels[Object.hasOwn(labels, bug) ? (bug as keyof typeof labels) : "other"];
+}
 
 export function t<Scope extends keyof typeof en>(
   key: keyof (typeof en)[Scope] & string,
@@ -13,7 +22,9 @@ export function t(key: string, locale: "en" | "ar-EG" = "en", scope: keyof typeo
 }
 
 export function localeAttrs(locale: "en" | "ar-EG") {
-  return locale === "en" ? { lang: "en", dir: "ltr" } as const : { lang: "ar", dir: "rtl" } as const;
+  return locale === "en"
+    ? ({ lang: "en", dir: "ltr" } as const)
+    : ({ lang: "ar", dir: "rtl" } as const);
 }
 
 export function resolveLocale(cookie: string | undefined, language: string | null): "en" | "ar-EG" {

@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { PrintReport } from "@/src/components/print-report";
 import { connect, getDb } from "@/src/db/client";
 import { teams } from "@/src/db/schema";
-import { localeAttrs, t } from "@/src/i18n";
+import { bugClassLabel, localeAttrs, t } from "@/src/i18n";
 import { getCurrentUser } from "@/src/services/current-user";
 import { HttpError } from "@/src/services/http-error";
 import { uiLocale } from "@/src/services/ui-locale";
@@ -97,7 +97,7 @@ export default async function ReportPage({
         <ul>
           {stats.topBugClasses.map(({ bugClass, count }) => (
             <li key={bugClass}>
-              <bdi dir="ltr">{bugClass}</bdi>: {number.format(count)}
+              <bdi>{bugClassLabel(bugClass, locale)}</bdi>: {number.format(count)}
             </li>
           ))}
         </ul>

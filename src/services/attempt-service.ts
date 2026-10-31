@@ -198,12 +198,14 @@ export async function attemptHistory(db: Db, cursor: string | null, cookie?: str
     .select({
       id: attempts.id,
       problemTitle: problems.title,
+      bugClass: diagnoses.bugClass,
       status: attempts.status,
       maxHintLevel: attempts.maxHintLevel,
       createdAt: attempts.createdAt,
     })
     .from(attempts)
     .innerJoin(problems, eq(problems.id, attempts.problemId))
+    .leftJoin(diagnoses, eq(diagnoses.attemptId, attempts.id))
     .where(and(eq(attempts.userId, user.id), before))
     .orderBy(desc(attempts.createdAt), desc(attempts.id))
     .limit(21);

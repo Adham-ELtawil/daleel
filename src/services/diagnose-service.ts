@@ -4,7 +4,14 @@ import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
 import { StoredDiagnosisSchema, TagsSchema } from "@/src/db/json";
-import { attempts, diagnoses } from "@/src/db/schema";
+import {
+  attempts,
+  diagnoses,
+  hintLadders,
+  hintReveals,
+  stressRuns,
+  walkthroughs,
+} from "@/src/db/schema";
 import { codeLines } from "@/src/domain/code-lines";
 import { validateDiagnosis } from "@/src/domain/diagnosis-validate";
 import { fixArabicPublicText } from "@/src/domain/arabic-style";
@@ -74,6 +81,7 @@ export async function diagnoseAttempt(
   deps: DiagnoseDeps,
   attemptId: string,
   emit: (event: DiagnoseEvent) => void,
+  retry = false,
 ): Promise<void> {
   const { db, llm, config, now } = deps;
   const attempt = await db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
@@ -97,6 +105,16 @@ export async function diagnoseAttempt(
     .get();
   if (!claimed) throw new HttpError(409, "already_running");
   try {
+    if (retry) {
+      await db.transaction(async (tx) => {
+        for (const table of [diagnoses, hintLadders, hintReveals, stressRuns, walkthroughs])
+          await tx.delete(table).where(eq(table.attemptId, attemptId));
+        await tx
+          .update(attempts)
+          .set({ maxHintLevel: 0, solvedAt: null })
+          .where(eq(attempts.id, attemptId));
+      });
+    }
     emit({ event: "stage", data: { name: "reading" } });
     // Keep the original diagnosis timestamp on copies so reuse never extends the 24h TTL.
     const candidates = await db
@@ -110,7 +128,9 @@ export async function diagnoseAttempt(
           gte(diagnoses.createdAt, now() - 86400000),
         ),
       );
-    const cached = candidates.find((row) => cacheHash(row.attempt) === cacheHash(attempt));
+    const cached = candidates.find(
+      (row) => !retry && cacheHash(row.attempt) === cacheHash(attempt),
+    );
     const saved = cached && StoredDiagnosisSchema.parse(JSON.parse(cached.diagnosis.resultJson));
     let recordedAt: string | null = saved?.recordedAt ?? null;
     emit({ event: "stage", data: { name: "thinking" } });
@@ -155,10 +175,7 @@ export async function diagnoseAttempt(
         .insert(diagnoses)
         .values(values)
         .onConflictDoUpdate({ target: diagnoses.attemptId, set: values });
-      await tx
-        .update(attempts)
-        .set({ status: "diagnosed", diagnosingSince: null })
-        .where(eq(attempts.id, attemptId));
+      await tx.update(attempts).set({ diagnosingSince: now() }).where(eq(attempts.id, attemptId));
     });
     emit({
       event: "diagnosis",
@@ -172,12 +189,17 @@ export async function diagnoseAttempt(
         (deps.log ?? ((code) => console.error({ requestId: attemptId, code })))("stress_error");
       }
     }
+    await db.update(attempts).set({ diagnosingSince: now() }).where(eq(attempts.id, attemptId));
     try {
       await ensureLadder({ db, now, ...deps.ladder }, attemptId, attempt.locale);
       emit({ event: "ladder_ready", data: { levels: 4 } });
     } catch {
       (deps.log ?? ((code) => console.error({ requestId: attemptId, code })))("ladder_error");
     }
+    await db
+      .update(attempts)
+      .set({ status: "diagnosed", diagnosingSince: null })
+      .where(eq(attempts.id, attemptId));
     emit({ event: "done", data: {} });
   } catch (error) {
     await db
