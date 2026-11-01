@@ -102,3 +102,23 @@ it("escapes HTML and dangerous links throughout the statement, specs and samples
   expect(html).toContain("&lt;script&gt;sample&lt;/script&gt;\n");
   expect(html).not.toMatch(/<(?:script|img|svg|a)\b/);
 });
+it("renders math in the statement, both specs and notes while leaving samples raw", async () => {
+  await store.db
+    .update(problems)
+    .set({
+      statementMd: "لو $n \\le 10^5$ يبقى",
+      inputSpecMd: "$1 \\le t \\le 100$",
+      outputSpecMd: "$\\texttt{six}$",
+      notesMd: "$$\\frac{a}{b}$$",
+      samplesJson: JSON.stringify([{ input: "$x$\n", output: "$y$\n" }]),
+    })
+    .where(eq(problems.id, problem.id));
+  const html = await panel("ar-EG");
+  expect(html.match(/class="katex"/g)).toHaveLength(4);
+  expect(html).toContain("≤");
+  expect(html).toContain('<span dir="ltr" class="math bidi-isolate">');
+  expect(html).toContain('class="math math-display block bidi-isolate"');
+  expect(html).not.toContain("$n");
+  expect(html).toMatch(/<pre\b[^>]*>\$x\$\n<\/pre>/);
+  expect(html).toMatch(/<pre\b[^>]*>\$y\$\n<\/pre>/);
+});
