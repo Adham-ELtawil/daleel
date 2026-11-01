@@ -1,0 +1,50 @@
+{
+  "provenance": {
+    "recordedAt": "2026-11-01T00:03:28.191Z",
+    "model": "muse-spark-1.3",
+    "reasoningEffort": "low",
+    "step": "idea",
+    "requestHash": "1ee3266a63dcac9d9099a88626e3c7686ca165c9d1a68466e6530e2ba3be1432",
+    "usage": {
+      "input": 531,
+      "output": 1812,
+      "cached": 0,
+      "reasoning": 1454
+    },
+    "costUsd": 0.00836475,
+    "latencyMs": 6551,
+    "tool": "pnpm record:demo"
+  },
+  "response": {
+    "levels": [
+      {
+        "level": 1,
+        "kind": "nudge",
+        "title": "What does a valid split look like?",
+        "body_md": "We need two parts that add to `w`. Both parts must be positive and even.\n\nWhat does that tell you about `w`? Try to split a few tiny numbers in your head.",
+        "question_back": "Can you try to split `1`, `2`, `3`, `4` by hand? Which ones feel possible?"
+      },
+      {
+        "level": 2,
+        "kind": "concept",
+        "title": "Parity and size observations",
+        "body_md": "The sum of two even numbers has a special parity. That already rules out many values of `w`.\n\nAlso each part is positive, so it cannot be too tiny. It must have some minimum size.",
+        "question_back": null
+      },
+      {
+        "level": 3,
+        "kind": "precise",
+        "title": "Think brute force plus math",
+        "body_md": "This is a math and brute force task. The limits for `w` are very small.\n\nIt fits because you only need parity reasoning plus a check for very small totals. You could also just try all pairs.",
+        "question_back": null
+      },
+      {
+        "level": 4,
+        "kind": "full",
+        "title": "Outline of the check",
+        "body_md": "In words: think what parity the total of two evens must have. Then think what the smallest possible total of two positive evens is.\n\nCombine those two ideas to test `w`. Trying all possible first parts also works. This takes constant time and memory.",
+        "question_back": null
+      }
+    ]
+  }
+}
