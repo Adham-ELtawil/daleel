@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { t } from "@/src/i18n";
 
 const LocaleContext = createContext<"en" | "ar-EG">("en");
@@ -27,11 +27,16 @@ export function LocaleShell({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   return (
     <LocaleContext.Provider value={locale}>
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-soft backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface">
         <div className="ms-auto me-auto flex max-w-6xl flex-wrap items-center gap-5 ps-6 pe-6 py-4">
-          <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-bold text-ink">
+          <Link
+            href="/"
+            aria-current={pathname === "/" ? "page" : undefined}
+            className="flex shrink-0 items-center gap-2 text-xl font-semibold text-ink"
+          >
             <svg
               aria-hidden="true"
               focusable="false"
@@ -47,19 +52,32 @@ export function LocaleShell({
             aria-label={t("navigation", locale, "landing")}
             className="order-last flex basis-full flex-wrap gap-4 text-sm font-medium sm:order-none sm:basis-auto"
           >
-            <Link href="/problem">{t("title", locale)}</Link>
-            <Link href="/me">{t("history", locale)}</Link>
-            <Link href="/coach">{t("title", locale, "coach")}</Link>
+            {(["/problem", "/me", "/coach"] as const).map((href) => (
+              <Link
+                key={href}
+                href={href}
+                className="nav-link border-b-2 border-transparent text-muted transition-colors duration-150 hover:text-ink hover:no-underline aria-[current=page]:border-accent aria-[current=page]:text-ink"
+                aria-current={
+                  pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined
+                }
+              >
+                {href === "/problem"
+                  ? t("title", locale)
+                  : href === "/me"
+                    ? t("history", locale)
+                    : t("title", locale, "coach")}
+              </Link>
+            ))}
           </nav>
           <button
             type="button"
-            className="ms-auto button button-secondary shrink-0"
+            className="ms-auto button button-secondary shrink-0 ps-3 pe-3 py-1.5"
             aria-label={t("ui_language", locale)}
             onClick={() => {
               void switchUiLocale(locale, window.location.pathname, () => router.refresh());
             }}
           >
-            {t(locale === "en" ? "arabic" : "english", locale)}
+            {t("language_target", locale, "landing")}
           </button>
         </div>
       </header>

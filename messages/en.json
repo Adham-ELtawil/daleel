@@ -2,16 +2,23 @@
   "landing": {
     "title": "Daleel",
     "navigation": "Main navigation",
-    "tagline": "Your competitive programming coach",
-    "headline": "Understand the bug. Find your own fix.",
-    "description": "Bring a Codeforces or AtCoder problem and your code. Learn what went wrong, one hint at a time, without spoiling the solution.",
-    "how_it_works": "How it works",
+    "headline": "{verdict}? Find out why, then fix it yourself.",
+    "headline_verdict": "Wrong answer",
+    "description": "Daleel reads your code, finds the input that breaks it, and gives you hints one step at a time, without handing you the solution.",
+    "how_it_works": "What happens after you paste your code",
     "diagnose": "Diagnose",
     "diagnose_description": "Spot the gap between your idea and your code.",
     "verify": "Verify",
     "verify_description": "Check a failing input when code execution is available.",
     "hint": "Hint",
-    "hint_description": "Reveal a little at a time, and work out the fix yourself."
+    "hint_description": "Reveal a little at a time, and work out the fix yourself.",
+    "demo_cta": "Try the demo",
+    "demo_start": "Start",
+    "demo_cf_code": "CF {code}",
+    "new_attempt": "New attempt",
+    "coach_strip": "For coaches: see your team’s weak topics this week.",
+    "coach_link": "Coach dashboard",
+    "language_target": "عربي"
   },
   "ladder_fallback_1": {
     "title": "Check the boundaries",
@@ -231,7 +238,7 @@
     "status_stuck": "Stuck",
     "ui_language": "Interface language",
     "english": "English",
-    "arabic": "Arabic"
+    "arabic": "عربي"
   },
   "attemptFlow": {
     "progress": "Attempt progress",
@@ -242,5 +249,18 @@
     "complete": "Complete",
     "current": "Current step",
     "pending": "Upcoming"
+  },
+  "hero": {
+    "label": "Theatre Square: student code, wrong answer, counterexample and first hint",
+    "file": "student.cpp",
+    "problem": "Codeforces 1A Theatre Square",
+    "running": "Running on tests…",
+    "verdict": "Wrong answer",
+    "input": "Input",
+    "expected": "Expected",
+    "got": "Got",
+    "hint_title": "Hint 1",
+    "hint": "The answer can reach 10^18. Which type are x and y, and what happens when you multiply them?",
+    "replay": "Replay"
   }
 }

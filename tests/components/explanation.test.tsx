@@ -45,8 +45,8 @@ it("omits the complexity section when the API returns null", async () => {
 it("anchors the explanation card and distinguishes removed and added lines", async () => {
   const html = await render();
   expect(html).toMatch(/<article[^>]*id="explanation"[^>]*class="[^"]*card/);
-  expect(html).toMatch(/<del[^>]*class="[^"]*bg-red-50/);
-  expect(html).toMatch(/<ins[^>]*class="[^"]*bg-green-50/);
+  expect(html).toMatch(/<del[^>]*class="[^"]*bg-danger\/10/);
+  expect(html).toMatch(/<ins[^>]*class="[^"]*bg-success\/10/);
 });
 it.each(["en", "ar-EG"] as const)("only offers the explanation when canExplain in %s", (locale) => {
   vi.stubGlobal("React", React);

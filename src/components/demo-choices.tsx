@@ -6,6 +6,49 @@ import { t } from "@/src/i18n";
 import type { demoSession } from "@/src/services/demo-service";
 
 type Example = Awaited<ReturnType<typeof demoSession>>["examples"][number];
+export function DemoChoiceRow({
+  example,
+  locale,
+  busy,
+  onStart,
+}: {
+  example: Example;
+  locale: "en" | "ar-EG";
+  busy: boolean;
+  onStart: (example: Example) => void;
+}) {
+  const problemCode =
+    example.judge === "codeforces"
+      ? t("demo_cf_code", locale, "landing").replace("{code}", example.externalId)
+      : example.externalId;
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => onStart(example)}
+      className="demo-row group flex w-full cursor-pointer items-center justify-between gap-4 border-s-2 border-transparent ps-4 pe-4 py-5 text-start transition-colors duration-150 focus-visible:border-accent hover:border-accent hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <bdi dir="ltr" className="w-full text-xl font-semibold sm:w-auto">
+          {example.title}
+        </bdi>{" "}
+        <code dir="ltr" className="text-sm text-muted">
+          {problemCode}
+        </code>{" "}
+        <bdi
+          dir={example.locale === "en" ? "ltr" : "rtl"}
+          className="inline-flex rounded-md border border-line ps-2 pe-2 py-0.5 font-sans text-sm text-muted"
+        >
+          {t(example.locale === "en" ? "english" : "arabic", locale)}
+        </bdi>
+      </span>{" "}
+      <span className="shrink-0 whitespace-nowrap text-sm font-semibold text-accent opacity-80 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none">
+        {t("demo_start", locale, "landing")}
+      </span>
+    </button>
+  );
+}
+
 export function DemoChoices({ locale }: { locale: "en" | "ar-EG" }) {
   const router = useRouter();
   const [examples, setExamples] = useState<Example[]>([]);
@@ -54,8 +97,8 @@ export function DemoChoices({ locale }: { locale: "en" | "ar-EG" }) {
     }
   }
   return (
-    <section className="space-y-5" aria-labelledby="demo-heading">
-      <h2 id="demo-heading" className="text-2xl font-semibold">
+    <section id="demo" className="space-y-5 scroll-mt-32" aria-labelledby="demo-heading">
+      <h2 id="demo-heading" className="text-[25px] font-semibold">
         {t("try_demo", locale)}
       </h2>
       {!examples.length && !error && (
@@ -63,22 +106,10 @@ export function DemoChoices({ locale }: { locale: "en" | "ar-EG" }) {
           {t("pending", locale)}
         </p>
       )}
-      <ul className="grid gap-4 sm:grid-cols-3">
+      <ul className="divide-y divide-line border-y border-line">
         {examples.map((example) => (
           <li key={example.problemId}>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => start(example)}
-              className="card flex h-full w-full cursor-pointer flex-col items-start gap-4 p-6 text-start transition-colors hover:border-accent hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <bdi dir="ltr" className="text-lg font-semibold">
-                {example.title}
-              </bdi>
-              <span className="badge">
-                {t(example.locale === "en" ? "english" : "arabic", locale)}
-              </span>
-            </button>
+            <DemoChoiceRow example={example} locale={locale} busy={busy} onStart={start} />
           </li>
         ))}
       </ul>

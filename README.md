@@ -125,4 +125,4 @@ Product scope: [PRD](docs/02-PRD.md). External evidence: [VERIFIED.md](docs/VERI
 
 [MIT](LICENSE), copyright Daleel contributors.
 
-Credits: IBM Plex Sans Arabic, SIL OFL 1.1. Font license: [app/fonts/OFL.txt](app/fonts/OFL.txt).
+Credits: Readex Pro and JetBrains Mono, SIL OFL 1.1. Font licenses: [Readex Pro](app/fonts/readex-pro/OFL.txt) and [JetBrains Mono](app/fonts/jetbrains-mono/OFL.txt).

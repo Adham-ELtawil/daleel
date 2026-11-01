@@ -67,16 +67,16 @@ export function Walkthrough({
       <p dir={direction} aria-live="polite">
         {frame.caption}
       </p>
-      <pre dir="ltr" className="overflow-x-auto rounded bg-gray-50 p-2 text-sm">
+      <pre dir="ltr" className="overflow-x-auto rounded bg-canvas p-2 text-sm">
         {lines.map((line, index) => (
           <code
             key={index}
             dir="ltr"
             data-code-line={index + 1}
             data-active={frame.code_line === index + 1}
-            className={`bidi-isolate block ${frame.code_line === index + 1 ? "bg-amber-100 font-bold text-ink" : ""}`}
+            className={`bidi-isolate block ${frame.code_line === index + 1 ? "bg-accent-soft font-bold text-ink" : ""}`}
           >
-            <span className="inline-block w-8 select-none text-gray-600" aria-hidden="true">
+            <span className="inline-block w-8 select-none text-muted" aria-hidden="true">
               {index + 1}
             </span>
             {line}
@@ -98,11 +98,11 @@ export function Walkthrough({
                 className="min-w-12 shrink-0 text-center"
               >
                 <div
-                  className={`rounded-lg border border-line p-3 font-mono ${array.highlight.includes(cell) ? "bg-amber-100 font-bold text-ink" : "bg-surface"}`}
+                  className={`rounded-lg border border-line p-3 font-mono ${array.highlight.includes(cell) ? "bg-accent-soft font-bold text-ink" : "bg-surface"}`}
                 >
                   {value}
                 </div>
-                <div className="text-xs text-gray-600">{cell}</div>
+                <div className="text-xs text-muted">{cell}</div>
                 {array.pointers
                   .filter((pointer) => pointer.index === cell)
                   .map((pointer, index) => (
@@ -143,7 +143,7 @@ export function Walkthrough({
                 <td>
                   <code dir="ltr" className="bidi-isolate">
                     {variable.changed ? (
-                      <strong className="rounded bg-amber-100 ps-2 pe-2 text-ink">
+                      <strong className="rounded bg-accent-soft ps-2 pe-2 text-ink">
                         {variable.value}
                       </strong>
                     ) : (
@@ -167,7 +167,7 @@ export function Walkthrough({
           ).map(([key, value]) => (
             <div key={key}>
               <h4>{t(key, locale, "stress")}</h4>
-              <pre dir="ltr" className="overflow-x-auto bg-gray-50 p-2">
+              <pre dir="ltr" className="overflow-x-auto bg-canvas p-2">
                 {value}
               </pre>
             </div>

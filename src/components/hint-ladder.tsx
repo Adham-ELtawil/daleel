@@ -181,6 +181,7 @@ export function HintLadder({
           <label id="recheck-code-label">{t("updated_code", locale)}</label>
           <div dir="ltr" className="overflow-hidden rounded border">
             <CodeMirror
+              theme="dark"
               value={code}
               onChange={setCode}
               extensions={extensions}

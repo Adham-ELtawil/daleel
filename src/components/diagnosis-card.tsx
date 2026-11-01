@@ -124,6 +124,7 @@ export function DiagnosisCard({
           {t("code", locale)}
         </h2>
         <CodeMirror
+          theme="dark"
           dir="ltr"
           value={code}
           extensions={extensions}
