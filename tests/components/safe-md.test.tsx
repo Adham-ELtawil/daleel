@@ -56,3 +56,29 @@ it("escapes HTML inside emphasis and leaves code asterisks literal", async () =>
   expect(html).toContain('<code dir="ltr" class="bidi-isolate">**literal**</code>');
   expect(html).not.toMatch(/<(script|img|a)\b/);
 });
+it("parses math before emphasis while preserving ordinary italic text", async () => {
+  const math = await render("$a*b*c$");
+  expect(math).toContain('class="katex"');
+  expect(math).not.toContain("<em");
+  expect(await render("*x*")).toBe('<p dir="auto"><em>x</em></p>');
+});
+it("leaves math delimiters inside backtick code literal", async () => {
+  expect(await render("`$x$`")).toBe(
+    '<p dir="auto"><code dir="ltr" class="bidi-isolate">$x$</code></p>',
+  );
+});
+it("renders inline and display math alongside bold text in Arabic", async () => {
+  const html = await render("لو $n \\le 10^5$ يبقى **تمام**.\n\n$$\\frac{a}{b}$$");
+  expect(html).toContain('<span dir="ltr" class="math bidi-isolate">');
+  expect(html).toContain("≤");
+  expect(html).toContain("<strong>تمام</strong>");
+  expect(html).toContain('class="math math-display block bidi-isolate"');
+  expect(html).not.toContain("<div");
+});
+it("falls back on invalid TeX and keeps math injection inert", async () => {
+  expect(await render("$\\badcommand{x}$")).toBe(
+    '<p dir="auto"><code dir="ltr" class="bidi-isolate">\\badcommand{x}</code></p>',
+  );
+  const html = await render("$\\href{javascript:alert(1)}{x}$ $<img src=x>$");
+  expect(html).not.toMatch(/href=["']javascript:|<(?:img|script)\b/);
+});

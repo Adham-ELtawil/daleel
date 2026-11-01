@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { localeAttrs, t } from "@/src/i18n";
 import { LocaleShell } from "@/src/components/locale-shell";
 import { uiLocale } from "@/src/services/ui-locale";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {

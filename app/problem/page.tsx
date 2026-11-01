@@ -13,6 +13,7 @@ import { Window } from "@/src/components/ui/window";
 import { JudgeOutput } from "@/src/components/ui/judge-output";
 import { LoadingSkeleton } from "@/src/components/attempt-feedback";
 import { IdeaStartButton } from "@/src/components/idea-card";
+import { MathText } from "@/src/components/math";
 
 const extensions = [
   cpp(),
@@ -162,6 +163,16 @@ export default function ProblemPage() {
                   </li>
                 ))}
               </ul>
+              {problem.statementMd && (
+                <details className="font-sans">
+                  <summary className="cursor-pointer font-semibold">
+                    {translate("title", locale, "statement")}
+                  </summary>
+                  <p dir="ltr" className="whitespace-pre-wrap pt-4">
+                    <MathText text={problem.statementMd} />
+                  </p>
+                </details>
+              )}
               {problem.samples.map((sample, index) => (
                 <Window
                   key={index}

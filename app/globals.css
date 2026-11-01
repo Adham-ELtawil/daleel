@@ -232,6 +232,20 @@
   unicode-bidi: isolate;
 }
 
+.math {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.math .katex {
+  color: var(--color-ink, #e7ecf6);
+  font-size: 1.05em;
+}
+.math-display {
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  text-align: center;
+}
+
 .intake label {
   display: grid;
   min-width: 0;
