@@ -102,6 +102,19 @@ PR-18 keyboard choice: controls stay LTR in both locales, so ← always steps to
 
 PR-27B iteration 1 verification: red `/tmp/pr27b-iteration1-red.txt` showed `Test Files 7 failed (7)` and `Tests 16 failed, 52 passed (68)` for the requested regressions; focused green showed `Test Files 7 passed (7)` and `Tests 68 passed (68)`. Fresh `pnpm lint && pnpm typecheck && pnpm test` passed: `Test Files 85 passed, 1 skipped (86)`; `Tests 773 passed, 5 skipped (778)`. Edited source/test files pass Prettier. Production build passed with an empty model key and a generated throwaway SESSION_SECRET supplied only through the build environment. The intake browser smoke now checks primary Resolve before resolution, secondary Resolve afterward, the judge-prefixed problem id and the current Check my code action. It remains unrun because cached Chromium exits at startup with sandbox `Operation not permitted`; fresh visual verification remains pending. No git commands, installs, dependency changes or live API calls.
 
+- [x] PR-28: render Codeforces/AtCoder LaTeX in statements, specs, notes, intake preview and SafeMd;
+  preserve backtick code, raw samples, literal currency and Arabic isolation.
+
+PR-28 verification: TDD red in /tmp/pr28-red-codex.txt showed 4 failed test files, 14 failed tests
+and 17 passes; the new splitter suite failed to load before implementation. Focused green:
+4 test files and 52 tests passed. Fresh pnpm lint && pnpm typecheck && pnpm test passed:
+Test Files 87 passed | 1 skipped (88); Tests 809 passed | 5 skipped (814). Production build passed
+with the owner's throwaway session key; KaTeX CSS and 20 woff2 assets are bundled locally, with
+60 local font URLs, no remote font URLs and no missing assets. Changed source/tests formatted.
+Implementation: 143 changed lines including deletions. Dependency justification: the already installed
+KaTeX and its types provide offline LaTeX rendering; no installs or additional dependency changes.
+Layout tests extend their existing CSS-import boundary mock for KaTeX; no assertions were removed.
+
 ## Day 8 — Wed Nov 4 → M8 (no new features)
 
 - 10:00–13:00 Bug fixes only from rehearsal. Rehearse the demo script 3× on the deployed URL (`06-DEMO-AND-SUBMISSION.md`). Each rehearsal: all 3 examples must pass.

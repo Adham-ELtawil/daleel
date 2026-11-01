@@ -33,3 +33,11 @@ Record here every external fact confirmed by a test or an official answer (date,
 PR-27 iteration 1 changes homepage presentation and localized copy; no new external API facts were checked and no live API calls were made. The offline suite passed with 742 tests and 5 skips, and the production build passed with a generated session secret supplied only through the build environment. Browser layout verification remains pending: both installed Chrome and cached Chromium fail at startup with sandbox `setsockopt EPERM`; the two new 390px landing scenarios were not run.
 
 PR-27B iteration 1 fixes the owner's nine screenshot findings without new external API facts or live calls. Fresh offline verification passed with 773 tests and 5 skips across 85 passing test files and 1 skipped file; lint, typecheck, edited-file Prettier and the production build also passed. The build received a generated throwaway SESSION_SECRET through its environment only and an empty model key. Cached Chromium still exits at startup with sandbox `Operation not permitted`, so the updated intake browser smoke and fresh visual checks remain unverified.
+
+PR-28 verified offline on 2026-11-01: installed KaTeX 0.16 renders HTML and MathML, rejects invalid
+commands with throwOnError, and with trust:false produces no JavaScript href or active img tag for
+the supplied injection cases. Confirmed by tests/components/math.test.tsx and SafeMd regressions.
+Next.js 15's production build bundles the imported KaTeX CSS and 20 woff2 font assets locally;
+all 60 KaTeX font URLs resolve to emitted files, with no remote URLs or missing assets. Fresh lint,
+typecheck and build passed; Test Files 87 passed | 1 skipped (88), Tests 809 passed | 5 skipped (814).
+No live external API requests were made.

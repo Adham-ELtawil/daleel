@@ -1,4 +1,6 @@
 import React from "react";
+import { splitMath } from "@/src/lib/math";
+import { MathSpan } from "./math";
 
 // Deliberately support only flat emphasis. Nested/malformed delimiters stay text.
 function emphasis(text: string) {
@@ -50,7 +52,13 @@ export function SafeMd({ text }: { text: string }) {
               {part.slice(1, -1)}
             </code>
           ) : (
-            emphasis(part)
+            splitMath(part).map((segment, index) =>
+              segment.kind === "math" ? (
+                <MathSpan key={index} tex={segment.value} display={segment.display} />
+              ) : (
+                emphasis(segment.value)
+              ),
+            )
           ),
         )}
       </p>
