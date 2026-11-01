@@ -35,7 +35,7 @@ it.each(["en", "ar-EG"] as const)(
       expect(html).toMatch(new RegExp(`<code[^>]*dir="ltr"[^>]*>${value}</code>`));
     }
     expect(html).toMatch(
-      /<p dir="ltr" class="[^"]*hero-verdict[^"]*font-mono[^"]*"><span aria-hidden="true">✗ <\/span>Wrong answer<\/p>/,
+      /<p dir="ltr" class="[^"]*font-mono[^"]*hero-verdict[^"]*"><span aria-hidden="true">✗ <\/span>Wrong answer<\/p>/,
     );
     expect(html.match(/<dt class="[^"]*font-sans[^"]*text-start[^"]*"/g)).toHaveLength(3);
     expect(html).not.toMatch(/test\s*\d/i);

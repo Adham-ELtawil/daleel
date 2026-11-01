@@ -19,7 +19,7 @@ it.each(["en", "ar-EG"] as const)(
     expect(html).toContain(t("thinking", locale));
     expect(html).toMatch(/role="status"[^>]*aria-busy="true"/);
     expect(html).toContain('aria-hidden="true"');
-    expect(html).toContain("motion-safe:animate-pulse");
+    expect(html).toContain("skeleton-line");
   },
 );
 it.each(["budget_reached", "llm_error", "contest_running"] as const)(
@@ -29,7 +29,7 @@ it.each(["budget_reached", "llm_error", "contest_running"] as const)(
     for (const locale of ["en", "ar-EG"] as const) {
       const html = renderToStaticMarkup(<DiagnosisError code={code} locale={locale} />);
       expect(html).toContain(renderToStaticMarkup(<p>{t(code, locale)}</p>));
-      expect(html).toMatch(/role="alert"[^>]*class="[^"]*border/);
+      expect(html).toMatch(/role="alert"[^>]*class="[^"]*state-panel/);
       expect(html).toContain("<h2");
       expect(html).not.toContain(code);
     }

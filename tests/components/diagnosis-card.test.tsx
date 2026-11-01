@@ -67,8 +67,8 @@ it.each([
   [0.499, "neutral"],
   [0.5, "warning"],
   [0.799, "warning"],
-  [0.8, "success"],
-  [1, "success"],
+  [0.8, "neutral"],
+  [1, "neutral"],
 ] as const)("colors confidence %s with the %s badge", (confidence, tone) => {
   for (const locale of ["en", "ar-EG"] as const) {
     const html = render(undefined, locale, "diagnosed", confidence);
@@ -77,12 +77,12 @@ it.each([
     expect(html).toContain(new Intl.NumberFormat(locale, { style: "percent" }).format(confidence));
   }
 });
-it("renders the stepper before code and marks persisted diagnosis and stress complete", () => {
+it("renders code before the rail and marks persisted diagnosis and stress complete", () => {
   const html = render(verified);
   const steps = html.match(/<ol[^>]*aria-label="Attempt progress"[\s\S]*?<\/ol>/)?.[0] ?? "";
   expect(steps.match(/data-state="complete"/g)).toHaveLength(2);
   expect(steps).toMatch(/aria-current="step"[^>]*>[\s\S]*?Hints/);
-  expect(html.indexOf(steps)).toBeLessThan(html.indexOf('id="attempt-code-label"'));
+  expect(html.indexOf(steps)).toBeGreaterThan(html.indexOf('id="attempt-code-label"'));
 });
 it.each(["en", "ar-EG"] as const)("uses a friendly bug label and retry action in %s", (locale) => {
   expect(render(undefined, locale)).toContain(
@@ -99,7 +99,7 @@ it.each(["en", "ar-EG"] as const)("uses a friendly bug label and retry action in
 });
 it("shows an accessible skeleton on a diagnosing reload and a card on an error reload", () => {
   expect(render(undefined, "en", "diagnosing")).toMatch(/role="status"[^>]*aria-busy="true"/);
-  expect(render(undefined, "en", "error")).toMatch(/role="alert"[^>]*class="[^"]*border/);
+  expect(render(undefined, "en", "error")).toMatch(/role="alert"[^>]*class="[^"]*state-panel/);
 });
 it.each(["en", "ar-EG"] as const)(
   "renders the persisted verified counterexample in %s with three LTR blocks",
@@ -119,6 +119,7 @@ it.each(["en", "ar-EG"] as const)(
       locale === "en" ? "verified by running your code" : "اتأكدنا بتشغيل الكود بتاعك",
     );
     expect(html).not.toContain(locale === "en" ? "Not verified" : "لسه مش متأكدين بالتشغيل");
+    expect(html).not.toContain("badge-success");
   },
 );
 it.each([
