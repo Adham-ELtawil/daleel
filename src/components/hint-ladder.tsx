@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
@@ -8,28 +8,38 @@ import { appendHint, nextHintLevel, type Hint } from "@/src/domain/attempt-ui";
 import { t } from "@/src/i18n";
 import type { attemptDetail } from "@/src/services/attempt-service";
 import { HttpError } from "@/src/services/http-error";
-import { SafeMd } from "./safe-md";
+import { HintRow } from "./ui/hint-row";
+import { Window } from "./ui/window";
 import { ReplayBadge } from "./replay-badge";
 import { Explanation } from "./explanation";
 import type { explainAttempt } from "@/src/services/explain-service";
-import { StepHeading } from "./attempt-steps";
-import { DiagnosisError } from "./attempt-feedback";
+import { AttemptStepper, StepHeading } from "./attempt-steps";
+import { LoadingSkeleton, DiagnosisError } from "./attempt-feedback";
 
 export function HintLadder({
   detail,
   locale,
   ready,
   onProgress,
+  pipeline,
 }: {
   detail: Awaited<ReturnType<typeof attemptDetail>>;
   locale: "en" | "ar-EG";
   ready: boolean;
   onProgress?: (progress: { hints: boolean; explanation: boolean }) => void;
+  pipeline?: {
+    diagnosis: ReactNode;
+    counterexample: ReactNode;
+    complete: [boolean, boolean];
+    paused: boolean;
+    preparing: boolean;
+  };
 }) {
   const router = useRouter();
   const { attempt } = detail;
   const idea = attempt.mode === "idea";
   const actions = idea ? [] : (["stuck", "solved", "fixed_recheck"] as const);
+  const [fresh, setFresh] = useState<number>();
   const [hints, setHints] = useState(detail.revealedHints);
   const [provenance, setProvenance] = useState({
     replay: detail.replay,
@@ -77,6 +87,7 @@ export function HintLadder({
           recordedAt: string | null;
         }>(`${path}/hints/next`, { locale });
         setProvenance({ replay, recordedAt });
+        setFresh(hint.level);
         setHints((previous) => appendHint(previous, hint));
         if (!idea && hint.level >= 3) setCanExplain(true);
       } else if (action === "explain") {
@@ -101,49 +112,28 @@ export function HintLadder({
       setBusy(false);
     }
   }
-  return (
+  const hintPanel = (
     <>
-      <section className="card space-y-4 p-5" aria-label={t("hints", locale)} aria-live="polite">
+      <section className="space-y-4" aria-label={t("hints", locale)} aria-live="polite">
         {idea ? (
           <h2 className="text-xl font-semibold">{t("ideaTitle", locale)}</h2>
         ) : (
-          <StepHeading step={3} locale={locale} />
+          !pipeline && <StepHeading step={3} locale={locale} />
         )}
         {hints.length > 0 && <ReplayBadge {...provenance} locale={locale} />}
         {hints.map((hint) => (
-          <article
-            key={hint.level}
-            data-hint-level={hint.level}
-            className="space-y-3 rounded-xl border border-line bg-canvas p-4"
-          >
-            <h3 dir="auto" className="flex items-center gap-3">
-              <span className="step-number">{hint.level}</span>
-              {hint.title}
-            </h3>
-            <SafeMd text={hint.body_md} />
-            {hint.question_back && <SafeMd text={hint.question_back} />}
-          </article>
+          <HintRow key={hint.level} hint={hint} fresh={fresh === hint.level} />
         ))}
+        {pipeline?.preparing && <LoadingSkeleton label={t("preparing_hints", locale)} />}
         {solved && <p role="status">{t("solved_note", locale)}</p>}
         {canExplain && <p>{t("explanation_unlocked", locale)}</p>}
         {error &&
           (idea ? (
             <DiagnosisError code={error} locale={locale} heading="ideaTitle" />
           ) : (
-            <p role="alert">{t(error, locale)}</p>
+            <DiagnosisError code={error} locale={locale} />
           ))}
-        {explainError && <p role="alert">{t("load_error", locale, "walkthrough")}</p>}
-        <div className="flex flex-wrap gap-3">
-          {canExplain && !explanation && (
-            <button
-              type="button"
-              disabled={busy}
-              className="button button-primary"
-              onClick={() => act("explain")}
-            >
-              {busy ? t("pending", locale) : t("full_explanation", locale, "walkthrough")}
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-3">
           {ready && next !== null && (
             <button
               type="button"
@@ -158,8 +148,8 @@ export function HintLadder({
             <button
               key={action}
               type="button"
-              disabled={busy || (action === "solved" && solved)}
-              className="button button-secondary"
+              disabled={busy || pipeline?.paused || (action === "solved" && solved)}
+              className="button button-secondary button-small"
               onClick={() => (action === "fixed_recheck" ? setEditing(!editing) : act(action))}
             >
               {t(action === "fixed_recheck" && editing ? "cancel" : action, locale)}
@@ -167,19 +157,59 @@ export function HintLadder({
           ))}
         </div>
       </section>
-      {canExplain && explanation && (
-        <Explanation {...explanation} code={attempt.code} locale={locale} />
+    </>
+  );
+  function explainPanel() {
+    return canExplain && explanation ? (
+      <Explanation {...explanation} heading={!pipeline} code={attempt.code} locale={locale} />
+    ) : (
+      <div className="space-y-3">
+        {explainError && (
+          <p role="alert" className="state-panel state-error">
+            {t("load_error", locale, "walkthrough")}
+          </p>
+        )}
+        {canExplain ? (
+          <button
+            type="button"
+            disabled={busy || pipeline?.paused}
+            className="button button-secondary"
+            onClick={() => act("explain")}
+          >
+            {t("full_explanation", locale, "walkthrough")}
+          </button>
+        ) : (
+          <p className="text-sm text-muted">{t("locked", locale)}</p>
+        )}
+        {busy && canExplain && <LoadingSkeleton label={t("pending", locale)} />}
+      </div>
+    );
+  }
+  return (
+    <div className="min-w-0 space-y-5">
+      {pipeline ? (
+        <AttemptStepper
+          locale={locale}
+          complete={[...pipeline.complete, canExplain, canExplain && Boolean(explanation)]}
+        >
+          {[pipeline.diagnosis, pipeline.counterexample, hintPanel, explainPanel()]}
+        </AttemptStepper>
+      ) : (
+        <>
+          {hintPanel}
+          {!idea && canExplain && explainPanel()}
+        </>
       )}
       {editing && (
         <form
-          className="card space-y-3 p-5"
+          className="space-y-3 border-t border-line pt-5"
           onSubmit={(event) => {
             event.preventDefault();
             void act("recheck");
           }}
         >
           <label id="recheck-code-label">{t("updated_code", locale)}</label>
-          <div dir="ltr" className="overflow-hidden rounded border">
+          <Window title={t(attempt.language === "cpp17" ? "student_cpp" : "student_py", locale)}>
             <CodeMirror
               theme="dark"
               value={code}
@@ -187,14 +217,15 @@ export function HintLadder({
               extensions={extensions}
               height="240px"
               readOnly={busy}
+              editable={!busy}
               indentWithTab={false}
             />
-          </div>
+          </Window>
           <button type="submit" disabled={busy || !code.trim()} className="button button-secondary">
             {t(busy ? "pending" : "recheck", locale)}
           </button>
         </form>
       )}
-    </>
+    </div>
   );
 }

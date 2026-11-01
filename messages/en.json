@@ -63,8 +63,8 @@
     "fix": "Fix your lines",
     "line": "Line",
     "complexity": "Complexity",
-    "previous": "← Previous",
-    "next": "Next →",
+    "previous": "Previous",
+    "next": "Next",
     "play": "Play",
     "pause": "Pause",
     "speed": "Speed",
@@ -102,7 +102,9 @@
     "attention_empty": "No trainees need attention this week.",
     "coach_only": "Open a coach session to view your teams.",
     "no_teams": "You have no teams yet.",
-    "invalid_selection": "Choose one of your teams and a Monday date."
+    "invalid_selection": "Choose one of your teams and a Monday date.",
+    "reason_unsolved": "{count} unsolved attempts this week. Review a failing case together.",
+    "reason_hints": "Needs hints averaging {level} levels to solve. Retry a solved problem together."
   },
   "report": {
     "title": "Weekly report",
@@ -153,12 +155,15 @@
     "sample": "Sample"
   },
   "intake": {
+    "codeforces": "Codeforces",
+    "atcoder": "AtCoder",
+    "custom": "Custom",
     "ideaStart": "I don't know where to start",
     "ideaTitle": "Find the idea step by step",
-    "ideaPasteCode": "I have code now — check it",
+    "ideaPasteCode": "I have code now, check it",
     "ideaBadge": "Idea hints",
     "idea_attempt": "This attempt supports idea hints only. Paste your code in a new attempt to check it.",
-    "idea_replay_unavailable": "Idea hints are not available in demo mode for this problem. Add a MODEL_API_KEY to use them live.",
+    "idea_replay_unavailable": "Idea hints are not recorded for this demo problem yet. Try another demo or return with your code.",
     "diagnose_again": "Diagnose again",
     "diagnosis_error": "Diagnosis paused",
     "preparing_hints": "Preparing your hints…",
@@ -179,7 +184,7 @@
     "NONE": "Not submitted",
     "verdictTestNo": "Test number",
     "studentNote": "My idea (up to 1000 characters)",
-    "submit": "Submit",
+    "submit": "Check my code",
     "pending": "Working…",
     "timeLimitMs": "Time limit in ms",
     "memoryLimitMb": "Memory limit in MB",
@@ -219,7 +224,7 @@
     "hint": "Hint",
     "stuck": "I'm stuck",
     "solved": "I solved it",
-    "fixed_recheck": "I fixed it → re-check",
+    "fixed_recheck": "I fixed it, check again",
     "updated_code": "Updated code",
     "recheck": "Re-check",
     "cancel": "Cancel",
@@ -238,7 +243,13 @@
     "status_stuck": "Stuck",
     "ui_language": "Interface language",
     "english": "English",
-    "arabic": "عربي"
+    "arabic": "عربي",
+    "ideaHelper": "No code yet? Get hints about the idea from the statement only.",
+    "editor_empty": "Resolve a problem to open your editor.",
+    "student_cpp": "student.cpp",
+    "student_py": "student.py",
+    "main_cpp": "main.cpp",
+    "main_py": "main.py"
   },
   "attemptFlow": {
     "progress": "Attempt progress",
@@ -262,5 +273,11 @@
     "hint_title": "Hint 1",
     "hint": "The answer can reach 10^18. Which type are x and y, and what happens when you multiply them?",
     "replay": "Replay"
+  },
+  "notFound": {
+    "title": "404 Not found",
+    "sentence": "This page doesn't exist, or the attempt belongs to another session.",
+    "home": "Home",
+    "new_attempt": "New attempt"
   }
 }

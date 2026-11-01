@@ -1,9 +1,19 @@
 import type { Problem } from "@/src/db/repo/problems";
+import { Window } from "./ui/window";
+import { JudgeOutput } from "./ui/judge-output";
 import { t } from "@/src/i18n";
 
-export function StatementPanel({ problem, locale }: { problem: Problem; locale: "en" | "ar-EG" }) {
+export function StatementPanel({
+  problem,
+  locale,
+  open = false,
+}: {
+  problem: Problem;
+  locale: "en" | "ar-EG";
+  open?: boolean;
+}) {
   return (
-    <details className="card p-5">
+    <details open={open} className="border-t border-line pt-5">
       <summary className="cursor-pointer font-semibold">{t("title", locale, "statement")}</summary>
       <div className="space-y-4 pt-4">
         <p dir="ltr" className="whitespace-pre-wrap">
@@ -11,29 +21,21 @@ export function StatementPanel({ problem, locale }: { problem: Problem; locale: 
         </p>
         {(["inputSpecMd", "outputSpecMd"] as const).map((field) => (
           <section key={field}>
-            <h2 className="font-semibold">{t(field, locale, "statement")}</h2>
-            <pre dir="ltr" className="overflow-x-auto whitespace-pre-wrap font-sans">
+            <h3>{t(field, locale, "statement")}</h3>
+            <p dir="ltr" className="whitespace-pre-wrap">
               {problem[field]}
-            </pre>
+            </p>
           </section>
         ))}
         {problem.samples.map((sample, index) => (
-          <section key={index} className="space-y-2">
-            <h2 className="font-semibold">
-              {t("sample", locale, "statement")} {index + 1}
-            </h2>
-            {(["input", "output"] as const).map((field) => (
-              <div key={field}>
-                <h3>{t(field, locale)}</h3>
-                <pre
-                  dir="ltr"
-                  className="overflow-x-auto rounded-lg border border-line bg-canvas p-3"
-                >
-                  {sample[field]}
-                </pre>
-              </div>
-            ))}
-          </section>
+          <Window key={index} title={t("sample", locale, "statement") + " " + (index + 1)}>
+            <JudgeOutput
+              rows={[
+                { label: t("input", locale), value: sample.input },
+                { label: t("output", locale), value: sample.output },
+              ]}
+            />
+          </Window>
         ))}
       </div>
     </details>

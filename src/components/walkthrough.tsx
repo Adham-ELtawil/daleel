@@ -8,6 +8,8 @@ import {
   type WalkthroughState,
 } from "@/src/domain/walkthrough-state";
 import type { Explanation } from "@/src/llm/schemas/explanation";
+import { Window } from "./ui/window";
+import { JudgeOutput } from "./ui/judge-output";
 import { localeAttrs, t } from "@/src/i18n";
 
 export function Walkthrough({
@@ -50,7 +52,7 @@ export function Walkthrough({
       tabIndex={0}
       aria-label={t("title", locale, "walkthrough")}
       aria-keyshortcuts="ArrowLeft ArrowRight Space"
-      className="space-y-4 rounded-xl border border-line bg-canvas p-4"
+      className="space-y-4 border-t border-line pt-5"
       onKeyDown={(event) => {
         if (
           event.target instanceof HTMLElement &&
@@ -67,23 +69,28 @@ export function Walkthrough({
       <p dir={direction} aria-live="polite">
         {frame.caption}
       </p>
-      <pre dir="ltr" className="overflow-x-auto rounded bg-canvas p-2 text-sm">
-        {lines.map((line, index) => (
-          <code
-            key={index}
-            dir="ltr"
-            data-code-line={index + 1}
-            data-active={frame.code_line === index + 1}
-            className={`bidi-isolate block ${frame.code_line === index + 1 ? "bg-accent-soft font-bold text-ink" : ""}`}
-          >
-            <span className="inline-block w-8 select-none text-muted" aria-hidden="true">
-              {index + 1}
-            </span>
-            {line}
-            {"\n"}
-          </code>
-        ))}
-      </pre>
+      <Window title={t("code", locale)}>
+        <pre dir="ltr" className="walkthrough-code overflow-x-auto py-3 text-sm">
+          {lines.map((line, index) => (
+            <code
+              key={index}
+              dir="ltr"
+              data-code-line={index + 1}
+              data-active={frame.code_line === index + 1}
+              className={`bidi-isolate block border-s-[3px] ps-3 pe-3 ${frame.code_line === index + 1 ? "diagnosis-suspect font-bold text-ink" : "border-transparent"}`}
+            >
+              <span
+                className="inline-block w-8 select-none bg-surface text-muted"
+                aria-hidden="true"
+              >
+                {index + 1}
+              </span>
+              {line}
+              {"\n"}
+            </code>
+          ))}
+        </pre>
+      </Window>
       {frame.arrays.map((array, index) => (
         <div key={index} dir="ltr" data-array={array.name} className="overflow-x-auto">
           <code dir="ltr" className="bidi-isolate">
@@ -95,7 +102,7 @@ export function Walkthrough({
                 key={cell}
                 data-array-cell={cell}
                 data-highlighted={array.highlight.includes(cell)}
-                className="min-w-12 shrink-0 text-center"
+                className="bidi-isolate min-w-12 shrink-0 text-center font-mono"
               >
                 <div
                   className={`rounded-lg border border-line p-3 font-mono ${array.highlight.includes(cell) ? "bg-accent-soft font-bold text-ink" : "bg-surface"}`}
@@ -121,12 +128,14 @@ export function Walkthrough({
         </div>
       ))}
       {frame.vars.length > 0 && (
-        <table className="w-full text-start">
-          <caption>{t("variables", locale, "walkthrough")}</caption>
+        <table className="w-auto text-start text-sm">
+          <caption className="pb-1 text-start text-muted">
+            {t("variables", locale, "walkthrough")}
+          </caption>
           <thead>
             <tr>
               {(["name", "value"] as const).map((key) => (
-                <th key={key} className="text-start">
+                <th key={key} className="pe-6 text-start font-semibold">
                   {t(key, locale, "walkthrough")}
                 </th>
               ))}
@@ -135,13 +144,13 @@ export function Walkthrough({
           <tbody>
             {frame.vars.map((variable, index) => (
               <tr key={index}>
-                <td>
-                  <code dir="ltr" className="bidi-isolate">
+                <td className="pe-6 py-0.5">
+                  <bdi dir="ltr" className="font-sans">
                     {variable.name}
-                  </code>
+                  </bdi>
                 </td>
                 <td>
-                  <code dir="ltr" className="bidi-isolate">
+                  <code dir="ltr" className="bidi-isolate font-mono">
                     {variable.changed ? (
                       <strong className="rounded bg-accent-soft ps-2 pe-2 text-ink">
                         {variable.value}
@@ -157,22 +166,19 @@ export function Walkthrough({
         </table>
       )}
       {last && (
-        <div className="space-y-2">
-          {(
-            [
-              ["input", trace.input],
-              ["expected", trace.expected_output],
-              ["actual", trace.student_output],
-            ] as const
-          ).map(([key, value]) => (
-            <div key={key}>
-              <h4>{t(key, locale, "stress")}</h4>
-              <pre dir="ltr" className="overflow-x-auto bg-canvas p-2">
-                {value}
-              </pre>
-            </div>
-          ))}
-        </div>
+        <Window title={t("counterexample", locale, "attemptFlow")}>
+          <JudgeOutput
+            rows={[
+              { label: t("input", locale, "stress"), value: trace.input },
+              {
+                label: t("expected", locale, "stress"),
+                value: trace.expected_output,
+                tone: "expected",
+              },
+              { label: t("actual", locale, "stress"), value: trace.student_output, tone: "got" },
+            ]}
+          />
+        </Window>
       )}
       <div dir="ltr" data-controls className="flex flex-wrap items-center gap-2">
         <button
@@ -181,6 +187,7 @@ export function Walkthrough({
           disabled={state.index === 0}
           onClick={() => step(-1)}
         >
+          <span aria-hidden="true">◀</span>
           {t("previous", locale, "walkthrough")}
         </button>
         <button
@@ -189,6 +196,7 @@ export function Walkthrough({
           disabled={trace.frames.length === 1}
           onClick={() => dispatch({ type: "play", playing: !state.playing })}
         >
+          <span aria-hidden="true">{state.playing ? "Ⅱ" : "▶"}</span>
           {t(state.playing ? "pause" : "play", locale, "walkthrough")}
         </button>
         <button
@@ -198,6 +206,7 @@ export function Walkthrough({
           onClick={() => step(1)}
         >
           {t("next", locale, "walkthrough")}
+          <span aria-hidden="true">▶</span>
         </button>
         <label>
           {t("speed", locale, "walkthrough")}{" "}

@@ -17,11 +17,11 @@ export default async function CoachPage({
 }) {
   const locale = await uiLocale();
   const tr = (key: Parameters<typeof t<"coach">>[0]) => t(key, locale, "coach");
-  const layout = "coach ms-auto me-auto max-w-5xl space-y-6 ps-6 pe-6 py-10";
+  const layout = "coach ms-auto me-auto max-w-6xl space-y-6 ps-6 pe-6 py-10";
   const message = (text: string, demoAvailable?: boolean) => (
     <main {...localeAttrs(locale)} className={layout}>
-      <h1 className="text-2xl font-bold">{tr("title")}</h1>
-      <p role="status" className="rounded border p-4">
+      <h1 className="text-3xl font-semibold">{tr("title")}</h1>
+      <p role="status" className="state-panel state-empty">
         {text}
       </p>
       {demoAvailable !== undefined && <DemoCoach locale={locale} available={demoAvailable} />}
@@ -63,11 +63,16 @@ export default async function CoachPage({
   };
   return (
     <main {...localeAttrs(locale)} className={layout}>
-      <h1 className="text-2xl font-bold">{tr("title")}</h1>
+      <h1 className="text-3xl font-semibold">{tr("title")}</h1>
       <form action="/coach" method="get" className="flex flex-wrap items-end gap-4">
         <label htmlFor="team">
           {tr("team")}
-          <select id="team" name="team" defaultValue={team.id} className="ms-2 rounded border p-2">
+          <select
+            id="team"
+            name="team"
+            defaultValue={team.id}
+            className="ms-2 rounded-lg border border-line bg-surface p-2"
+          >
             {owned.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
@@ -86,7 +91,7 @@ export default async function CoachPage({
             step={7}
             defaultValue={stats.weekStart}
             required
-            className="ms-2 rounded border p-2"
+            className="ms-2 rounded-lg border border-line bg-surface p-2"
           />
         </label>
         <button type="submit" className="button button-secondary">
@@ -94,24 +99,27 @@ export default async function CoachPage({
         </button>
       </form>
       <p>
-        {tr("invite")}: <bdi dir="ltr">{team.inviteCode}</bdi>
+        {tr("invite")}:{" "}
+        <code dir="ltr" className="bidi-isolate select-all rounded-md bg-surface ps-3 pe-3 py-2">
+          {team.inviteCode}
+        </code>
       </p>
-      {team.inviteCode === "DEMO0001" && <p>{tr("synthetic")}</p>}
+      {team.inviteCode === "DEMO0001" && <p className="text-sm text-muted">{tr("synthetic")}</p>}
       <Link
         className="button button-primary"
         href={`/coach/report?${new URLSearchParams({ team: team.id, week: stats.weekStart })}`}
       >
         {t("title", locale, "report")}
       </Link>
-      <dl className="stat-grid">
+      <dl className="stats-strip">
         {columns.map((key) => (
-          <div key={key} className="card p-4">
+          <div key={key} className="p-4">
             <dt className="text-sm text-muted">{tr(key)}</dt>
             <dd className="text-3xl font-bold tabular-nums">{format(key, stats[key])}</dd>
           </div>
         ))}
       </dl>
-      <div className="card max-h-[32rem] overflow-auto">
+      <div className="max-h-[32rem] overflow-auto border-y border-line">
         <table className="w-full text-start">
           <caption className="pb-3 text-start text-xl font-semibold">{tr("trainees")}</caption>
           <thead>
@@ -131,11 +139,24 @@ export default async function CoachPage({
             {stats.trainees.map((row) => (
               <tr key={row.userId}>
                 <th scope="row" className="border-b border-line p-3 text-start">
-                  <bdi dir="ltr">{row.handle}</bdi>
+                  <code dir="ltr" className="bidi-isolate">
+                    {row.handle}
+                  </code>
                 </th>
                 {columns.map((key) => (
                   <td key={key} className="border-b border-line p-3 text-end tabular-nums">
-                    <span className={key === "solvedRate" ? "badge badge-neutral" : undefined}>
+                    <span className="inline-flex items-center gap-2">
+                      {key === "solvedRate" && (
+                        <span
+                          aria-hidden="true"
+                          className="h-1 w-12 overflow-hidden rounded-sm bg-line"
+                        >
+                          <span
+                            className="block h-full bg-muted"
+                            style={{ width: `${row.solvedRate * 100}%` }}
+                          />
+                        </span>
+                      )}
                       {format(key, row[key])}
                     </span>
                   </td>
@@ -145,7 +166,7 @@ export default async function CoachPage({
           </tbody>
         </table>
         {!stats.attempts && !stats.ideaHelp && (
-          <p role="status" className="rounded border p-4">
+          <p role="status" className="state-panel state-empty">
             {tr("empty")}
           </p>
         )}
@@ -155,38 +176,61 @@ export default async function CoachPage({
           {tr("attention")}
         </h2>
         <p>{tr("attention_rule")}</p>
-        {!stats.attention.length && <p>{tr("attention_empty")}</p>}
-        <ul className="grid gap-3 sm:grid-cols-2">
+        {!stats.attention.length && (
+          <p className="state-panel state-empty">{tr("attention_empty")}</p>
+        )}
+        <ul>
           {stats.attention.map((row) => (
-            <li key={row.userId} className="card border-s-4 border-s-warning p-4">
-              <bdi dir="ltr">{row.handle}</bdi> · {tr("unsolved")}: {number.format(row.unsolved)} ·{" "}
-              {tr("avgHintLevelAtSolve")}: {number.format(row.avgHintLevelAtSolve)}
+            <li
+              key={row.userId}
+              className="grid gap-2 border-b border-line py-4 sm:grid-cols-[10rem_1fr]"
+            >
+              <code dir="ltr" className="bidi-isolate">
+                {row.handle}
+              </code>
+              <p>
+                {row.unsolved >= 3
+                  ? tr("reason_unsolved").replace("{count}", number.format(row.unsolved))
+                  : tr("reason_hints").replace("{level}", number.format(row.avgHintLevelAtSolve))}
+              </p>
             </li>
           ))}
         </ul>
       </section>
-      {(
-        [
-          ["topics", stats.topTags.map(({ tag, count }) => [tag, count] as const)],
-          ["bugs", stats.topBugClasses.map(({ bugClass, count }) => [bugClass, count] as const)],
-        ] as const
-      ).map(([key, items]) => (
-        <section key={key} aria-labelledby={key}>
-          <h2 id={key} className="text-xl font-semibold">
-            {tr(key)}
-          </h2>
-          <ul>
-            {items.map(([label, count]) => (
-              <li key={label}>
-                <bdi dir={key === "bugs" ? "auto" : "ltr"}>
-                  {key === "bugs" ? bugClassLabel(label, locale) : label}
-                </bdi>
-                : {number.format(count)}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <div className="grid gap-8 lg:grid-cols-2">
+        {(
+          [
+            ["topics", stats.topTags.map(({ tag, count }) => [tag, count] as const)],
+            ["bugs", stats.topBugClasses.map(({ bugClass, count }) => [bugClass, count] as const)],
+          ] as const
+        ).map(([key, items]) => (
+          <section key={key} aria-labelledby={key}>
+            <h2 id={key} className="text-xl font-semibold">
+              {tr(key)}
+            </h2>
+            <ul className="space-y-4">
+              {items.map(([label, count]) => (
+                <li key={label} className="space-y-1">
+                  <div className="flex justify-between gap-3">
+                    <bdi dir={key === "bugs" ? "auto" : "ltr"}>
+                      {key === "bugs" ? bugClassLabel(label, locale) : label}
+                    </bdi>
+                    <span className="tabular-nums">{number.format(count)}</span>
+                  </div>
+                  <div aria-hidden="true" className="topic-bar h-1 bg-line">
+                    <div
+                      className="h-full bg-muted"
+                      style={{
+                        width: `${(count / Math.max(1, ...items.map(([, n]) => n))) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </main>
   );
 }

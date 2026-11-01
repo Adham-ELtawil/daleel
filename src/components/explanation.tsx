@@ -10,15 +10,17 @@ export function Explanation({
   trace,
   code,
   locale,
+  heading = true,
 }: {
   explanation: Omit<ExplanationData, "trace">;
   trace: ExplanationData["trace"];
   code: string;
   locale: "en" | "ar-EG";
+  heading?: boolean;
 }) {
   return (
-    <article id="explanation" className="card scroll-mt-24 space-y-5 p-5">
-      <StepHeading step={4} locale={locale} />
+    <article id="explanation" className="scroll-mt-24 space-y-5">
+      {heading && <StepHeading step={4} locale={locale} />}
       <SafeMd text={explanation.explanation_md} />
       {explanation.fix.length > 0 && (
         <section>
@@ -30,8 +32,8 @@ export function Explanation({
                   {t("line", locale, "walkthrough")} {fix.line}:{" "}
                 </span>
                 <code dir="ltr" className="bidi-isolate whitespace-pre-wrap">
-                  <del className="block rounded bg-danger/10 p-2 text-danger">{fix.old}</del>
-                  <ins className="mt-1 block rounded bg-success/10 p-2 text-success no-underline">
+                  <del className="block rounded bg-danger/12 p-2 text-danger">{fix.old}</del>
+                  <ins className="mt-1 block rounded bg-success/12 p-2 text-success no-underline">
                     {fix.new}
                   </ins>
                 </code>

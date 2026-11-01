@@ -26,7 +26,7 @@ export function DemoChoiceRow({
       type="button"
       disabled={busy}
       onClick={() => onStart(example)}
-      className="demo-row group flex w-full cursor-pointer items-center justify-between gap-4 border-s-2 border-transparent ps-4 pe-4 py-5 text-start transition-colors duration-150 focus-visible:border-accent hover:border-accent hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+      className="demo-row group flex w-full cursor-pointer items-center justify-between gap-4 border-s-2 border-transparent ps-4 pe-4 py-5 text-start transition-colors duration-150 focus-visible:border-accent hover:border-accent hover:bg-surface disabled:cursor-not-allowed"
     >
       <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
         <bdi dir="ltr" className="w-full text-xl font-semibold sm:w-auto">

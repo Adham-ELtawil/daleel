@@ -9,6 +9,9 @@ import { t as translate } from "@/src/i18n";
 import { useLocale } from "@/src/components/locale-shell";
 import { HttpError } from "@/src/services/http-error";
 import { post, preloadProblem, startIdeaAttempt } from "@/src/services/intake-client";
+import { Window } from "@/src/components/ui/window";
+import { JudgeOutput } from "@/src/components/ui/judge-output";
+import { LoadingSkeleton } from "@/src/components/attempt-feedback";
 import { IdeaStartButton } from "@/src/components/idea-card";
 
 const extensions = [
@@ -25,6 +28,7 @@ export default function ProblemPage() {
   const router = useRouter();
   const [problem, setProblem] = useState<Problem>();
   const [paste, setPaste] = useState(false);
+  const [language, setLanguage] = useState("cpp17");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Parameters<typeof t>[0]>();
@@ -82,135 +86,181 @@ export default function ProblemPage() {
     }
   }
   return (
-    <main className="intake ms-auto me-auto max-w-3xl space-y-6 ps-6 pe-6 py-10">
-      <h1 className="text-3xl font-bold">{t("title")}</h1>
+    <main className="intake ms-auto me-auto max-w-6xl space-y-6 ps-6 pe-6 py-10">
+      <h1>{t("title")}</h1>
       {error && (
-        <p role="alert" className="text-danger">
+        <p
+          role="alert"
+          className={`state-panel ${error === "contest_running" ? "state-warning" : "state-error"}`}
+        >
           {t(error)}
         </p>
       )}
-      <form onSubmit={(event) => submit(event, "resolve")} className="card p-6">
-        <fieldset disabled={busy} className="grid gap-3">
-          <label>
-            {t("url")}
-            <input
-              name="url"
-              dir="ltr"
-              required={!paste}
-              onChange={() => {
-                setPaste(false);
-                setProblem(undefined);
-              }}
-            />
-          </label>
-          {!paste && (
-            <button
-              type="button"
-              className="button button-secondary justify-self-start"
-              onClick={() => {
-                setPaste(true);
-                setProblem(undefined);
-              }}
-            >
-              {t("statement")}
-            </button>
-          )}
-          {paste && (
-            <label>
-              {t("statement")}
-              <textarea name="statement" dir="ltr" required maxLength={20000} rows={8} />
-            </label>
-          )}
-          <button type="submit" className="button button-primary justify-self-start">
-            {t(busy ? "pending" : "resolve")}
-          </button>
-        </fieldset>
-      </form>
-      {problem && (
-        <>
-          <section dir="ltr" className="card space-y-3 p-6">
-            <h2 className="text-2xl font-semibold">{problem.title}</h2>
-            <dl>
-              {(["timeLimitMs", "memoryLimitMb"] as const).map((key) => (
-                <div key={key}>
-                  <dt>{t(key)}</dt>
-                  <dd>{problem[key]}</dd>
-                </div>
+      <div className="workspace-grid">
+        <div className="min-w-0 space-y-6">
+          <form onSubmit={(event) => submit(event, "resolve")}>
+            <fieldset disabled={busy} className="grid gap-3">
+              <label>
+                {t("url")}
+                <input
+                  name="url"
+                  dir="ltr"
+                  className="bidi-isolate font-mono"
+                  required={!paste}
+                  onChange={() => {
+                    setPaste(false);
+                    setProblem(undefined);
+                  }}
+                />
+              </label>
+              {!paste && (
+                <button
+                  type="button"
+                  className="text-button justify-self-start"
+                  onClick={() => {
+                    setPaste(true);
+                    setProblem(undefined);
+                  }}
+                >
+                  {t("statement")}
+                </button>
+              )}
+              {paste && (
+                <label>
+                  {t("statement")}
+                  <textarea name="statement" dir="ltr" required maxLength={20000} rows={8} />
+                </label>
+              )}
+              <button
+                type="submit"
+                className={`button ${problem ? "button-secondary" : "button-primary"} justify-self-start`}
+              >
+                {t(busy ? "pending" : "resolve")}
+              </button>
+            </fieldset>
+          </form>
+          {problem && (
+            <section className="space-y-4 border-t border-line pt-5">
+              <h2 dir="ltr">{problem.title}</h2>
+              <code dir="ltr" className="bidi-isolate text-sm text-muted">
+                {t(problem.judge)} {problem.externalId}
+              </code>
+              <dl className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+                {(["timeLimitMs", "memoryLimitMb", "rating"] as const)
+                  .filter((key) => problem[key] !== null)
+                  .map((key) => (
+                    <div key={key} className="flex gap-2">
+                      <dt>{t(key)}</dt>
+                      <dd className="tabular-nums text-ink">{problem[key]}</dd>
+                    </div>
+                  ))}
+              </dl>
+              <ul aria-label={t("tags")} className="flex flex-wrap gap-2">
+                {problem.tags.map((tag) => (
+                  <li key={tag} className="badge badge-neutral">
+                    <bdi dir="ltr">{tag}</bdi>
+                  </li>
+                ))}
+              </ul>
+              {problem.samples.map((sample, index) => (
+                <Window
+                  key={index}
+                  title={translate("sample", locale, "statement") + " " + (index + 1)}
+                >
+                  <JudgeOutput
+                    rows={[
+                      { label: t("input"), value: sample.input },
+                      { label: t("output"), value: sample.output },
+                    ]}
+                  />
+                </Window>
               ))}
-            </dl>
-            {problem.rating !== null && (
-              <p>
-                {t("rating")}: {problem.rating}
-              </p>
-            )}
-            {problem.tags.length > 0 && (
-              <p>
-                {t("tags")}: {problem.tags.join(", ")}
-              </p>
-            )}
-            {problem.samples.map((sample, index) => (
-              <div key={index}>
-                <h3>{t("input")}</h3>
-                <pre dir="ltr">{sample.input}</pre>
-                <h3>{t("output")}</h3>
-                <pre dir="ltr">{sample.output}</pre>
-              </div>
-            ))}
-          </section>
-          <form onSubmit={(event) => submit(event, "attempt")} className="card grid gap-4 p-6">
-            <label id="code-label">{t("code")}</label>
-            <div dir="ltr" className="overflow-hidden rounded-lg border border-line">
+            </section>
+          )}
+        </div>
+        {problem ? (
+          <form onSubmit={(event) => submit(event, "attempt")} className="min-w-0 space-y-4">
+            <Window
+              title={
+                <bdi dir="ltr" className="font-mono">
+                  {t(language === "cpp17" ? "main_cpp" : "main_py")}
+                </bdi>
+              }
+            >
+              <fieldset
+                disabled={busy}
+                className="editor-toolbar grid gap-3 border-b border-line p-3 text-sm"
+              >
+                {choices.map(({ key, values }) => (
+                  <label key={key}>
+                    {t(key)}
+                    <select
+                      name={key}
+                      onChange={
+                        key === "language" ? (event) => setLanguage(event.target.value) : undefined
+                      }
+                    >
+                      {values.map((value) => (
+                        <option key={value} value={value}>
+                          {t(value)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+                <label>
+                  {t("verdictTestNo")}
+                  <input
+                    name="verdictTestNo"
+                    type="number"
+                    step={1}
+                    className="font-mono"
+                    dir="ltr"
+                  />
+                </label>
+              </fieldset>
+              <label id="code-label" className="sr-only">
+                {t("code")}
+              </label>
               <CodeMirror
                 theme="dark"
                 value={code}
                 onChange={setCode}
-                extensions={extensions}
-                height="240px"
+                extensions={language === "cpp17" ? extensions : extensions.slice(1)}
+                height="360px"
                 readOnly={busy}
+                editable={!busy}
                 indentWithTab={false}
               />
-            </div>
-            <fieldset disabled={busy} className="grid gap-3">
-              {choices.map(({ key, values }) => (
-                <label key={key}>
-                  {t(key)}
-                  <select name={key}>
-                    {values.map((value) => (
-                      <option key={value} value={value}>
-                        {t(value)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-              <label>
-                {t("verdictTestNo")}
-                <input name="verdictTestNo" type="number" step={1} />
-              </label>
+            </Window>
+            <fieldset disabled={busy} className="grid gap-4">
               <label>
                 {t("studentNote")}
                 <textarea name="studentNote" maxLength={1000} rows={3} />
               </label>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="submit"
-                  disabled={!code}
-                  className="button button-primary justify-self-start"
-                >
-                  {t(busy ? "pending" : "submit")}
-                </button>
-                <IdeaStartButton
-                  locale={locale}
-                  busy={busy}
-                  onClick={() => {
-                    void submit(null, "idea");
-                  }}
-                />
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="submit" disabled={!code} className="button button-primary">
+                    {t(busy ? "pending" : "submit")}
+                  </button>
+                  <IdeaStartButton
+                    locale={locale}
+                    busy={busy}
+                    onClick={() => {
+                      void submit(null, "idea");
+                    }}
+                  />
+                </div>
+                <p className="text-sm text-muted">{t("ideaHelper")}</p>
               </div>
             </fieldset>
           </form>
-        </>
-      )}
+        ) : (
+          <section role="status" className="state-panel state-empty lg:self-start">
+            {busy ? <LoadingSkeleton label={t("pending")} /> : <p>{t("editor_empty")}</p>}
+          </section>
+        )}
+      </div>
     </main>
   );
 }

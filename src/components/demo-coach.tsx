@@ -30,17 +30,21 @@ export function DemoCoach({ locale, available }: { locale: "en" | "ar-EG"; avail
     }
   }
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 border-t border-line pt-5">
       <button
         type="button"
         disabled={!available || busy}
         onClick={open}
-        className="rounded border p-3 disabled:opacity-50"
+        className="button button-secondary"
       >
         {busy ? t("pending", locale) : t("demo_entry", locale, "coach")}
       </button>
       {!available && <SafeMd text={t("demo_seed_hint", locale, "coach")} />}
-      {error && <p role="alert">{t("internal_error", locale)}</p>}
+      {error && (
+        <p role="alert" className="state-panel state-error">
+          {t("internal_error", locale)}
+        </p>
+      )}
     </div>
   );
 }
