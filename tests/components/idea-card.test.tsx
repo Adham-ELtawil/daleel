@@ -52,7 +52,7 @@ it.each(["en", "ar-EG"] as const)(
     expect(html).toContain(`dir="${locale === "en" ? "ltr" : "rtl"}"`);
     expect(html).toMatch(/<button[^>]*type="button"[^>]*>[\s\S]*?(Hint|الـ hint) 1<\/button>/);
     expect(html).toContain('href="/problem?problemId=problem-1"');
-    expect(html).toContain(locale === "en" ? "I have code now — check it" : "كتبت كود؟ يلا نشوفه");
+    expect(html).toContain(locale === "en" ? "I have code now, check it" : "كتبت كود؟ يلا نشوفه");
     const complete = renderToStaticMarkup(<IdeaCard detail={detail(locale, 4)} locale={locale} />);
     expect(complete).toContain('data-hint-level="4"');
     expect(complete).not.toMatch(

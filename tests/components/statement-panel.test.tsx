@@ -69,6 +69,8 @@ it.each(["en", "ar-EG"] as const)(
     expect(html).not.toMatch(/^<details[^>]*\bopen/);
     expect(html).toMatch(/<summary\b[^>]*>/);
     expect(html).toContain(locale === "en" ? "Problem statement" : "نص المسألة");
+    expect(html.match(/<h3\b/g)).toHaveLength(2);
+    expect(html).not.toContain("<h2");
     for (const text of [problem.statementMd, problem.inputSpecMd, problem.outputSpecMd]) {
       const escaped = renderToStaticMarkup(React.createElement("span", null, text)).slice(6, -7);
       expect(html).toContain(escaped);

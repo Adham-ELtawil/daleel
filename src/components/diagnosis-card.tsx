@@ -13,7 +13,8 @@ import { HintLadder } from "./hint-ladder";
 import { ReplayBadge } from "./replay-badge";
 import { StressResult } from "./stress-result";
 import { DiagnosisError, LoadingSkeleton } from "./attempt-feedback";
-import { AttemptStepper, StepHeading } from "./attempt-steps";
+import { Window } from "./ui/window";
+import { StatementPanel } from "./statement-panel";
 
 export function DiagnosisCard({
   detail,
@@ -40,7 +41,7 @@ export function DiagnosisCard({
     status === "error" ? "llm_error" : undefined,
   );
   const [reset, setReset] = useState(false);
-  const [progress, setProgress] = useState({ hints: detail.canExplain, explanation: false });
+  const [revision, setRevision] = useState(0);
   const extensions = useMemo(
     () => [
       ...(language === "cpp17" ? [cpp()] : []),
@@ -53,7 +54,7 @@ export function DiagnosisCard({
     async (retry = false) => {
       setBusy(true);
       setReset(true);
-      setProgress({ hints: false, explanation: false });
+      setRevision((value) => value + 1);
       setError(undefined);
       setResult(undefined);
       setStress(undefined);
@@ -108,56 +109,31 @@ export function DiagnosisCard({
     }
   }, [autostart, status, initial, diagnose]);
   const ready = ladderReady || (Boolean(result) && !busy);
-  return (
-    <section dir={locale === "en" ? "ltr" : "rtl"} className="attempt-flow space-y-6">
-      <AttemptStepper
-        complete={[
-          Boolean(result),
-          Boolean(result && (stress || (!busy && !error))),
-          progress.hints,
-          progress.explanation,
-        ]}
-        locale={locale}
-      />
-      <div className="card overflow-hidden">
-        <h2 id="attempt-code-label" className="border-b border-line p-4 text-lg">
-          {t("code", locale)}
-        </h2>
-        <CodeMirror
-          theme="dark"
-          dir="ltr"
-          value={code}
-          extensions={extensions}
-          readOnly
-          height="300px"
-          indentWithTab={false}
-        />
-      </div>
-      <section aria-live="polite" className="card space-y-4 p-5">
-        <StepHeading step={1} locale={locale} />
+  const diagnosisPanel = {
+    content: (
+      <section aria-live="polite" className="space-y-4">
         <button
           type="button"
           disabled={busy}
           onClick={() => diagnose(Boolean(result || error || reset || status !== "new"))}
-          className="button button-secondary"
+          className="quiet-button"
         >
           {t(result || error || reset || status !== "new" ? "diagnose_again" : "diagnose", locale)}
         </button>
         {stage && !result && <LoadingSkeleton label={t(stage, locale)} />}
         {error && <DiagnosisError code={error} locale={locale} />}
-        {busy && result && (stress || !result.bug_found) && !ladderReady && !error && (
-          <LoadingSkeleton label={t("preparing_hints", locale)} />
-        )}
         {result && (
           <article className="space-y-3">
             <ReplayBadge replay={result.replay} recordedAt={result.recordedAt} locale={locale} />
-            <p dir="auto">{result.public_summary}</p>
+            <p dir="auto" className="max-w-[70ch] text-xl">
+              {result.public_summary}
+            </p>
             <div className="flex flex-wrap gap-2">
-              <span className={`badge ${result.bug_found ? "badge-danger" : "badge-neutral"}`}>
+              <span className="badge badge-neutral">
                 {t("bug_class", locale)}: <bdi>{bugClassLabel(result.bug_class, locale)}</bdi>
               </span>
               <span
-                className={`badge badge-${result.confidence >= 0.8 ? "success" : result.confidence >= 0.5 ? "warning" : "neutral"}`}
+                className={`badge badge-${result.confidence >= 0.8 ? "neutral" : result.confidence >= 0.5 ? "warning" : "neutral"}`}
               >
                 {t("confidence", locale)}:{" "}
                 <bdi>
@@ -169,25 +145,56 @@ export function DiagnosisCard({
           </article>
         )}
       </section>
-      {result && (
-        <StressResult
-          result={stress}
-          pending={busy && result.bug_found && !ladderReady && !error}
-          locale={locale}
-        />
-      )}
-      {!busy && !error && (
-        <HintLadder
-          detail={
-            reset
-              ? { ...detail, revealedHints: [], canExplain: false, replay: false, recordedAt: null }
-              : detail
-          }
-          locale={locale}
-          ready={ready}
-          onProgress={setProgress}
-        />
-      )}
+    ),
+  };
+  return (
+    <section dir={locale === "en" ? "ltr" : "rtl"} className="attempt-flow workspace-grid">
+      <div className="min-w-0 space-y-5 lg:sticky lg:top-28 lg:self-start">
+        <Window
+          filename={t(language === "cpp17" ? "student_cpp" : "student_py", locale)}
+          title={<bdi dir="ltr">{detail.problem?.title}</bdi>}
+        >
+          <label id="attempt-code-label" className="sr-only">
+            {t("code", locale)}
+          </label>
+          <CodeMirror
+            theme="dark"
+            dir="ltr"
+            value={code}
+            extensions={extensions}
+            readOnly
+            editable={false}
+            basicSetup={{ highlightActiveLine: false, highlightActiveLineGutter: false }}
+            height="300px"
+            indentWithTab={false}
+          />
+        </Window>
+        {detail.problem && <StatementPanel problem={detail.problem} locale={locale} />}
+      </div>
+      <HintLadder
+        key={revision}
+        detail={
+          reset
+            ? { ...detail, revealedHints: [], canExplain: false, replay: false, recordedAt: null }
+            : detail
+        }
+        locale={locale}
+        ready={ready && !error}
+        pipeline={{
+          diagnosis: diagnosisPanel.content,
+          counterexample: result ? (
+            <StressResult
+              result={stress}
+              pending={busy && result.bug_found && !ladderReady && !error}
+              locale={locale}
+            />
+          ) : null,
+          complete: [Boolean(result), Boolean(result && (stress || (!busy && !error)))],
+          paused: busy || Boolean(error),
+          preparing:
+            busy && Boolean(result && (stress || !result.bug_found)) && !ladderReady && !error,
+        }}
+      />
     </section>
   );
 }

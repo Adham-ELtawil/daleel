@@ -20,11 +20,13 @@ export default async function ReportPage({
     return t(key, locale, "report");
   };
   const coach = (key: Parameters<typeof t<"coach">>[0]) => t(key, locale, "coach");
-  const layout = "report ms-auto me-auto max-w-4xl space-y-6 ps-6 pe-6 py-10";
+  const layout = "report ms-auto me-auto max-w-6xl space-y-6 ps-6 pe-6 py-10";
   const message = (text: string) => (
     <main {...localeAttrs(locale)} className={layout}>
       <h1>{tr("title")}</h1>
-      <p role="status">{text}</p>
+      <p role="status" className="state-panel state-empty">
+        {text}
+      </p>
     </main>
   );
   const db = await connect(getDb());
@@ -67,13 +69,17 @@ export default async function ReportPage({
         </Link>
         <PrintReport locale={locale} />
       </nav>
-      {team.inviteCode === "DEMO0001" && <p>{coach("synthetic")}</p>}
-      <p className="card border-s-4 border-s-accent p-5 text-xl font-semibold">{report.headline}</p>
-      {!stats.attempts && !stats.ideaHelp && <p>{coach("empty")}</p>}
-      <dl className="stat-grid">
+      {team.inviteCode === "DEMO0001" && <p className="text-sm text-muted">{coach("synthetic")}</p>}
+      <p className="max-w-[70ch] text-[31px] font-semibold">{report.headline}</p>
+      {!stats.attempts && !stats.ideaHelp && (
+        <p role="status" className="state-panel state-empty">
+          {coach("empty")}
+        </p>
+      )}
+      <dl className="stats-strip">
         {(["attempts", "solved", "solvedRate", "avgHintLevelAtSolve", "ideaHelp"] as const).map(
           (key) => (
-            <div key={key} className="card p-4">
+            <div key={key} className="p-4">
               <dt className="text-sm text-muted">{coach(key)}</dt>
               <dd className="text-3xl font-bold tabular-nums">
                 {(key === "solvedRate" ? percent : number).format(stats[key])}
@@ -110,11 +116,16 @@ export default async function ReportPage({
         <h2 id="attention" className="text-xl font-semibold">
           {coach("attention")}
         </h2>
-        {!report.attention.length && <p>{coach("attention_empty")}</p>}
+        {!report.attention.length && (
+          <p className="state-panel state-empty">{coach("attention_empty")}</p>
+        )}
         <ul className="space-y-2">
           {report.attention.map(({ handle, suggestion }) => (
-            <li key={handle} className="card border-s-4 border-s-warning p-4">
-              <bdi dir="ltr">{handle}</bdi>: {suggestion}
+            <li key={handle} className="border-b border-line py-4">
+              <code dir="ltr" className="bidi-isolate me-4">
+                {handle}
+              </code>
+              <span>{suggestion}</span>
             </li>
           ))}
         </ul>
@@ -123,7 +134,7 @@ export default async function ReportPage({
         <h2 id="recommended" className="text-xl font-semibold">
           {tr("recommended")}
         </h2>
-        {!report.recommended.length && <p>{tr("empty")}</p>}
+        {!report.recommended.length && <p className="state-panel state-empty">{tr("empty")}</p>}
         {report.recommended.length > 0 && report.recommended.length < 5 && (
           <p>{tr("limited").replace("{count}", number.format(report.recommended.length))}</p>
         )}
@@ -136,11 +147,14 @@ export default async function ReportPage({
                   className="underline"
                   href={`https://codeforces.com/problemset/problem/${p.contestId}/${p.index}`}
                 >
-                  <bdi dir="ltr">
-                    {p.id} · {p.name}
-                  </bdi>
+                  <code dir="ltr" className="bidi-isolate me-3">
+                    {p.id}
+                  </code>
+                  <bdi dir="ltr">{p.name}</bdi>
                 </a>{" "}
-                · {t("rating", locale)}: {number.format(p.rating)}
+                <span className="ms-3 text-sm text-muted">
+                  {t("rating", locale)}: {number.format(p.rating)}
+                </span>
                 <p>{why}</p>
               </li>
             );

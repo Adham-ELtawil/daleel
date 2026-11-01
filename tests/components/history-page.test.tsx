@@ -53,11 +53,39 @@ it.each(["en", "ar-EG"])("shows localized bug classes in history in %s", async (
   expect(html).toContain(locale === "en" ? "Missed edge case" : "حالة خاصة فاتتك");
   expect(html).not.toContain("edge_case");
 });
+it.each([0, 1, 2, 3, 4])("renders four hint segments with %s revealed", async (revealed) => {
+  await store.db.insert(attempts).values({
+    ...rows.attempt,
+    userId: "guest_local",
+    language: "cpp17",
+    locale: "en",
+    status: "diagnosed",
+    maxHintLevel: revealed,
+  });
+  const html = await render();
+  expect(html.match(/data-hint-segment=/g)).toHaveLength(4);
+  expect(html.match(/data-filled="true"/g) ?? []).toHaveLength(revealed);
+  expect(html).not.toContain(" · ");
+  expect(html).toMatch(/<a[^>]*class="[^"]*history-row/);
+});
+it.each([
+  ["solved", "success"],
+  ["error", "danger"],
+  ["stuck", "warning"],
+  ["diagnosed", "neutral"],
+  ["new", "neutral"],
+] as const)("maps %s to the %s status chip", async (status, tone) => {
+  await store.db
+    .insert(attempts)
+    .values({ ...rows.attempt, userId: "guest_local", language: "cpp17", locale: "en", status });
+  expect(await render()).toContain(`badge-${tone}`);
+});
 it.each(["en", "ar-EG"])("links the empty history to a new attempt in %s", async (locale) => {
   request.locale = locale;
   const html = await render();
-  expect(html).toMatch(/role="status"[^>]*class="[^"]*\bcard\b/);
+  expect(html).toMatch(/role="status"[^>]*class="[^"]*state-panel/);
   expect(html).toContain('href="/problem"');
+  expect(html).toContain('href="/#demo"');
   expect(html).toContain(locale === "en" ? "New attempt" : "محاولة جديدة");
 });
 it.each(["en", "ar-EG"])("shows the idea badge instead of a bug class in %s", async (locale) => {

@@ -225,8 +225,8 @@ it.each(["en", "ar-EG"] as const)(
         code: "idea_replay_unavailable",
         message:
           locale === "en"
-            ? "Idea hints are not available in demo mode for this problem. Add a MODEL_API_KEY to use them live."
-            : expect.stringMatching(/^[\u0600-\u06ff].*MODEL_API_KEY/),
+            ? "Idea hints are not recorded for this demo problem yet. Try another demo or return with your code."
+            : "تلميحات الفكرة لسه مش متسجلة للمسألة دي في الديمو. جرّب ديمو تاني أو ارجع بالكود بتاعك.",
       },
     });
     expect(log).toHaveBeenCalledWith({ requestId: "pr26-test", code: "idea_replay_unavailable" });

@@ -27,10 +27,15 @@ it("renders the caption, read-only numbered student code and highlighted current
   expect(html).toContain(a.trace.frames[0].caption);
   expect(html).not.toContain(a.trace.frames[1].caption);
   expect(html).toMatch(/data-code-line="5"[^>]*data-active="true"/);
+  expect(html).toMatch(/data-active="true"[^>]*class="[^"]*diagnosis-suspect/);
   expect(html).toContain("cin &gt;&gt; w;");
   expect(html).toMatch(/<pre[^>]*dir="ltr"/);
   expect(html).not.toMatch(/<textarea|contenteditable="true"/);
   expect(html).toMatch(/<strong[^>]*>2<\/strong>/);
+  expect(html).toMatch(/<table[^>]*class="[^"]*w-auto[^"]*text-sm/);
+  expect(html).toMatch(/<caption[^>]*class="[^"]*text-start/);
+  expect(html).toMatch(/<bdi[^>]*dir="ltr"[^>]*class="font-sans">w<\/bdi>/);
+  expect(html).toMatch(/<code[^>]*dir="ltr"[^>]*class="[^"]*font-mono/);
 });
 it("renders highlighted array cells and pointer labels under their target cells", async () => {
   const trace: Explanation["trace"] = structuredClone(a.trace);

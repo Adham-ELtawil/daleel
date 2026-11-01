@@ -11,7 +11,7 @@ export function ReplayBadge({
   locale: "en" | "ar-EG";
 }) {
   return replay && recordedAt ? (
-    <span dir="auto" className="badge badge-info text-xs">
+    <span dir="auto" className="badge badge-neutral text-xs">
       {t("replay_badge", locale).replace("{date}", recordedAt.slice(0, 10))}
     </span>
   ) : null;

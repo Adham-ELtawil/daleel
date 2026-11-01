@@ -167,6 +167,11 @@ it.each(["en", "ar-EG"] as const)(
     expect(attention).toContain("trainee_01");
     expect(attention).toContain("trainee_02");
     expect(attention).not.toContain("trainee_03");
+    expect(attention).not.toContain(" · ");
+    expect(attention).toContain(
+      locale === "en" ? "unsolved attempts this week" : "محاولات لسه متحلتش الأسبوع ده",
+    );
+    expect(attention).toContain(locale === "en" ? "Needs hints averaging" : "بيحتاج hints بمتوسط");
     expect(html).toContain("math");
     expect(html).toContain(locale === "en" ? "Off-by-one error" : "فرق واحد في الحدود");
     expect(html).not.toContain("off_by_one");
@@ -177,7 +182,7 @@ it("uses the selected team/week and shows empty states without leaking another t
   const previous = await render({ team: "team_a", week: "2026-10-19" });
   expect(previous).toContain("No attempts this week.");
   expect(previous).toContain("Share the invite code with your trainees to get started.");
-  expect(previous).toMatch(/role="status"[^>]*class="[^"]*border/);
+  expect(previous).toMatch(/role="status"[^>]*class="[^"]*state-panel/);
   expect(previous).toContain("No trainees need attention this week.");
   expect(previous).not.toContain("trainee_01");
   const other = await render({ team: "team_b", week: "2026-10-26" });
