@@ -1,0 +1,32 @@
+{
+  "levels": [
+    {
+      "level": 1,
+      "kind": "nudge",
+      "title": "What counts as a split?",
+      "body_md": "Think about what each part must satisfy.",
+      "question_back": "What does a valid part look like?"
+    },
+    {
+      "level": 2,
+      "kind": "concept",
+      "title": "Look at the structure",
+      "body_md": "Both parts must be positive and even. Consider how these requirements interact.",
+      "question_back": null
+    },
+    {
+      "level": 3,
+      "kind": "precise",
+      "title": "Use parity",
+      "body_md": "Parity reasoning fits because the condition concerns even weights and their sum.",
+      "question_back": null
+    },
+    {
+      "level": 4,
+      "kind": "full",
+      "title": "Build the reasoning",
+      "body_md": "Consider the smallest valid parts, then reason about the parity of their sum and whether the total can accommodate both. This takes constant time and constant space.",
+      "question_back": null
+    }
+  ]
+}

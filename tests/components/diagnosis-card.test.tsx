@@ -29,6 +29,7 @@ function render(
 ) {
   const detail: Awaited<ReturnType<typeof attemptDetail>> = {
     attempt: {
+      mode: "code",
       id: "pr16b2-attempt",
       problemId: "cf-4A",
       parentAttemptId: null,

@@ -32,6 +32,27 @@ it("has every English key in Arabic, including the intake UI", () => {
   expect(en).toHaveProperty("intake");
   expect(keys(ar).sort()).toEqual(keys(en).sort());
 });
+it("has all new idea-mode keys in both locales with Arabic-first copy", () => {
+  for (const messages of [en, ar]) {
+    for (const key of [
+      "ideaStart",
+      "ideaTitle",
+      "ideaPasteCode",
+      "ideaBadge",
+      "idea_replay_unavailable",
+    ])
+      expect(messages.intake).toHaveProperty(key);
+    expect(messages.coach).toHaveProperty("ideaHelp");
+  }
+  for (const key of [
+    "ideaStart",
+    "ideaTitle",
+    "ideaPasteCode",
+    "ideaBadge",
+    "idea_replay_unavailable",
+  ])
+    expect(Reflect.get(ar.intake, key)).toMatch(/^[\u0600-\u06ff]/);
+});
 it("has complete stress copy in both locales with Arabic-first lines", () => {
   const stressKeys = [
     "pending",

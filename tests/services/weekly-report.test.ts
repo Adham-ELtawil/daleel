@@ -152,3 +152,23 @@ it("enforces coach ownership, guest restrictions and valid Cairo Mondays in the 
     });
   }
 });
+it("includes ideaHelp in report stats while preserving code counts, narrative and attention", async () => {
+  const { weeklyReport, coach, team } = await setup();
+  const before = await weeklyReport(store.db, coach, team.id, "2026-10-26", "en");
+  const base = (await store.db.select().from(attempts).where(eq(attempts.userId, "trainee_01")))[0];
+  await store.db
+    .insert(attempts)
+    .values({ ...base, id: "report-idea", mode: "idea", code: "", createdAt: now, status: "new" });
+  const after = await weeklyReport(store.db, coach, team.id, "2026-10-26", "en");
+  expect(after.stats).toMatchObject({
+    attempts: before.stats.attempts,
+    solved: before.stats.solved,
+    solvedRate: before.stats.solvedRate,
+    avgHintLevelAtSolve: before.stats.avgHintLevelAtSolve,
+    ideaHelp: 1,
+  });
+  expect(after.stats.trainees.find(({ userId }) => userId === "trainee_01")).toMatchObject({
+    ideaHelp: 1,
+  });
+  expect(after.report).toEqual(before.report);
+});

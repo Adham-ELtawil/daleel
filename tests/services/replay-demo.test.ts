@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,7 +11,11 @@ import { getProblemByExternalId } from "@/src/db/repo/problems";
 import { seed } from "@/src/db/seed";
 import { createMetaClient, type ChatMessage, type LlmStepConfig } from "@/src/llm/meta-client";
 import { buildDiagnoseMessages, diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
-import { buildLadderMessages, ladderStepConfig } from "@/src/llm/prompts/ladder";
+import {
+  buildIdeaLadderMessages,
+  buildLadderMessages,
+  ladderStepConfig,
+} from "@/src/llm/prompts/ladder";
 import { buildExplainMessages, explainStepConfig } from "@/src/llm/prompts/explain";
 import { ExplanationSchema } from "@/src/llm/schemas/explanation";
 import { validateExplanation } from "@/src/domain/explanation-validate";
@@ -96,6 +100,13 @@ const explanation = await createReplayStore().read(
     }),
   ),
 );
+const ideaConfig = { ...ladderStepConfig({}), step: "idea" as const };
+const ideaRecording = existsSync("recordings/idea")
+  ? await createReplayStore().read(
+      "idea",
+      hashFor(ideaConfig, buildIdeaLadderMessages({ problem, locale: "en" })),
+    )
+  : null;
 
 let store: Awaited<ReturnType<typeof tempDb>>;
 const now = () => Date.UTC(2026, 9, 30, 13);
@@ -193,6 +204,28 @@ it.skipIf(!explanation)(
       null,
     );
     expect(await response.json()).toEqual({ explanation: expected, trace });
+    expect(flow.fetch).not.toHaveBeenCalled();
+  },
+);
+it.skipIf(!ideaRecording)(
+  "replays committed idea hints when recorded, without diagnosis or a model key",
+  async () => {
+    const flow = setup("replay");
+    const savedProblem = (await getProblemByExternalId(store.db, "codeforces", "4A"))!;
+    const response = await flow.handlers.attempt(
+      request({ problemId: savedProblem.id, mode: "idea" }),
+    );
+    expect(response.status).toBe(200);
+    const { attemptId }: { attemptId: string } = await response.json();
+    for (let level = 1; level <= 4; level++) {
+      const reveal = await flow.handlers.nextHint(request(), attemptId);
+      expect(reveal.status).toBe(200);
+      expect(await reveal.json()).toMatchObject({
+        hint: { level },
+        replay: true,
+        recordedAt: ideaRecording!.provenance.recordedAt,
+      });
+    }
     expect(flow.fetch).not.toHaveBeenCalled();
   },
 );

@@ -401,6 +401,7 @@ it("paginates local guest history by createdAt + id newest first without leaking
         "createdAt",
         "id",
         "maxHintLevel",
+        "mode",
         "problemTitle",
         "status",
       ]);

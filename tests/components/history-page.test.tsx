@@ -60,3 +60,22 @@ it.each(["en", "ar-EG"])("links the empty history to a new attempt in %s", async
   expect(html).toContain('href="/problem"');
   expect(html).toContain(locale === "en" ? "New attempt" : "محاولة جديدة");
 });
+it.each(["en", "ar-EG"])("shows the idea badge instead of a bug class in %s", async (locale) => {
+  request.locale = locale;
+  await store.db.insert(attempts).values({
+    ...rows.attempt,
+    mode: "idea",
+    code: "",
+    userId: "guest_local",
+    language: "cpp17",
+    locale: "en",
+    status: "new",
+  });
+  const html = await render();
+  expect(html).toMatch(
+    new RegExp(
+      `<span[^>]*class="[^"]*badge[^>]*>${locale === "en" ? "Idea hints" : "تلميحات الفكرة"}<`,
+    ),
+  );
+  expect(html).not.toContain(locale === "en" ? "Missed edge case" : "حالة خاصة فاتتك");
+});

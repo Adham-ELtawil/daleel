@@ -237,3 +237,21 @@ it("has nonempty Egyptian Arabic copy, matching English keys", () => {
     expect(line).not.toMatch(/[()\/→←]/);
   }
 });
+it.each(["en", "ar-EG"])(
+  "shows idea help in both the summary and trainee table in %s",
+  async (locale) => {
+    request.locale = locale;
+    const base = (await store.db.select().from(attempts))[0];
+    await store.db
+      .insert(attempts)
+      .values({ ...base, id: "idea-help", mode: "idea", code: "", status: "new" });
+    const html = await render();
+    const label = locale === "en" ? "Asked for idea help" : "طلب مساعدة في الفكرة";
+    expect(html).toMatch(
+      new RegExp(
+        `<dt[^>]*>${label}</dt>[\\s\\S]*?<dd[^>]*>${new Intl.NumberFormat(locale).format(1)}</dd>`,
+      ),
+    );
+    expect(html).toMatch(new RegExp(`<th[^>]*scope="col"[^>]*>${label}</th>`));
+  },
+);
