@@ -21,11 +21,15 @@ const locales = [
   {
     selected: "en",
     preview: "Early preview: the coach is under construction.",
+    headline: "Wrong answer? Find out why, then fix it yourself.",
+    eyebrow: "Your competitive programming coach",
     steps: ["Diagnose", "Verify", "Hint"],
   },
   {
     selected: "ar-EG",
     preview: "لسه بنبني النسخة الأولى.",
+    headline: "الكود طلع Wrong answer؟ اعرف السبب وصلّحه بنفسك.",
+    eyebrow: "كوتشك في الـ competitive programming",
     steps: ["شخّص", "اتأكد", "خد تلميح"],
   },
 ] as const;
@@ -47,3 +51,19 @@ it.each(locales)("explains the three steps in order in $selected", async ({ sele
   expect(headings).toEqual(steps);
   expect(list.match(/<li\b/g)).toHaveLength(3);
 });
+
+it.each(locales)(
+  "shows the verdict message and functional CTAs in $selected",
+  async ({ selected, headline, eyebrow }) => {
+    const html = await render(selected);
+    const heading = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "";
+    expect(heading.replace(/<[^>]*>/g, "")).toBe(headline);
+    expect(heading).toMatch(/<bdi dir="ltr" class="whitespace-nowrap">Wrong answer<\/bdi>/);
+    expect(html).toContain('href="/problem"');
+    expect(html).toContain('href="#demo"');
+    expect(html).toContain('id="demo"');
+    expect(html).toContain('id="demo-heading"');
+    expect(html).toContain('href="/coach"');
+    expect(html).not.toContain(eyebrow);
+  },
+);

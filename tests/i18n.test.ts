@@ -109,3 +109,43 @@ it.each([
     expect(i18n.resolveLocale(cookie, language)).toBe(expected);
   }
 });
+
+it("provides the verdict hero and phase-one landing copy in both locales", () => {
+  const landing = [
+    "headline_verdict",
+    "demo_cta",
+    "demo_start",
+    "demo_cf_code",
+    "new_attempt",
+    "coach_strip",
+    "coach_link",
+    "language_target",
+  ];
+  const hero = [
+    "label",
+    "file",
+    "problem",
+    "running",
+    "verdict",
+    "input",
+    "expected",
+    "got",
+    "hint_title",
+    "hint",
+    "replay",
+  ];
+  for (const messages of [en, ar]) {
+    for (const key of landing) expect(messages.landing).toHaveProperty(key);
+    expect(messages.landing.headline).toContain("{verdict}");
+    expect(Reflect.get(messages.landing, "headline_verdict")).toBe("Wrong answer");
+    expect(messages).toHaveProperty("hero");
+    for (const key of hero) expect(Reflect.get(messages, "hero")).toHaveProperty(key);
+    expect(messages.hero.verdict).toBe("Wrong answer");
+    expect(messages.hero.problem).toBe("Codeforces 1A Theatre Square");
+  }
+  const arabicHero = Reflect.get(ar, "hero") as Record<string, string> | undefined;
+  for (const key of hero.filter((key) => !["file", "problem", "verdict"].includes(key))) {
+    expect(arabicHero?.[key]).toMatch(/^[\u0600-\u06ff]/);
+    expect(arabicHero?.[key]).not.toMatch(/[()\/→←]/);
+  }
+});

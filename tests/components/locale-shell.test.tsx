@@ -4,14 +4,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
 import { t } from "@/src/i18n";
 
+let pathname = "/";
 let locale: "en" | "ar-EG" = "en";
 vi.mock("@/app/globals.css", () => ({}));
-vi.mock("next/font/local", () => ({ default: () => ({ variable: "font-daleel" }) }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => ({ value: locale }) }),
   headers: async () => new Headers(),
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => pathname,
+}));
 afterEach(() => vi.unstubAllGlobals());
 
 it.each(["en", "ar-EG"] as const)(
@@ -27,7 +30,7 @@ it.each(["en", "ar-EG"] as const)(
     );
     expect(html).toMatch(/<header[\s\S]*<button[\s\S]*<\/header>[\s\S]*<main/);
     expect(html).toContain(`aria-label="${t("ui_language", selected)}"`);
-    expect(html).toContain(t(selected === "en" ? "arabic" : "english", selected));
+    expect(html).toContain(selected === "en" ? "عربي" : "English");
   },
 );
 it.each(
@@ -107,3 +110,16 @@ it("provides an SVG favicon without the scaffold icon or external assets", () =>
   expect(svg).not.toMatch(/<(?:script|image)\b|\bhref=/);
   expect(existsSync("app/favicon.ico")).toBe(false);
 });
+
+it.each(["/problem", "/me", "/coach", "/coach/report"])(
+  "marks the current navigation link on %s",
+  async (path) => {
+    pathname = path;
+    vi.stubGlobal("React", React);
+    const { LocaleShell } = await import("@/src/components/locale-shell");
+    const html = renderToStaticMarkup(<LocaleShell locale="en">{null}</LocaleShell>);
+    const current = [...html.matchAll(/<a\b[^>]*aria-current="page"[^>]*>/g)];
+    expect(current).toHaveLength(1);
+    expect(current[0][0]).toContain(`href="${path.startsWith("/coach") ? "/coach" : path}"`);
+  },
+);
