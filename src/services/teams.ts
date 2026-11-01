@@ -57,6 +57,7 @@ export async function teamStats(db: Db, user: User, id: string, week: string | n
       userId: users.id,
       handle: users.handle,
       createdAt: attempts.createdAt,
+      mode: attempts.mode,
       status: attempts.status,
       maxHintLevel: attempts.maxHintLevel,
       topicsJson: diagnoses.topicsJson,

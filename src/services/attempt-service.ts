@@ -34,8 +34,8 @@ export async function ownedAttempt(db: Db, id: string, cookie?: string | null) {
   if (!attempt) throw new HttpError(404, "not_found");
   return attempt;
 }
-export function canExplain(revealed: number, status: string) {
-  return revealed >= 3 || status === "stuck";
+export function canExplain(revealed: number, status: string, mode: "code" | "idea" = "code") {
+  return mode === "code" && (revealed >= 3 || status === "stuck");
 }
 function ladderFor(deps: AttemptDeps, id: string, locale: "en" | "ar-EG") {
   if (!deps.ladder) throw new HttpError(500, "internal_error");
@@ -53,6 +53,7 @@ export async function revealHint(deps: AttemptDeps, id: string, locale?: "en" | 
   const { db, now } = deps;
   const attempt = await ownedAttempt(db, id, deps.cookie);
   if (
+    attempt.mode === "code" &&
     !(await db
       .select({ id: diagnoses.id })
       .from(diagnoses)
@@ -123,6 +124,7 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
   const metadata = stress && StoredStressTestsSchema.parse(JSON.parse(stress.testsJson));
   const attempt = {
     id: stored.id,
+    mode: stored.mode,
     problemId: stored.problemId,
     parentAttemptId: stored.parentAttemptId,
     language: stored.language,
@@ -164,16 +166,18 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
     replay: recordedAt !== null,
     recordedAt,
     revealedHints: ladder ? reveals.map((r) => publicHint(ladder.levels[r.level - 1])) : [],
-    canExplain: canExplain(reveals.length, stored.status),
+    canExplain: canExplain(reveals.length, stored.status, stored.mode),
   };
 }
 export async function markAttempt(deps: AttemptDeps, id: string, status: "stuck" | "solved") {
-  await ownedAttempt(deps.db, id, deps.cookie);
+  const attempt = await ownedAttempt(deps.db, id, deps.cookie);
   await deps.db
     .update(attempts)
     .set({ status, solvedAt: status === "solved" ? deps.now() : null })
     .where(eq(attempts.id, id));
-  return status === "stuck" ? { canExplain: true } : { ok: true };
+  return status === "stuck"
+    ? { canExplain: canExplain(attempt.maxHintLevel, status, attempt.mode) }
+    : { ok: true };
 }
 const CursorSchema = z.tuple([z.number().int().nonnegative(), z.string().min(1)]);
 export async function attemptHistory(db: Db, cursor: string | null, cookie?: string | null) {
@@ -197,6 +201,7 @@ export async function attemptHistory(db: Db, cursor: string | null, cookie?: str
   const rows = await db
     .select({
       id: attempts.id,
+      mode: attempts.mode,
       problemTitle: problems.title,
       bugClass: diagnoses.bugClass,
       status: attempts.status,

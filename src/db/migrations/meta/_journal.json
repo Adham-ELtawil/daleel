@@ -15,6 +15,13 @@
       "when": 1793356881461,
       "tag": "0001_black_thor_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793490652680,
+      "tag": "0002_idea-mode",
+      "breakpoints": true
     }
   ]
 }

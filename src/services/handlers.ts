@@ -6,7 +6,8 @@ import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
 import { attempts } from "@/src/db/schema";
 import { resolveLocale } from "@/src/i18n";
-import { BudgetReached } from "@/src/llm/meta-client";
+import { BudgetReached, MetaApiError, OutputTruncated, SchemaError } from "@/src/llm/meta-client";
+import { ReplayMiss } from "@/src/llm/replay/store";
 import { explainAttempt, type ExplainDeps } from "./explain-service";
 import { getCurrentUser } from "./current-user";
 import { SessionSchema, startSession } from "./session";
@@ -19,6 +20,7 @@ import {
   attemptDetail,
   attemptHistory,
   markAttempt,
+  ownedAttempt,
   revealHint,
   type AttemptDeps,
 } from "./attempt-service";
@@ -32,8 +34,9 @@ const resolveSchema = z.union([
       .refine((text) => text.trim().length > 0),
   }),
 ]);
-const attemptSchema = z.strictObject({
+const codeAttemptSchema = z.strictObject({
   problemId: z.string().min(1),
+  mode: z.literal("code").default("code"),
   language: z.enum(["cpp17", "python3"]),
   code: z
     .string()
@@ -44,6 +47,15 @@ const attemptSchema = z.strictObject({
   studentNote: z.string().max(1000).optional(),
   parentAttemptId: z.string().min(1).optional(),
 });
+const attemptSchema = z.discriminatedUnion("mode", [
+  codeAttemptSchema,
+  z.strictObject({ problemId: z.string().min(1), mode: z.literal("idea") }).transform((fields) => ({
+    ...fields,
+    code: "",
+    language: "cpp17" as const,
+    parentAttemptId: undefined,
+  })),
+]);
 const localeSchema = z.strictObject({ locale: z.enum(["en", "ar-EG"]).optional() });
 const teamSchema = z.strictObject({ name: z.string().trim().min(1).max(100) });
 async function body<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
@@ -176,7 +188,25 @@ export function createHandlers(deps: {
     nextHint: (request: Request, id: string) =>
       run(request, async () => {
         const { locale } = await body(request, localeSchema);
-        return revealHint(await attemptDeps(request), id, locale);
+        const options = await attemptDeps(request);
+        try {
+          return await revealHint(options, id, locale);
+        } catch (error) {
+          if (error instanceof BudgetReached) throw new HttpError(503, "budget_reached");
+          if (error instanceof HttpError) throw error;
+          const attempt = await ownedAttempt(options.db, id, options.cookie);
+          if (attempt.mode === "idea") {
+            if (error instanceof ReplayMiss)
+              throw new HttpError(503, "idea_replay_unavailable", locale ?? attempt.locale);
+            if (
+              error instanceof SchemaError ||
+              error instanceof MetaApiError ||
+              error instanceof OutputTruncated
+            )
+              throw new HttpError(503, "llm_error");
+          }
+          throw error;
+        }
       }),
     explain: (request: Request, id: string) =>
       run(request, async () => {

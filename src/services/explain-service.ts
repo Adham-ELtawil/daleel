@@ -45,6 +45,7 @@ export async function explainAttempt(
   locale?: "en" | "ar-EG",
 ) {
   const attempt = await ownedAttempt(db, id, cookie);
+  if (attempt.mode === "idea") throw new HttpError(409, "idea_attempt");
   const [{ total }] = await db
     .select({ total: count() })
     .from(hintReveals)

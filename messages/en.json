@@ -29,6 +29,11 @@
     "title": "Review the reasoning",
     "body": "Write down why each step should work, then check the boundaries and time complexity. Change only the lines that do not match that reasoning."
   },
+  "idea_fallback": {
+    "title": "Read the requirements again",
+    "body": "Think through the smallest allowed values by hand. List what a valid result must satisfy and what the constraints allow.",
+    "question": "What does the statement ask you to find?"
+  },
   "stress": {
     "pending": "Trying to break your code",
     "verified": "Verified counterexample",
@@ -66,6 +71,7 @@
     "load_error": "We could not load the explanation. Please try again."
   },
   "coach": {
+    "ideaHelp": "Asked for idea help",
     "title": "Coach dashboard",
     "demo_entry": "Open demo team as coach_demo",
     "demo_seed_hint": "Run `pnpm db:seed --demo-team`, then reload this page.",
@@ -140,6 +146,12 @@
     "sample": "Sample"
   },
   "intake": {
+    "ideaStart": "I don't know where to start",
+    "ideaTitle": "Find the idea step by step",
+    "ideaPasteCode": "I have code now — check it",
+    "ideaBadge": "Idea hints",
+    "idea_attempt": "This attempt supports idea hints only. Paste your code in a new attempt to check it.",
+    "idea_replay_unavailable": "Idea hints are not available in demo mode for this problem. Add a MODEL_API_KEY to use them live.",
     "diagnose_again": "Diagnose again",
     "diagnosis_error": "Diagnosis paused",
     "preparing_hints": "Preparing your hints…",

@@ -25,6 +25,7 @@ export function createDiagnoseHandler(
       if (!body.success) throw new HttpError(400, "invalid");
       const db = await deps.db();
       const attempt = await ownedAttempt(db, id, request.headers.get("cookie"));
+      if (attempt.mode === "idea") throw new HttpError(409, "idea_attempt");
       const problem = await getProblem(db, attempt.problemId);
       if (!problem) throw new HttpError(404, "not_found");
       await guardContest(problem, { cfApi: deps.cfApi, log });

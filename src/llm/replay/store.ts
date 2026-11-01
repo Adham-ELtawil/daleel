@@ -3,7 +3,15 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 
-const StepSchema = z.enum(["normalize", "diagnose", "stress", "ladder", "explain", "report"]);
+const StepSchema = z.enum([
+  "normalize",
+  "diagnose",
+  "stress",
+  "ladder",
+  "idea",
+  "explain",
+  "report",
+]);
 const HashSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const TokensSchema = z.number().int().nonnegative();
 const RecordingSchema = z.strictObject({

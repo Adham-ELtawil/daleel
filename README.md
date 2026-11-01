@@ -10,6 +10,8 @@ The starting material was a Next.js scaffold, the product and prompt design docs
 
 The implementation and verification history is in [the build plan](docs/05-BUILD-PLAN.md); [decisions](docs/DECISIONS.md) override older design proposals.
 
+Idea hints help trainees start without code: reveal four hints in Arabic or English, then return to the same problem to paste code; coaches see idea-help counts separately.
+
 ## Run the judge demo without a key
 
 Requires Node.js 20+ and pnpm 10. From the repository root:

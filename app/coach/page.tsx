@@ -55,7 +55,7 @@ export default async function CoachPage({
     if (error instanceof HttpError) return message(tr("invalid_selection"));
     throw error;
   }
-  const columns = ["attempts", "solved", "solvedRate", "avgHintLevelAtSolve"] as const;
+  const columns = ["attempts", "solved", "solvedRate", "avgHintLevelAtSolve", "ideaHelp"] as const;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
   const format = (key: (typeof columns)[number], value: number) => {
@@ -144,7 +144,7 @@ export default async function CoachPage({
             ))}
           </tbody>
         </table>
-        {!stats.attempts && (
+        {!stats.attempts && !stats.ideaHelp && (
           <p role="status" className="rounded border p-4">
             {tr("empty")}
           </p>
