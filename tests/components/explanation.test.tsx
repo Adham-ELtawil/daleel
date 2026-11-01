@@ -52,6 +52,7 @@ it.each(["en", "ar-EG"] as const)("only offers the explanation when canExplain i
   vi.stubGlobal("React", React);
   const detail: Awaited<ReturnType<typeof attemptDetail>> = {
     attempt: {
+      mode: "code",
       id: "pr18-attempt",
       problemId: "cf-4A",
       parentAttemptId: null,

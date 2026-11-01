@@ -166,3 +166,11 @@ it("has complete Arabic-first report and per-topic template translations", () =>
     }
   }
 });
+it.each(["en", "ar-EG"])(
+  "includes deterministic idea-help statistics in the report in %s",
+  async (locale) => {
+    request.locale = locale;
+    const html = await render({ team: "demo_team", week: "2026-10-26" });
+    expect(html).toContain(locale === "en" ? "Asked for idea help" : "طلب مساعدة في الفكرة");
+  },
+);

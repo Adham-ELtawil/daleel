@@ -13,6 +13,7 @@ import { ReplayBadge } from "./replay-badge";
 import { Explanation } from "./explanation";
 import type { explainAttempt } from "@/src/services/explain-service";
 import { StepHeading } from "./attempt-steps";
+import { DiagnosisError } from "./attempt-feedback";
 
 export function HintLadder({
   detail,
@@ -27,12 +28,14 @@ export function HintLadder({
 }) {
   const router = useRouter();
   const { attempt } = detail;
+  const idea = attempt.mode === "idea";
+  const actions = idea ? [] : (["stuck", "solved", "fixed_recheck"] as const);
   const [hints, setHints] = useState(detail.revealedHints);
   const [provenance, setProvenance] = useState({
     replay: detail.replay,
     recordedAt: detail.recordedAt,
   });
-  const [canExplain, setCanExplain] = useState(detail.canExplain);
+  const [canExplain, setCanExplain] = useState(!idea && detail.canExplain);
   const [explanation, setExplanation] = useState<Awaited<ReturnType<typeof explainAttempt>>>();
   useEffect(() => {
     onProgress?.({ hints: canExplain, explanation: canExplain && Boolean(explanation) });
@@ -75,7 +78,7 @@ export function HintLadder({
         }>(`${path}/hints/next`, { locale });
         setProvenance({ replay, recordedAt });
         setHints((previous) => appendHint(previous, hint));
-        if (hint.level >= 3) setCanExplain(true);
+        if (!idea && hint.level >= 3) setCanExplain(true);
       } else if (action === "explain") {
         setExplanation(await post(`${path}/explain`, { locale }));
       } else if (action === "recheck") {
@@ -101,7 +104,11 @@ export function HintLadder({
   return (
     <>
       <section className="card space-y-4 p-5" aria-label={t("hints", locale)} aria-live="polite">
-        <StepHeading step={3} locale={locale} />
+        {idea ? (
+          <h2 className="text-xl font-semibold">{t("ideaTitle", locale)}</h2>
+        ) : (
+          <StepHeading step={3} locale={locale} />
+        )}
         {hints.length > 0 && <ReplayBadge {...provenance} locale={locale} />}
         {hints.map((hint) => (
           <article
@@ -119,7 +126,12 @@ export function HintLadder({
         ))}
         {solved && <p role="status">{t("solved_note", locale)}</p>}
         {canExplain && <p>{t("explanation_unlocked", locale)}</p>}
-        {error && <p role="alert">{t(error, locale)}</p>}
+        {error &&
+          (idea ? (
+            <DiagnosisError code={error} locale={locale} heading="ideaTitle" />
+          ) : (
+            <p role="alert">{t(error, locale)}</p>
+          ))}
         {explainError && <p role="alert">{t("load_error", locale, "walkthrough")}</p>}
         <div className="flex flex-wrap gap-3">
           {canExplain && !explanation && (
@@ -142,7 +154,7 @@ export function HintLadder({
               {t("hint", locale)} {next}
             </button>
           )}
-          {(["stuck", "solved", "fixed_recheck"] as const).map((action) => (
+          {actions.map((action) => (
             <button
               key={action}
               type="button"

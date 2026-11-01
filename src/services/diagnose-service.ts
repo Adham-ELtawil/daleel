@@ -87,6 +87,7 @@ export async function diagnoseAttempt(
   const attempt = await db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
   const problem = attempt && (await getProblem(db, attempt.problemId));
   if (!attempt || !problem) throw new HttpError(404, "not_found");
+  if (attempt.mode === "idea") throw new HttpError(409, "idea_attempt");
   const diagnosingSince = now();
   const claimed = await db
     .update(attempts)

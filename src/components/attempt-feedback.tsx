@@ -16,13 +16,15 @@ export function LoadingSkeleton({ label }: { label: string }) {
 export function DiagnosisError({
   code,
   locale,
+  heading = "diagnosis_error",
 }: {
   code: Parameters<typeof t>[0];
   locale: "en" | "ar-EG";
+  heading?: "diagnosis_error" | "ideaTitle";
 }) {
   return (
     <section role="alert" className="card space-y-2 border-warning/30 bg-amber-50 p-4">
-      <h2 className="font-semibold">{t("diagnosis_error", locale)}</h2>
+      <h2 className="font-semibold">{t(heading, locale)}</h2>
       <p>{t(code, locale)}</p>
     </section>
   );

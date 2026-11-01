@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
@@ -8,6 +8,8 @@ import type { Problem } from "@/src/db/repo/problems";
 import { t as translate } from "@/src/i18n";
 import { useLocale } from "@/src/components/locale-shell";
 import { HttpError } from "@/src/services/http-error";
+import { post, preloadProblem, startIdeaAttempt } from "@/src/services/intake-client";
+import { IdeaStartButton } from "@/src/components/idea-card";
 
 const extensions = [
   cpp(),
@@ -17,16 +19,6 @@ const choices = [
   { key: "language", values: ["cpp17", "python3"] },
   { key: "verdictReported", values: ["NONE", "WA", "TLE", "MLE", "RE", "CE"] },
 ] as const;
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data: T & { error?: { code: Parameters<typeof translate>[0] } } = await response.json();
-  if (!response.ok) throw new HttpError(response.status, data.error?.code ?? "internal_error");
-  return data;
-}
 export default function ProblemPage() {
   const locale = useLocale();
   const t = (key: Parameters<typeof translate>[0]) => translate(key, locale);
@@ -36,13 +28,37 @@ export default function ProblemPage() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Parameters<typeof t>[0]>();
-  async function submit(event: FormEvent<HTMLFormElement>, mode: "resolve" | "attempt") {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  useEffect(() => {
+    const id = new URL(window.location.href).searchParams.get("problemId");
+    if (!id) return;
+    let active = true;
+    setBusy(true);
+    preloadProblem(id)
+      .then((saved) => {
+        if (active) setProblem(saved);
+      })
+      .catch((failure: unknown) => {
+        if (active) setError(failure instanceof HttpError ? failure.code : "internal_error");
+      })
+      .finally(() => {
+        if (active) setBusy(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  async function submit(
+    event: FormEvent<HTMLFormElement> | null,
+    mode: "resolve" | "attempt" | "idea",
+  ) {
+    event?.preventDefault();
+    const form = event ? new FormData(event.currentTarget) : new FormData();
     setBusy(true);
     setError(undefined);
     try {
-      if (mode === "resolve") {
+      if (mode === "idea" && problem) {
+        await startIdeaAttempt(problem.id, (path) => router.push(path));
+      } else if (mode === "resolve") {
         setProblem(undefined);
         const input = paste ? { statement: form.get("statement") } : { url: form.get("url") };
         setProblem((await post<{ problem: Problem }>("/api/problems/resolve", input)).problem);
@@ -174,13 +190,22 @@ export default function ProblemPage() {
                 {t("studentNote")}
                 <textarea name="studentNote" maxLength={1000} rows={3} />
               </label>
-              <button
-                type="submit"
-                disabled={!code}
-                className="button button-primary justify-self-start"
-              >
-                {t(busy ? "pending" : "submit")}
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="submit"
+                  disabled={!code}
+                  className="button button-primary justify-self-start"
+                >
+                  {t(busy ? "pending" : "submit")}
+                </button>
+                <IdeaStartButton
+                  locale={locale}
+                  busy={busy}
+                  onClick={() => {
+                    void submit(null, "idea");
+                  }}
+                />
+              </div>
             </fieldset>
           </form>
         </>

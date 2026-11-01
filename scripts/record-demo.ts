@@ -20,7 +20,7 @@ import { createRunner } from "@/src/runner/factory";
 import { createReplayStore } from "@/src/llm/replay/store";
 import { getCurrentUser } from "@/src/services/current-user";
 import { diagnoseAttempt } from "@/src/services/diagnose-service";
-import { markAttempt } from "@/src/services/attempt-service";
+import { markAttempt, revealHint } from "@/src/services/attempt-service";
 import { explainAttempt } from "@/src/services/explain-service";
 import { createHandlers } from "@/src/services/handlers";
 
@@ -87,6 +87,24 @@ export async function runDemoFlows(
       parent,
     );
     if (example.id === "4A") await diagnose(await create("fixed.cpp", parent), false);
+  }
+  const first = examples[0];
+  const problem = await getProblemByExternalId(db, first.judge, first.id);
+  if (!problem) throw new Error("demo_problem_missing");
+  for (const locale of ["en", "ar-EG"] as const) {
+    await db.update(users).set({ locale }).where(eq(users.id, user.id));
+    const response = await handlers.attempt(
+      new Request("http://localhost/api/attempts", {
+        method: "POST",
+        body: JSON.stringify({ problemId: problem.id, mode: "idea" }),
+      }),
+    );
+    if (!response.ok) throw new Error("demo_attempt_failed");
+    const { attemptId }: { attemptId: string } = await response.json();
+    for (let level = 1; level <= 4; level++) {
+      const { hint } = await revealHint({ db, now, ladder }, attemptId, locale);
+      if (hint.level !== level) throw new Error("demo_flow_failed");
+    }
   }
 }
 

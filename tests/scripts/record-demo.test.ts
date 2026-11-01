@@ -13,7 +13,8 @@ import explanationB from "@/tests/fixtures/llm/explanation-b.json";
 import { tempDb } from "@/tests/db/helpers";
 import { seed } from "@/src/db/seed";
 import { createMetaClient } from "@/src/llm/meta-client";
-import { attempts, stressRuns, walkthroughs } from "@/src/db/schema";
+import { attempts, diagnoses, hintReveals, stressRuns, walkthroughs } from "@/src/db/schema";
+import ideaLadder from "@/tests/fixtures/llm/idea-ladder.json";
 import { fakeStressRunner } from "@/tests/runner/stress-fake";
 import stressPlan from "@/tests/fixtures/llm/stress-a.json";
 
@@ -89,15 +90,27 @@ it.each(["none", "local"])(
       stream(explanationB),
       stream(explanation),
     ]);
+    const ideas = createFakeFetch([
+      { status: 200, json: chatCompletion(JSON.stringify(ideaLadder)) },
+      { status: 200, json: chatCompletion(JSON.stringify(ideaLadder)) },
+    ]);
     const steps: string[] = [];
     const transport: typeof globalThis.fetch = async (input, init) => {
       const request = new Request(input, init);
       const body = z
         .object({
           response_format: z.object({ json_schema: z.object({ name: z.string() }) }),
+          messages: z.array(z.object({ content: z.string() })),
         })
         .parse(await request.clone().json());
       const name = body.response_format.json_schema.name;
+      if (
+        name === "HintLadder" &&
+        !body.messages.some(({ content }) => content.includes("<student_code>"))
+      ) {
+        steps.push("idea");
+        return ideas.fetch(request);
+      }
       steps.push(name);
       return (name === "Explanation" ? explanations : fake).fetch(request);
     };
@@ -129,9 +142,17 @@ it.each(["none", "local"])(
       "Diagnosis",
       "HintLadder",
       "Explanation",
+      "idea",
+      "idea",
     ]);
-    const count = provider === "local" ? 14 : 11;
-    expect(fake.requests).toHaveLength(count - 3);
+    const count = provider === "local" ? 16 : 13;
+    expect(fake.requests).toHaveLength(count - 5);
+    expect(ideas.requests).toHaveLength(2);
+    for (const request of ideas.requests) {
+      expect(JSON.stringify(request.body.messages)).toContain("<problem ");
+      expect(JSON.stringify(request.body.messages)).not.toMatch(/<student_code>|<diagnosis>/);
+    }
+    expect(JSON.stringify(ideas.requests[1].body.messages)).toContain("Egyptian Arabic");
     expect(JSON.stringify(fake.requests[2 + stress.length].body.messages)).toContain(
       "w % 2 == 0 && w > 2",
     );
@@ -147,6 +168,7 @@ it.each(["none", "local"])(
     );
     expect(files).toHaveLength(count);
     expect(files.filter((name) => String(name).startsWith("explain/"))).toHaveLength(3);
+    expect(files.filter((name) => String(name).startsWith("idea/"))).toHaveLength(2);
     expect(files.filter((name) => String(name).startsWith("stress/"))).toHaveLength(
       provider === "local" ? 3 : 0,
     );
@@ -180,9 +202,22 @@ it.each(["none", "local"])(
       expect(traces).toHaveLength(3);
       expect(traces.map((row) => JSON.parse(row.traceJson).frames.length)).toEqual([4, 5, 4]);
       const recordedAttempts = await db.db.select().from(attempts);
+      const ideaAttempts = recordedAttempts.filter((attempt) => attempt.mode === "idea");
+      expect(ideaAttempts).toHaveLength(2);
+      expect(ideaAttempts.map(({ locale }) => locale)).toEqual(["en", "ar-EG"]);
+      expect(
+        ideaAttempts.every((attempt) => attempt.code === "" && attempt.maxHintLevel === 4),
+      ).toBe(true);
+      expect(new Set(ideaAttempts.map(({ problemId }) => problemId)).size).toBe(1);
+      expect(await db.db.select().from(hintReveals)).toHaveLength(8);
+      const diagnosisRows = await db.db.select().from(diagnoses);
+      expect(
+        diagnosisRows.every((row) => !ideaAttempts.some((attempt) => attempt.id === row.attemptId)),
+      ).toBe(true);
       expect(
         recordedAttempts.filter(
-          (attempt) => attempt.status === "stuck" || attempt.maxHintLevel >= 3,
+          (attempt) =>
+            attempt.mode === "code" && (attempt.status === "stuck" || attempt.maxHintLevel >= 3),
         ),
       ).toHaveLength(3);
       expect(logs.every((log) => log.status === "replay" && log.costUsd === 0)).toBe(true);

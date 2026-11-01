@@ -144,6 +144,7 @@ export async function stressAttempt(
   const attempt = await db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
   const problem = attempt && (await getProblem(db, attempt.problemId));
   if (!attempt || !problem) throw new HttpError(404, "not_found");
+  if (attempt.mode === "idea") throw new HttpError(409, "idea_attempt");
   const stored = await db.select().from(diagnoses).where(eq(diagnoses.attemptId, attemptId)).get();
   if (!stored) throw new HttpError(409, "not_diagnosed");
   const diagnosis = StoredDiagnosisSchema.parse(JSON.parse(stored.resultJson)).value;

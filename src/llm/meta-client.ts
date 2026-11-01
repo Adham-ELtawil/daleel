@@ -6,7 +6,8 @@ import { z, type ZodType } from "zod";
 import { costUsd } from "./pricing";
 import { ReplayMiss, type ReplayStore } from "./replay/store";
 
-export type LlmStep = "normalize" | "diagnose" | "stress" | "ladder" | "explain" | "report";
+export type LlmStep =
+  "normalize" | "diagnose" | "stress" | "ladder" | "idea" | "explain" | "report";
 export type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh";
 
 export interface LlmStepConfig {

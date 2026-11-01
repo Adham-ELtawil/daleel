@@ -69,16 +69,18 @@ export default async function ReportPage({
       </nav>
       {team.inviteCode === "DEMO0001" && <p>{coach("synthetic")}</p>}
       <p className="card border-s-4 border-s-accent p-5 text-xl font-semibold">{report.headline}</p>
-      {!stats.attempts && <p>{coach("empty")}</p>}
+      {!stats.attempts && !stats.ideaHelp && <p>{coach("empty")}</p>}
       <dl className="stat-grid">
-        {(["attempts", "solved", "solvedRate", "avgHintLevelAtSolve"] as const).map((key) => (
-          <div key={key} className="card p-4">
-            <dt className="text-sm text-muted">{coach(key)}</dt>
-            <dd className="text-3xl font-bold tabular-nums">
-              {(key === "solvedRate" ? percent : number).format(stats[key])}
-            </dd>
-          </div>
-        ))}
+        {(["attempts", "solved", "solvedRate", "avgHintLevelAtSolve", "ideaHelp"] as const).map(
+          (key) => (
+            <div key={key} className="card p-4">
+              <dt className="text-sm text-muted">{coach(key)}</dt>
+              <dd className="text-3xl font-bold tabular-nums">
+                {(key === "solvedRate" ? percent : number).format(stats[key])}
+              </dd>
+            </div>
+          ),
+        )}
       </dl>
       <section aria-labelledby="topics">
         <h2 id="topics" className="text-xl font-semibold">

@@ -6,6 +6,7 @@ type Row = {
   maxHintLevel: number;
   topics: string[];
   bugClass: string | null;
+  mode?: "code" | "idea";
 };
 const cairo = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Africa/Cairo",
@@ -23,11 +24,13 @@ function weekOf(timestamp: number) {
   return date.toISOString().slice(0, 10);
 }
 function summary(rows: Row[]) {
-  const solved = rows.filter((row) => row.status === "solved");
+  const code = rows.filter((row) => row.mode !== "idea");
+  const solved = code.filter((row) => row.status === "solved");
   return {
-    attempts: rows.length,
+    attempts: code.length,
+    ideaHelp: rows.length - code.length,
     solved: solved.length,
-    solvedRate: rows.length ? solved.length / rows.length : 0,
+    solvedRate: code.length ? solved.length / code.length : 0,
     avgHintLevelAtSolve: solved.length
       ? solved.reduce((sum, row) => sum + row.maxHintLevel, 0) / solved.length
       : 0,
@@ -53,8 +56,9 @@ export function weeklyStats(rows: Row[], week: number) {
       return { userId, handle, ...stats, unsolved: stats.attempts - stats.solved };
     })
     .sort((a, b) => a.handle.localeCompare(b.handle, "en"));
-  const tags = selected.flatMap((row) => [...new Set(row.topics)]);
-  const bugs = selected.flatMap((row) => (row.bugClass ? [row.bugClass] : []));
+  const code = selected.filter((row) => row.mode !== "idea");
+  const tags = code.flatMap((row) => [...new Set(row.topics)]);
+  const bugs = code.flatMap((row) => (row.bugClass ? [row.bugClass] : []));
   return {
     weekStart,
     ...summary(selected),

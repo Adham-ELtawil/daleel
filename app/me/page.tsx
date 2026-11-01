@@ -38,7 +38,10 @@ export default async function HistoryPage({
             <p className="text-sm text-muted">
               {t(`status_${item.status}`, locale)} · {t("max_hint", locale)}: {item.maxHintLevel}
             </p>
-            {item.bugClass && <p>{bugClassLabel(item.bugClass, locale)}</p>}
+            {item.mode === "idea" && (
+              <span className="badge badge-neutral">{t("ideaBadge", locale)}</span>
+            )}
+            {item.mode === "code" && item.bugClass && <p>{bugClassLabel(item.bugClass, locale)}</p>}
             <time
               className="block text-sm text-muted"
               dateTime={new Date(item.createdAt).toISOString()}

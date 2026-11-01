@@ -83,6 +83,9 @@ export const attempts = sqliteTable(
       .notNull()
       .references(() => problems.id),
     parentAttemptId: text("parent_attempt_id").references((): AnySQLiteColumn => attempts.id),
+    mode: text("mode", { enum: ["code", "idea"] })
+      .notNull()
+      .default("code"),
     language: text("language", { enum: ["cpp17", "python3"] }).notNull(),
     code: text("code").notNull(),
     codeHash: text("code_hash").notNull(),
@@ -206,7 +209,7 @@ export const llmCalls = sqliteTable(
   {
     id: text("id").primaryKey(),
     step: text("step", {
-      enum: ["normalize", "diagnose", "stress", "ladder", "explain", "report", "asr"],
+      enum: ["normalize", "diagnose", "stress", "ladder", "idea", "explain", "report", "asr"],
     }).notNull(),
     attemptId: text("attempt_id").references(() => attempts.id),
     model: text("model").notNull(),

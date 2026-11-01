@@ -78,6 +78,7 @@ it("returns zeros and empty lists for a week without attempts", () => {
     solved: 0,
     solvedRate: 0,
     avgHintLevelAtSolve: 0,
+    ideaHelp: 0,
     topTags: [],
     topBugClasses: [],
     trainees: [],
