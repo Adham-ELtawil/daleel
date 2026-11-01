@@ -161,6 +161,7 @@ export default function ProblemPage() {
             <label id="code-label">{t("code")}</label>
             <div dir="ltr" className="overflow-hidden rounded-lg border border-line">
               <CodeMirror
+                theme="dark"
                 value={code}
                 onChange={setCode}
                 extensions={extensions}

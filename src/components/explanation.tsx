@@ -30,8 +30,8 @@ export function Explanation({
                   {t("line", locale, "walkthrough")} {fix.line}:{" "}
                 </span>
                 <code dir="ltr" className="bidi-isolate whitespace-pre-wrap">
-                  <del className="block rounded bg-red-50 p-2 text-danger">{fix.old}</del>
-                  <ins className="mt-1 block rounded bg-green-50 p-2 text-success no-underline">
+                  <del className="block rounded bg-danger/10 p-2 text-danger">{fix.old}</del>
+                  <ins className="mt-1 block rounded bg-success/10 p-2 text-success no-underline">
                     {fix.new}
                   </ins>
                 </code>

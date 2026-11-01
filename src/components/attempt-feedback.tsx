@@ -23,7 +23,7 @@ export function DiagnosisError({
   heading?: "diagnosis_error" | "ideaTitle";
 }) {
   return (
-    <section role="alert" className="card space-y-2 border-warning/30 bg-amber-50 p-4">
+    <section role="alert" className="card space-y-2 border-warning/30 bg-warning/10 p-4">
       <h2 className="font-semibold">{t(heading, locale)}</h2>
       <p>{t(code, locale)}</p>
     </section>

@@ -186,7 +186,7 @@ Rules:
 - Markdown renderer (`react-markdown`): every inline `code` → `<code dir="ltr" class="bidi-isolate">`; fenced code → `<pre dir="ltr">`; paragraphs get `dir="auto"`. CSS: `.bidi-isolate{unicode-bidi:isolate}`.
 - Prompt rules for Arabic output (in `04-PROMPTS.md`): Egyptian colloquial, technical terms in English, every line/bullet starts with an Arabic word, no parentheses/arrows/slashes around English terms, numbers next to Arabic words, code only in backticks or blocks.
 - Problem statements are kept in their original language (English for CF/AtCoder) and rendered LTR.
-- Fonts: `IBM Plex Sans Arabic` (or `Noto Sans Arabic`) for Arabic, `JetBrains Mono` for code.
+- Fonts (D16): self-hosted variable `Readex Pro` 300–700 for both UI scripts and `JetBrains Mono` 400–700 for code, with per-subset unicode ranges and OFL licenses.
 
 ## 8. Caching and cost control
 | Cache | Key | TTL |

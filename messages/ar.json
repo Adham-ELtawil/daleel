@@ -2,16 +2,23 @@
   "landing": {
     "title": "Daleel",
     "navigation": "التنقل الرئيسي",
-    "tagline": "كوتشك في الـ competitive programming",
-    "headline": "افهم الغلطة. وصلّحها بنفسك.",
-    "description": "حط مسألة Codeforces أو AtCoder والكود بتاعك. دليل بيساعدك تلاقي الـ bug بواحدة واحدة من غير ما يحرق الفكرة.",
-    "how_it_works": "إزاي دليل بيساعدك؟",
+    "headline": "الكود طلع {verdict}؟ اعرف السبب وصلّحه بنفسك.",
+    "headline_verdict": "Wrong answer",
+    "description": "دليل بيقرا الكود بتاعك، يلاقي الـ input اللي بيوقعه، ويديك hints خطوة بخطوة من غير ما يحرق عليك الحل.",
+    "how_it_works": "إيه اللي بيحصل بعد ما تحط الكود؟",
     "diagnose": "شخّص",
     "diagnose_description": "شوف الفرق بين فكرتك واللي الكود بيعمله.",
     "verify": "اتأكد",
     "verify_description": "جرّب input صغير يوقع الكود، لما التشغيل يكون متاح.",
     "hint": "خد تلميح",
-    "hint_description": "خد تلميح كل مرة، ووصل للتصليح بتفكيرك."
+    "hint_description": "خد تلميح كل مرة، ووصل للتصليح بتفكيرك.",
+    "demo_cta": "جرّب الديمو",
+    "demo_start": "ابدأ",
+    "demo_cf_code": "CF {code}",
+    "new_attempt": "محاولة جديدة",
+    "coach_strip": "للكوتشز: شوف المواضيع اللي محتاجة تدريب عند فريقك الأسبوع ده.",
+    "coach_link": "لوحة الكوتش",
+    "language_target": "English"
   },
   "ladder_fallback_1": {
     "title": "راجع أصغر قيم",
@@ -230,8 +237,8 @@
     "status_solved": "اتحلّت",
     "status_stuck": "محاولة واقفة",
     "ui_language": "لغة الواجهة",
-    "english": "لغة English",
-    "arabic": "لغة العربية"
+    "english": "English",
+    "arabic": "عربي"
   },
   "attemptFlow": {
     "progress": "مراحل المحاولة",
@@ -242,5 +249,18 @@
     "complete": "خلصت",
     "current": "الخطوة الحالية",
     "pending": "الخطوة الجاية"
+  },
+  "hero": {
+    "label": "مثال Theatre Square بالكود والـ Wrong answer والـ counterexample وأول تلميح",
+    "file": "student.cpp",
+    "problem": "Codeforces 1A Theatre Square",
+    "running": "بنجرّب الكود على tests…",
+    "verdict": "Wrong answer",
+    "input": "الـ input",
+    "expected": "الـ output المتوقع",
+    "got": "الـ output بتاعك",
+    "hint_title": "تلميح 1",
+    "hint": "الإجابة ممكن توصل لـ 10^18. شوف x و y نوعهم إيه، ويحصل إيه لما تضربهم في بعض؟",
+    "replay": "اعرضها تاني"
   }
 }

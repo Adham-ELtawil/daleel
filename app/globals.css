@@ -1,40 +1,94 @@
 @import "tailwindcss";
 
-@theme {
-  --color-canvas: #f8fafc;
-  --color-surface: #ffffff;
-  --color-ink: #0f172a;
-  --color-muted: #475569;
-  --color-line: #e2e8f0;
-  --color-accent: #0f766e;
-  --color-accent-strong: #115e59;
-  --color-accent-soft: #f0fdfa;
-  --color-success: #15803d;
-  --color-warning: #a16207;
-  --color-danger: #b91c1c;
-  --radius-card: 1rem;
-  --shadow-soft: 0 4px 24px #0f172a08;
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono/jetbrains-mono-latin-ext-var.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/jetbrains-mono/jetbrains-mono-latin-var.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Readex Pro";
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/readex-pro/readex-pro-arabic-var.woff2") format("woff2");
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011,
+    U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E,
+    U+10EC2-10EC7, U+10EC9-10EEE, U+10EF0-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22,
+    U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49,
+    U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F,
+    U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E,
+    U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+@font-face {
+  font-family: "Readex Pro";
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/readex-pro/readex-pro-latin-ext-var.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "Readex Pro";
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("./fonts/readex-pro/readex-pro-latin-var.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@theme inline {
-  --font-sans: var(--font-daleel), sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
-    monospace;
+@theme {
+  --font-sans: "Readex Pro", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --color-canvas: #0f1830;
+  --color-surface: #16213f;
+  --color-ink: #e7ecf6;
+  --color-muted: #93a1c2;
+  --color-line: #2a3763;
+  --color-accent: #f3b95f;
+  --color-accent-strong: #dfa349;
+  --color-accent-soft: #302b30;
+  --color-success: #7bd9a4;
+  --color-warning: #f3c779;
+  --color-danger: #ff7b8a;
+  --radius-card: 0.625rem;
+  --shadow-soft: 0 4px 24px #080d1c30;
 }
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html:lang(en) body {
+    line-height: 1.6;
+  }
   body {
     background: var(--color-canvas);
     color: var(--color-ink);
-    font-family: var(--font-daleel), sans-serif;
+    font-family: var(--font-sans);
     line-height: 1.7;
   }
   h1 {
     @apply text-3xl font-bold leading-tight;
   }
   h2 {
-    @apply text-2xl font-semibold;
+    @apply text-[25px] font-semibold;
   }
   h3 {
     @apply text-lg font-semibold;
@@ -56,10 +110,10 @@
     @apply rounded-card border border-line bg-surface shadow-soft;
   }
   .button {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg ps-5 pe-5 py-2.5 text-sm font-semibold transition-colors hover:no-underline disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg ps-5 pe-5 py-2.5 text-sm font-semibold transition duration-150 hover:-translate-y-px active:translate-y-0 motion-reduce:transform-none hover:no-underline disabled:cursor-not-allowed disabled:opacity-50;
   }
   .button-primary {
-    @apply bg-accent text-white hover:bg-accent-strong;
+    @apply bg-accent text-canvas hover:bg-accent-strong;
   }
   .button-secondary {
     @apply border border-line bg-surface text-ink hover:border-accent hover:text-accent;
@@ -68,19 +122,19 @@
     @apply inline-flex gap-1 rounded-full bg-accent-soft ps-3 pe-3 py-1 text-sm font-medium text-accent;
   }
   .badge-success {
-    @apply bg-green-50 text-success;
+    @apply bg-success/10 text-success;
   }
   .badge-warning {
-    @apply bg-amber-50 text-warning;
+    @apply bg-warning/10 text-warning;
   }
   .badge-neutral {
-    @apply bg-slate-100 text-muted;
+    @apply bg-line text-muted;
   }
   .badge-danger {
-    @apply bg-red-50 text-danger;
+    @apply bg-danger/10 text-danger;
   }
   .badge-info {
-    @apply bg-sky-50 text-sky-800;
+    @apply bg-accent-soft text-accent;
   }
   .step-number {
     @apply inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-bold text-accent;
@@ -98,7 +152,7 @@
     @apply border-accent bg-accent-soft font-semibold text-accent-strong;
   }
   .attempt-stepper [data-state="complete"] .step-number {
-    @apply bg-success text-white;
+    @apply bg-success text-canvas;
   }
   .attempt-stepper [data-state="pending"] .step-number {
     @apply bg-line text-muted;
@@ -153,6 +207,15 @@
 
 @media print {
   body {
+    --color-canvas: #fff;
+    --color-surface: #fff;
+    --color-ink: #000;
+    --color-muted: #444;
+    --color-accent: #775019;
+    --color-success: #165c31;
+    --color-danger: #9a1d32;
+    --color-accent-soft: #eee;
+    color-scheme: light;
     background: #fff;
     color: #000;
   }
@@ -174,5 +237,93 @@
   }
   .report .stat-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Basic dark syntax comes from the installed CodeMirror package. */
+.cm-editor.cm-editor,
+.cm-editor .cm-scroller {
+  @apply bg-surface font-mono text-ink;
+}
+.cm-editor .cm-gutters {
+  @apply border-line bg-canvas text-muted;
+}
+.cm-editor .cm-activeLine,
+.cm-editor .cm-activeLineGutter {
+  background: var(--color-accent-soft);
+}
+.cm-editor .cm-cursor {
+  border-inline-start-color: var(--color-accent);
+}
+.hero-wrong-line {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  animation: hero-wrong 1.2s both;
+}
+.hero-dots,
+.hero-value,
+.hero-hint-text {
+  clip-path: inset(0);
+}
+.hero-hint-text:dir(rtl) {
+  animation-name: hero-wipe-rtl;
+}
+@keyframes hero-reveal {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes hero-open {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 14rem;
+    opacity: 1;
+  }
+}
+@keyframes hero-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+@keyframes hero-wipe-rtl {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+@keyframes hero-wrong {
+  0%,
+  99% {
+    border-color: transparent;
+    background: transparent;
+  }
+}
+@keyframes hero-running {
+  10%,
+  90% {
+    opacity: 1;
+  }
+}
+@keyframes hero-blink {
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-motion="verdict"] *,
+  [data-motion="verdict"] {
+    animation: none;
+  }
+  .hero-replay,
+  .hero-running,
+  .hero-caret {
+    display: none;
+  }
+  .button,
+  .nav-link,
+  .demo-row {
+    transition: none;
   }
 }
