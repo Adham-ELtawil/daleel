@@ -4,7 +4,7 @@ import { DALEEL_PALETTE, featureIcons, type FeatureName } from "@/src/stickers/i
 
 // Decorative: the text beside it carries the meaning. Fixed box, so no layout shift before paint;
 // the kit pauses off-screen stickers and shows icon.still under prefers-reduced-motion.
-export function FeatureSticker({ name, size = 88 }: { name: FeatureName; size?: number }) {
+export function FeatureSticker({ name, size = 96 }: { name: FeatureName; size?: number }) {
   return (
     <span
       aria-hidden="true"
