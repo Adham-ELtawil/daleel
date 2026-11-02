@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { accessSync, constants, existsSync } from "node:fs";
+import { accessSync, constants, existsSync, readdirSync, readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -28,16 +28,41 @@ export function compileCommand(dir: string): Command {
     ],
   };
 }
-export function runCommand(dir: string, limits: RunLimits, lib64: boolean): Command {
+export function nprocLimit(
+  uid: number,
+  proc = {
+    pids: () => readdirSync("/proc"),
+    status: (pid: string) => readFileSync(`/proc/${pid}/status`, "utf8"),
+  },
+): number {
+  let pids: string[];
+  try {
+    pids = proc.pids();
+  } catch {
+    return 1024;
+  }
+  let threads = 0;
+  for (const pid of pids) {
+    if (!/^\d+$/.test(pid)) continue;
+    try {
+      const status = proc.status(pid);
+      if (Number(status.match(/^Uid:\s+(\d+)/m)?.[1]) === uid)
+        threads += Number(status.match(/^Threads:\s+(\d+)/m)?.[1] ?? 0);
+    } catch {
+      /* Processes can exit between directory enumeration and status reads. */
+    }
+  }
+  // RLIMIT_NPROC counts all threads of the real uid, including those outside the sandbox.
+  return Math.max(1024, threads + 256);
+}
+export function runCommand(dir: string, limits: RunLimits, lib64: boolean, nproc: number): Command {
   return {
     command: "prlimit",
     args: [
       `--as=${limits.memoryMb * 1048576}`,
       `--cpu=${Math.ceil(limits.timeMs / 1000) + 1}`,
       `--fsize=${limits.outputKb * 1024}`,
-      // RLIMIT_NPROC counts every process of this uid (the dev box already runs >100),
-      // so 64 made bwrap fail with EAGAIN. 1024 still bounds a fork bomb; pid namespace isolates it.
-      "--nproc=1024",
+      `--nproc=${nproc}`,
       "--",
       "bwrap",
       "--ro-bind",
@@ -194,11 +219,13 @@ export function createLocalRunner(): Runner {
         const dir = binaries.get(binaryId);
         if (!dir) throw new RunnerError("invalid_binary", "Unknown runner binary");
         const result = await execute(
-          runCommand(dir, limits, existsSync("/lib64")),
+          runCommand(dir, limits, existsSync("/lib64"), nprocLimit(process.getuid?.() ?? 0)),
           input,
           limits.timeMs * 2,
           limits.outputKb * 1024,
         );
+        if (result.stderr.startsWith("bwrap:"))
+          throw new RunnerError("runner_down", "Runner sandbox could not start");
         return {
           status: mapStatus({ ...result, limitMs: limits.timeMs }),
           stdout: result.stdout,

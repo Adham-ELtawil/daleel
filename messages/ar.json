@@ -44,6 +44,7 @@
   "stress": {
     "pending": "بنجرّب نلاقي input يوقع الكود بتاعك",
     "verified": "مثال counterexample متأكدين منه",
+    "verdict": "إجابة غلط",
     "input": "الـ input",
     "expected": "الـ output المتوقع",
     "actual": "الـ output بتاعك",
@@ -167,6 +168,7 @@
     "diagnose_again": "شخّص تاني",
     "diagnosis_error": "التشخيص وقف شوية",
     "preparing_hints": "بنجهّز الـ hints بتاعتك…",
+    "preparing_language": "بنجهّز الكلام بلغتك…",
     "title": "محاولة جديدة",
     "url": "لينك المسألة",
     "resolve": "هات المسألة",

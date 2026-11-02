@@ -118,6 +118,8 @@ it.each(["en", "ar-EG"] as const)(
     expect(html).toContain(
       locale === "en" ? "verified by running your code" : "اتأكدنا بتشغيل الكود بتاعك",
     );
+    expect(html).toContain(locale === "en" ? "Wrong answer" : "إجابة غلط");
+    if (locale === "ar-EG") expect(html).not.toContain("Wrong answer");
     expect(html).not.toContain(locale === "en" ? "Not verified" : "لسه مش متأكدين بالتشغيل");
     expect(html).not.toContain("badge-success");
   },

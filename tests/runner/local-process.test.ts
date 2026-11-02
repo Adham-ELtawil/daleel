@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { PassThrough } from "node:stream";
 import type { ChildProcess } from "node:child_process";
 import { afterEach, expect, it, vi } from "vitest";
+import { RunnerError } from "@/src/runner/runner";
 
 vi.mock("node:fs", async (original) => ({
   ...(await original<typeof import("node:fs")>()),
@@ -110,4 +111,53 @@ it("returns safe dependency errors for spawn failure and removes compiler artifa
   });
   const args = spawn.mock.calls[0][1];
   expect(existsSync(String(args?.[args.length - 1]))).toBe(false);
+});
+it.each([
+  "bwrap: Creating new namespace failed: Resource temporarily unavailable\n",
+  "bwrap: execvp /run/a.out: Permission denied\n",
+])("reports sandbox infrastructure failure as RunnerError: %s", async (stderr) => {
+  const { runner, children, next } = await setup();
+  const compile = runner.compile("int main(){}", "cpp17");
+  await next(1);
+  children[0].finish();
+  const compiled = await compile;
+  if (!compiled.ok) throw new Error("fake_compile_failed");
+  try {
+    const running = runner.run(compiled.binaryId, "", {
+      timeMs: 2000,
+      memoryMb: 256,
+      outputKb: 64,
+    });
+    await next(2);
+    children[1].stderr.write(stderr);
+    children[1].finish(1);
+    await expect(running).rejects.toBeInstanceOf(RunnerError);
+    await expect(running).rejects.toMatchObject({
+      code: "runner_down",
+      message: "Runner sandbox could not start",
+    });
+  } finally {
+    await runner.dispose(compiled.binaryId);
+  }
+});
+it("keeps ordinary program stderr as a runtime error", async () => {
+  const { runner, children, next } = await setup();
+  const compile = runner.compile("int main(){}", "cpp17");
+  await next(1);
+  children[0].finish();
+  const compiled = await compile;
+  if (!compiled.ok) throw new Error("fake_compile_failed");
+  try {
+    const running = runner.run(compiled.binaryId, "", {
+      timeMs: 2000,
+      memoryMb: 256,
+      outputKb: 64,
+    });
+    await next(2);
+    children[1].stderr.write("program failed\n");
+    children[1].finish(1);
+    expect(await running).toMatchObject({ status: "re", stderr: "program failed\n" });
+  } finally {
+    await runner.dispose(compiled.binaryId);
+  }
 });

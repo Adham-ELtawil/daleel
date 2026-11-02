@@ -7,6 +7,7 @@ import { StoredDiagnosisSchema, TagsSchema } from "@/src/db/json";
 import {
   attempts,
   diagnoses,
+  diagnosisTranslations,
   hintLadders,
   hintReveals,
   stressRuns,
@@ -108,7 +109,14 @@ export async function diagnoseAttempt(
   try {
     if (retry) {
       await db.transaction(async (tx) => {
-        for (const table of [diagnoses, hintLadders, hintReveals, stressRuns, walkthroughs])
+        for (const table of [
+          diagnoses,
+          diagnosisTranslations,
+          hintLadders,
+          hintReveals,
+          stressRuns,
+          walkthroughs,
+        ])
           await tx.delete(table).where(eq(table.attemptId, attemptId));
         await tx
           .update(attempts)
@@ -172,6 +180,10 @@ export async function diagnoseAttempt(
       createdAt: cached?.diagnosis.createdAt ?? now(),
     };
     await db.transaction(async (tx) => {
+      if (!saved)
+        await tx
+          .delete(diagnosisTranslations)
+          .where(eq(diagnosisTranslations.attemptId, attemptId));
       await tx
         .insert(diagnoses)
         .values(values)

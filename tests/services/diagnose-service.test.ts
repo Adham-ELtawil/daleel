@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   attempts,
   diagnoses,
+  diagnosisTranslations,
   hintLadders,
   hintReveals,
   stressRuns,
@@ -258,25 +259,28 @@ it.each(["diagnosed", "error"] as const)(
     // A second matching diagnosis must not be reused by an explicit retry.
     await diagnoseAttempt(deps(), await attempt(), () => {});
     await store.db.insert(hintReveals).values({ attemptId: id, level: 1, revealedAt: now });
-    await store.db
-      .insert(hintLadders)
-      .values({
-        id: "old-ar",
-        attemptId: id,
-        locale: "ar-EG",
-        levelsJson: JSON.stringify(ladderFixture.levels),
-        createdAt: now,
-      });
-    await store.db
-      .insert(walkthroughs)
-      .values({
-        id: "old-trace",
-        attemptId: id,
-        locale: "en",
-        explanationJson: "{}",
-        traceJson: "{}",
-        createdAt: now,
-      });
+    await store.db.insert(diagnosisTranslations).values({
+      id: "old-translation",
+      attemptId: id,
+      locale: "ar-EG",
+      publicJson: JSON.stringify(toPublic(result)),
+      createdAt: now,
+    });
+    await store.db.insert(hintLadders).values({
+      id: "old-ar",
+      attemptId: id,
+      locale: "ar-EG",
+      levelsJson: JSON.stringify(ladderFixture.levels),
+      createdAt: now,
+    });
+    await store.db.insert(walkthroughs).values({
+      id: "old-trace",
+      attemptId: id,
+      locale: "en",
+      explanationJson: "{}",
+      traceJson: "{}",
+      createdAt: now,
+    });
     await store.db
       .update(attempts)
       .set({ status: state, maxHintLevel: 1 })
@@ -284,7 +288,14 @@ it.each(["diagnosed", "error"] as const)(
     const d = deps();
     d.llm.mockImplementationOnce(async () => {
       expect(await diagnosisState(id)).toEqual({ status: "diagnosing", diagnosingSince: now });
-      for (const table of [diagnoses, hintLadders, hintReveals, stressRuns, walkthroughs])
+      for (const table of [
+        diagnoses,
+        diagnosisTranslations,
+        hintLadders,
+        hintReveals,
+        stressRuns,
+        walkthroughs,
+      ])
         expect(await store.db.select().from(table).where(eq(table.attemptId, id))).toEqual([]);
       return { ...result, public_summary: "Fresh diagnosis" };
     });
@@ -295,6 +306,12 @@ it.each(["diagnosed", "error"] as const)(
     expect(response.status).toBe(200);
     const events: DiagnoseEvent[] = [];
     await readSse(response.body!, (event) => events.push(event));
+    expect(
+      await store.db
+        .select()
+        .from(diagnosisTranslations)
+        .where(eq(diagnosisTranslations.attemptId, id)),
+    ).toEqual([]);
     expect(d.llm).toHaveBeenCalledOnce();
     expect(d.ladder.llm).toHaveBeenCalledOnce();
     expect(events.find((event) => event.event === "diagnosis")).toMatchObject({
@@ -309,6 +326,28 @@ it.each(["diagnosed", "error"] as const)(
     ).toHaveLength(1);
   },
 );
+it("clears stale translations when an expired diagnosis is generated again", async () => {
+  const id = await attempt();
+  await diagnoseAttempt(deps(), id, () => {});
+  await store.db.insert(diagnosisTranslations).values({
+    id: "expired-translation",
+    attemptId: id,
+    locale: "ar-EG",
+    publicJson: JSON.stringify(toPublic(result)),
+    createdAt: now,
+  });
+  now += 86400001;
+  const d = deps();
+  d.llm.mockResolvedValue({ ...result, public_summary: "Fresh diagnosis after expiry" });
+  await diagnoseAttempt(d, id, () => {});
+  expect(d.llm).toHaveBeenCalledOnce();
+  expect(
+    await store.db
+      .select()
+      .from(diagnosisTranslations)
+      .where(eq(diagnosisTranslations.attemptId, id)),
+  ).toEqual([]);
+});
 it.each([0, 150000, 150001, null])("retry obeys the stale claim at age %s", async (age) => {
   const id = await attempt();
   await diagnoseAttempt(deps(), id, () => {});

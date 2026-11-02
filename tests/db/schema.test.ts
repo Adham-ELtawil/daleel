@@ -17,6 +17,7 @@ describe("migrations", () => {
     expect(rows.map((r) => r.name)).toEqual([
       "attempts",
       "diagnoses",
+      "diagnosis_translations",
       "hint_ladders",
       "hint_reveals",
       "llm_calls",

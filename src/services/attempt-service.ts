@@ -17,12 +17,14 @@ import type { HintLadder } from "@/src/llm/schemas/ladder";
 import { getCurrentUser } from "./current-user";
 import { HttpError } from "./http-error";
 import { ensureLadder, type LadderDeps } from "./ladder-service";
+import { localizedDiagnosis, type DiagnosisLocaleDeps } from "./diagnosis-locale";
 
 export type AttemptDeps = {
   db: Db;
   cookie?: string | null;
   now: () => number;
   ladder?: Pick<LadderDeps, "llm" | "config">;
+  translate?: Pick<DiagnosisLocaleDeps, "llm" | "config">;
 };
 export async function ownedAttempt(db: Db, id: string, cookie?: string | null) {
   const user = await getCurrentUser(db, cookie);
@@ -120,6 +122,17 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
       ? StoredLadderSchema.parse(JSON.parse(ladderRow.levelsJson)).recordedAt
       : null;
   const result = diagnosis && StoredDiagnosisSchema.parse(JSON.parse(diagnosis.resultJson));
+  const publicDiagnosis = result
+    ? deps.translate
+      ? await localizedDiagnosis(
+          { ...deps, ...deps.translate, userId: stored.userId },
+          id,
+          locale ?? stored.locale,
+          toPublic(result.value),
+          stored.locale,
+        )
+      : toPublic(result.value)
+    : null;
   const stress = await deps.db.select().from(stressRuns).where(eq(stressRuns.attemptId, id)).get();
   const metadata = stress && StoredStressTestsSchema.parse(JSON.parse(stress.testsJson));
   const attempt = {
@@ -154,10 +167,10 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
           }),
         }
       : {}),
-    ...(result
+    ...(result && publicDiagnosis
       ? {
           diagnosis: {
-            ...toPublic(result.value),
+            ...publicDiagnosis,
             replay: result.recordedAt !== null,
             recordedAt: result.recordedAt,
           },

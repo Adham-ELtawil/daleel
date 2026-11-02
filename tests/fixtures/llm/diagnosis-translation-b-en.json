@@ -1,0 +1,11 @@
+{
+  "public_summary": "Your idea is correct, but large inputs cause a number overflow.",
+  "approach": {
+    "student_idea_public": "You use ceil to count tiles along each side, then multiply the counts. That idea is correct.",
+    "correct_idea_family": "ceil division then product, 64-bit"
+  },
+  "suspect_inputs": [
+    { "why": "The maximum product 1e18 overflows int." },
+    { "why": "Even 1e10 exceeds int." }
+  ]
+}
