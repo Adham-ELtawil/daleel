@@ -22,6 +22,8 @@ export function compileCommand(dir: string): Command {
       "-std=c++17",
       "-O2",
       "-pipe",
+      // Codeforces compiles with ONLINE_JUDGE; local freopen guards must not hide stdout.
+      "-DONLINE_JUDGE",
       "-o",
       join(dir, "a.out"),
       join(dir, "main.cpp"),

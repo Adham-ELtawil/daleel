@@ -67,6 +67,24 @@ describe.skipIf(!process.env.RUNNER_INTEGRATION)("real local runner", () => {
       }),
     30000,
   );
+  it(
+    "defines ONLINE_JUDGE so freopen guards keep output on stdout",
+    () =>
+      withRunner(async (runner, binaries) => {
+        const compiled = await runner.compile(
+          '#include <bits/stdc++.h>\nint main(){\n#ifndef ONLINE_JUDGE\nfreopen("output.txt","w",stdout);freopen("input.txt","r",stdin);\n#endif\nint a,b;std::cin>>a>>b;std::cout<<a+b<<"\\n";}',
+          "cpp17",
+        );
+        expect(compiled.ok).toBe(true);
+        if (!compiled.ok) throw new Error(compiled.output);
+        binaries.push(compiled.binaryId);
+        expect(await runner.run(compiled.binaryId, "2 3\n", limits)).toMatchObject({
+          status: "ok",
+          stdout: "5\n",
+        });
+      }),
+    30000,
+  );
   it.each([
     ["int main(){for(;;){}}", "tle", ""],
     ['#include <iostream>\nint main(){for(;;)std::cout << "xxxxxxxxxxxxxxxx";}', "ole", ""],

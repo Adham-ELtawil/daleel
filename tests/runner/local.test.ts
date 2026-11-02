@@ -26,6 +26,7 @@ it("builds compile argv with timeout, AS/CPU limits and C++17", async () => {
       "-std=c++17",
       "-O2",
       "-pipe",
+      "-DONLINE_JUDGE",
       "-o",
       "/tmp/test dir;$(touch nope)/a.out",
       "/tmp/test dir;$(touch nope)/main.cpp",
