@@ -41,3 +41,22 @@ Next.js 15's production build bundles the imported KaTeX CSS and 20 woff2 font a
 all 60 KaTeX font URLs resolve to emitted files, with no remote URLs or missing assets. Fresh lint,
 typecheck and build passed; Test Files 87 passed | 1 skipped (88), Tests 809 passed | 5 skipped (814).
 No live external API requests were made.
+
+PR-29 confirmed offline on 2026-11-02: libSQL applies drizzle-kit migration `0003` over a database
+migrated through `0002`, preserves legacy code/mode/locale/status, and enforces the new translation
+table's attempt FK and unique attempt/locale key. Zod generates strict translation objects with the
+existing 240/300/120/200 text limits and exact suspect count; invalid counts fall back without caching.
+Recording/replay supports the `translate` step, bills normal model rates on fixture calls and zero
+on replay, and records four demo translations covering both directions. No live Meta calls were made;
+the existing eval harness scored 4/4 on the CF 4A/1A diagnosis fixtures using a fake transport.
+
+The nproc calculator's fake /proc fixture counts only the real uid's threads, handles exited processes,
+and returns max(1024, thread count + 256). A real bubblewrap availability probe at nproc 1300 failed
+with `bwrap: loopback: Failed to create NETLINK_ROUTE socket: Operation not permitted` in this restricted
+workspace. The CF 1A `6 6 4` integration was attempted and now reports RunnerError; its sandboxed output
+remains unverified here. Existing stress tests confirm that RunnerError yields status `error`, without
+marking the reference `brute_untrusted` or failing the attempt.
+
+PR-29 fresh verification: lint/typecheck passed; `Test Files 91 passed | 1 skipped (92)`;
+`Tests 842 passed | 6 skipped (848)`. Changed matched files pass Prettier and production build passed
+with the supplied throwaway session secret, compiling successfully and generating 16/16 static pages.

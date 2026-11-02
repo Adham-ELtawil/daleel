@@ -8,6 +8,7 @@ const StepSchema = z.enum([
   "diagnose",
   "stress",
   "ladder",
+  "translate",
   "idea",
   "explain",
   "report",

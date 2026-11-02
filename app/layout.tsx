@@ -12,6 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
+    other: { google: "notranslate" },
     openGraph: {
       type: "website",
       title,
@@ -25,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await uiLocale();
   return (
-    <html {...localeAttrs(locale)}>
+    <html {...localeAttrs(locale)} translate="no" className="notranslate">
       <body className="antialiased">
         <LocaleShell locale={locale}>{children}</LocaleShell>
       </body>

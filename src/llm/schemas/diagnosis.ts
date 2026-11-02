@@ -56,6 +56,11 @@ export const DiagnosisSchema = z.strictObject({
 });
 
 export type Diagnosis = z.infer<typeof DiagnosisSchema>;
+export const DiagnosisPublicSchema = DiagnosisSchema.omit({
+  root_cause_internal: true,
+  fix_internal: true,
+  checked_internal: true,
+});
 export type DiagnosisPublic = Omit<
   Diagnosis,
   "root_cause_internal" | "fix_internal" | "checked_internal"

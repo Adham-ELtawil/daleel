@@ -141,6 +141,22 @@ export const stressRuns = sqliteTable("stress_runs", {
   createdAt: integer("created_at").notNull(),
 });
 
+export const diagnosisTranslations = sqliteTable(
+  "diagnosis_translations",
+  {
+    id: text("id").primaryKey(),
+    attemptId: text("attempt_id")
+      .notNull()
+      .references(() => attempts.id),
+    locale: text("locale", { enum: locales }).notNull(),
+    publicJson: text("public_json").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    unique("diagnosis_translations_attempt_locale_unique").on(table.attemptId, table.locale),
+  ],
+);
+
 export const hintLadders = sqliteTable(
   "hint_ladders",
   {
@@ -209,7 +225,17 @@ export const llmCalls = sqliteTable(
   {
     id: text("id").primaryKey(),
     step: text("step", {
-      enum: ["normalize", "diagnose", "stress", "ladder", "idea", "explain", "report", "asr"],
+      enum: [
+        "normalize",
+        "diagnose",
+        "stress",
+        "ladder",
+        "translate",
+        "idea",
+        "explain",
+        "report",
+        "asr",
+      ],
     }).notNull(),
     attemptId: text("attempt_id").references(() => attempts.id),
     model: text("model").notNull(),

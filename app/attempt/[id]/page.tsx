@@ -7,6 +7,7 @@ import { attemptDetail } from "@/src/services/attempt-service";
 import { HttpError } from "@/src/services/http-error";
 import { callModel } from "@/src/services/runtime";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
+import { translateStepConfig } from "@/src/llm/prompts/translate";
 import { uiLocale } from "@/src/services/ui-locale";
 import { t } from "@/src/i18n";
 
@@ -25,6 +26,7 @@ export default async function AttemptPage({
       cookie: (await headers()).get("cookie"),
       now: Date.now,
       ladder: { llm: callModel, config: ladderStepConfig(process.env) },
+      translate: { llm: callModel, config: translateStepConfig(process.env) },
     },
     id,
     locale,

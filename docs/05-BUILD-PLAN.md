@@ -115,6 +115,25 @@ Implementation: 143 changed lines including deletions. Dependency justification:
 KaTeX and its types provide offline LaTeX rendering; no installs or additional dependency changes.
 Layout tests extend their existing CSS-import boundary mock for KaTeX; no assertions were removed.
 
+- [x] PR-29: disable browser auto-translate; cache public diagnosis translations per viewer locale;
+  show a localized attempt loading skeleton; derive sandbox nproc from current uid threads and
+  report bubblewrap setup failures as runner errors. Clear translations when diagnosis regenerates.
+
+PR-29 TDD: `/tmp/pr29-red.txt` showed 43 failed, 73 passed and 6 skipped tests across 12 failing
+files and one skipped file. `/tmp/pr29-cache-red.txt` reproduced three stale-translation failures
+on explicit retries and expiry. Drizzle-kit generated `0003` with the existing turso dialect and
+schema/migration paths via CLI flags, avoiding the config's env-file loader. Offline eval harness:
+CF 4A/1A class 2/2, lines 2/2, score 4/4; synthetic fixture transport, no live calls. Demo recording
+and replay cover four translations in both directions, with graceful missing-recording fallback.
+Copy correction: the counterexample's English-pinned `Wrong answer` label now follows viewer locale
+and reads `إجابة غلط` in Arabic; the other scanned attempt components already use messages.
+Fresh `pnpm lint && pnpm typecheck && pnpm test` passed: `Test Files 91 passed | 1 skipped (92)`;
+`Tests 842 passed | 6 skipped (848)`. Changed matched files pass Prettier. Production build passed
+with the supplied throwaway session secret: compiled successfully and generated 16/16 static pages.
+Implementation is 284 changed lines including deletions; 348 with docs, excluding tests/migrations.
+Real CF 1A runner integration is blocked here:
+bubblewrap cannot create a NETLINK_ROUTE socket, returning Operation not permitted at nproc 1300.
+
 ## Day 8 — Wed Nov 4 → M8 (no new features)
 
 - 10:00–13:00 Bug fixes only from rehearsal. Rehearse the demo script 3× on the deployed URL (`06-DEMO-AND-SUBMISSION.md`). Each rehearsal: all 3 examples must pass.

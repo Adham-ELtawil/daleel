@@ -44,6 +44,7 @@
   "stress": {
     "pending": "Trying to break your code",
     "verified": "Verified counterexample",
+    "verdict": "Wrong answer",
     "input": "Input",
     "expected": "Expected",
     "actual": "Your output",
@@ -167,6 +168,7 @@
     "diagnose_again": "Diagnose again",
     "diagnosis_error": "Diagnosis paused",
     "preparing_hints": "Preparing your hints…",
+    "preparing_language": "Preparing in your language…",
     "title": "New attempt",
     "url": "Problem link",
     "resolve": "Resolve",

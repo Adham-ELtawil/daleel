@@ -77,6 +77,7 @@ export function createHandlers(deps: {
   now?: () => number;
   log?: (event: { requestId: string; code: string }) => void;
   ladder?: AttemptDeps["ladder"];
+  translate?: AttemptDeps["translate"];
   explain?: Pick<ExplainDeps, "llm" | "config">;
 }) {
   const now = deps.now ?? Date.now;
@@ -226,7 +227,13 @@ export function createHandlers(deps: {
           locale: new URL(request.url).searchParams.get("locale") ?? undefined,
         });
         if (!parsed.success) throw new HttpError(400, "invalid");
-        return attemptDetail(await attemptDeps(request), id, parsed.data.locale);
+        const locale =
+          parsed.data.locale ??
+          resolveLocale(
+            request.headers.get("cookie")?.match(/(?:^|;\s*)daleel_locale=([^;]*)/)?.[1],
+            request.headers.get("accept-language"),
+          );
+        return attemptDetail(await attemptDeps(request), id, locale);
       }),
     stuck: (request: Request, id: string) => mark(request, id, "stuck"),
     solved: (request: Request, id: string) => mark(request, id, "solved"),

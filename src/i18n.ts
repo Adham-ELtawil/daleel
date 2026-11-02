@@ -24,7 +24,7 @@ export function t(key: string, locale: "en" | "ar-EG" = "en", scope: keyof typeo
 export function localeAttrs(locale: "en" | "ar-EG") {
   return locale === "en"
     ? ({ lang: "en", dir: "ltr" } as const)
-    : ({ lang: "ar", dir: "rtl" } as const);
+    : ({ lang: "ar-EG", dir: "rtl" } as const);
 }
 
 export function resolveLocale(cookie: string | undefined, language: string | null): "en" | "ar-EG" {

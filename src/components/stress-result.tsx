@@ -29,7 +29,7 @@ export function StressResult({
           <Window title={t("verified", locale, "stress")}>
             <JudgeOutput
               animate
-              verdict={t("verdict", "en", "hero")}
+              verdict={t("verdict", locale, "stress")}
               rows={[
                 { label: t("input", locale, "stress"), value: result.failing_input ?? "" },
                 {

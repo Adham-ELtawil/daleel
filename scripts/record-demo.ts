@@ -16,11 +16,12 @@ import { diagnoseStepConfig } from "@/src/llm/prompts/diagnose";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
 import { explainStepConfig } from "@/src/llm/prompts/explain";
 import { stressStepConfig } from "@/src/llm/prompts/stress";
+import { translateStepConfig } from "@/src/llm/prompts/translate";
 import { createRunner } from "@/src/runner/factory";
 import { createReplayStore } from "@/src/llm/replay/store";
 import { getCurrentUser } from "@/src/services/current-user";
 import { diagnoseAttempt } from "@/src/services/diagnose-service";
-import { markAttempt, revealHint } from "@/src/services/attempt-service";
+import { attemptDetail, markAttempt, revealHint } from "@/src/services/attempt-service";
 import { explainAttempt } from "@/src/services/explain-service";
 import { createHandlers } from "@/src/services/handlers";
 
@@ -32,6 +33,7 @@ export async function runDemoFlows(
 ) {
   const now = Date.now;
   const ladder = { config: ladderStepConfig(env), llm: client.callStructured };
+  const translate = { config: translateStepConfig(env), llm: client.callStructured };
   const stress =
     env.RUNNER_PROVIDER === "local"
       ? { config: stressStepConfig(env), llm: client.callStructured, runner: createRunner(env) }
@@ -78,6 +80,7 @@ export async function runDemoFlows(
         },
       );
       if (bugFound !== expectedBug || !ladderReady) throw new Error("demo_flow_failed");
+      await attemptDetail({ db, now, translate }, id, example.locale === "en" ? "ar-EG" : "en");
     };
     const parent = await create("student.cpp");
     await diagnose(parent, true);

@@ -10,6 +10,7 @@ import {
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
 import { explainStepConfig } from "@/src/llm/prompts/explain";
 import { stressStepConfig } from "@/src/llm/prompts/stress";
+import { translateStepConfig } from "@/src/llm/prompts/translate";
 import { createRunner } from "@/src/runner/factory";
 import { createReplayStore } from "@/src/llm/replay/store";
 import { createHandlers } from "./handlers";
@@ -37,6 +38,7 @@ export function attemptHandlers() {
   return createHandlers({
     db: () => connect(getDb()),
     ladder: { config: ladderStepConfig(process.env), llm: callModel },
+    translate: { config: translateStepConfig(process.env), llm: callModel },
     explain: { config: explainStepConfig(process.env), llm: callModel },
   });
 }
