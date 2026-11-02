@@ -41,14 +41,14 @@ export default async function Home() {
               key={step}
               className="relative space-y-3 border-s border-line ps-5 after:hidden sm:border-s-0 sm:ps-0 sm:after:absolute sm:after:start-12 sm:after:end-0 sm:after:top-4 sm:after:block sm:after:h-px sm:after:bg-line last:after:hidden"
             >
-              <div className="flex items-center gap-3">
-                <span aria-hidden="true" className="step-number">
-                  {index + 1}
-                </span>
-                <FeatureSticker
-                  name={({ diagnose: "diagnose", verify: "counterexample", hint: "hints" } as const)[step]}
-                />
-              </div>
+              <span aria-hidden="true" className="step-number">
+                {index + 1}
+              </span>
+              <FeatureSticker
+                name={
+                  ({ diagnose: "diagnose", verify: "counterexample", hint: "hints" } as const)[step]
+                }
+              />
               <h3 className="text-xl">{t(step, locale, "landing")}</h3>
               <p className="text-sm text-muted">{t(`${step}_description`, locale, "landing")}</p>
             </li>
