@@ -26,9 +26,11 @@ it.each(["en", "ar-EG"] as const)(
     vi.stubGlobal("React", React);
     const { default: RootLayout } = await import("@/app/layout");
     const html = renderToStaticMarkup(await RootLayout({ children: React.createElement("main") }));
-    expect(html).toContain(
-      `<html lang="${selected === "en" ? "en" : "ar"}" dir="${selected === "en" ? "ltr" : "rtl"}">`,
-    );
+    const root = html.match(/<html\b[^>]*>/)?.[0] ?? "";
+    expect(root).toContain(`lang="${selected}"`);
+    expect(root).toContain(`dir="${selected === "en" ? "ltr" : "rtl"}"`);
+    expect(root).toContain('translate="no"');
+    expect(root).toMatch(/class="[^"]*\bnotranslate\b/);
     expect(html).toMatch(/<header[\s\S]*<button[\s\S]*<\/header>[\s\S]*<main/);
     expect(html).toContain(`aria-label="${t("ui_language", selected)}"`);
     expect(html).toContain(selected === "en" ? "عربي" : "English");
@@ -94,6 +96,7 @@ it.each(["en", "ar-EG"] as const)(
     expect(await generateMetadata()).toMatchObject({
       title: t("title", selected, "landing"),
       description: t("description", selected, "landing"),
+      other: { google: "notranslate" },
       openGraph: {
         type: "website",
         title: t("title", selected, "landing"),

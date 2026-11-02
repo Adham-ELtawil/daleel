@@ -158,3 +158,26 @@ it("record mode with reuse returns an existing recording without a live call", a
   );
   expect(s.fetch).not.toHaveBeenCalled();
 });
+it("records and replays the translate step with normal Spark pricing and no replay transport", async () => {
+  const fake = createFakeFetch([{ status: 200, json: chatCompletion(JSON.stringify(response)) }]);
+  const s = await setup("record", { fetch: fake.fetch });
+  const translate = { ...cfg, step: "translate" as const };
+  expect(await s.client.callStructured(translate, [...messages], { zod: schema })).toEqual(
+    response,
+  );
+  expect(s.logs[0]).toMatchObject({
+    step: "translate",
+    status: "ok",
+    costUsd: (60 * 1.25 + 40 * 0.15 + 50 * 4.25) / 1e6,
+  });
+  expect(await s.store.read("translate", s.logs[0].requestHash)).toMatchObject({
+    provenance: { step: "translate" },
+    response,
+  });
+  const replay = await setup("replay", { apiKey: "" });
+  expect(await replay.client.callStructured(translate, [...messages], { zod: schema })).toEqual(
+    response,
+  );
+  expect(replay.fetch).not.toHaveBeenCalled();
+  expect(replay.logs[0]).toMatchObject({ step: "translate", status: "replay", costUsd: 0 });
+});

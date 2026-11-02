@@ -57,6 +57,7 @@ it("has complete stress copy in both locales with Arabic-first lines", () => {
   const stressKeys = [
     "pending",
     "verified",
+    "verdict",
     "input",
     "expected",
     "actual",
@@ -84,7 +85,7 @@ it("has complete stress copy in both locales with Arabic-first lines", () => {
 });
 it.each([
   ["en", { lang: "en", dir: "ltr" }],
-  ["ar-EG", { lang: "ar", dir: "rtl" }],
+  ["ar-EG", { lang: "ar-EG", dir: "rtl" }],
 ] as const)("sets whole-page attributes for %s", (locale, expected) => {
   expect(i18n.localeAttrs(locale)).toEqual(expected);
 });

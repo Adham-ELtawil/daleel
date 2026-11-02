@@ -13,10 +13,19 @@ import explanationB from "@/tests/fixtures/llm/explanation-b.json";
 import { tempDb } from "@/tests/db/helpers";
 import { seed } from "@/src/db/seed";
 import { createMetaClient } from "@/src/llm/meta-client";
-import { attempts, diagnoses, hintReveals, stressRuns, walkthroughs } from "@/src/db/schema";
+import {
+  attempts,
+  diagnoses,
+  diagnosisTranslations,
+  hintReveals,
+  stressRuns,
+  walkthroughs,
+} from "@/src/db/schema";
 import ideaLadder from "@/tests/fixtures/llm/idea-ladder.json";
 import { fakeStressRunner } from "@/tests/runner/stress-fake";
 import stressPlan from "@/tests/fixtures/llm/stress-a.json";
+import translationAr from "@/tests/fixtures/llm/diagnosis-translation-a-ar.json";
+import translationEn from "@/tests/fixtures/llm/diagnosis-translation-b-en.json";
 
 vi.mock("@/src/runner/local", () => ({
   createLocalRunner: () => ({ ...fakeStressRunner(), name: "local" }),
@@ -81,7 +90,11 @@ it.each(["none", "local"])(
       stream(diagnosisB),
       ...stress,
       { status: 200, json: chatCompletion(JSON.stringify(ladderB)) },
-      stream({ ...diagnosis, bug_class: "off_by_one" }),
+      stream({
+        ...diagnosis,
+        bug_class: "off_by_one",
+        public_summary: "Your loop skips a boundary value.",
+      }),
       ...stress,
       { status: 200, json: chatCompletion(JSON.stringify(ladder)) },
     ]);
@@ -94,6 +107,11 @@ it.each(["none", "local"])(
       { status: 200, json: chatCompletion(JSON.stringify(ideaLadder)) },
       { status: 200, json: chatCompletion(JSON.stringify(ideaLadder)) },
     ]);
+    const translations = createFakeFetch(
+      [translationAr, { ...translationAr, suspect_inputs: [] }, translationEn, translationAr].map(
+        (value) => ({ status: 200, json: chatCompletion(JSON.stringify(value)) }),
+      ),
+    );
     const steps: string[] = [];
     const transport: typeof globalThis.fetch = async (input, init) => {
       const request = new Request(input, init);
@@ -112,7 +130,13 @@ it.each(["none", "local"])(
         return ideas.fetch(request);
       }
       steps.push(name);
-      return (name === "Explanation" ? explanations : fake).fetch(request);
+      return (
+        name === "Explanation"
+          ? explanations
+          : name === "DiagnosisTranslation"
+            ? translations
+            : fake
+      ).fetch(request);
     };
     const print = vi.fn<(line: string) => void>();
     const { runRecordDemo: run, runDemoFlows } = await runner();
@@ -133,20 +157,27 @@ it.each(["none", "local"])(
     expect(steps.filter((step) => step !== "StressPlan")).toEqual([
       "Diagnosis",
       "HintLadder",
+      "DiagnosisTranslation",
       "Explanation",
       "Diagnosis",
       "HintLadder",
+      "DiagnosisTranslation",
       "Diagnosis",
       "HintLadder",
+      "DiagnosisTranslation",
       "Explanation",
       "Diagnosis",
       "HintLadder",
+      "DiagnosisTranslation",
       "Explanation",
       "idea",
       "idea",
     ]);
-    const count = provider === "local" ? 16 : 13;
-    expect(fake.requests).toHaveLength(count - 5);
+    const count = provider === "local" ? 20 : 17;
+    expect(fake.requests).toHaveLength(count - 9);
+    expect(translations.requests).toHaveLength(4);
+    expect(JSON.stringify(translations.requests[0].body.messages)).toContain("Egyptian Arabic");
+    expect(JSON.stringify(translations.requests[2].body.messages)).toContain("English");
     expect(ideas.requests).toHaveLength(2);
     for (const request of ideas.requests) {
       expect(JSON.stringify(request.body.messages)).toContain("<problem ");
@@ -169,6 +200,7 @@ it.each(["none", "local"])(
     expect(files).toHaveLength(count);
     expect(files.filter((name) => String(name).startsWith("explain/"))).toHaveLength(3);
     expect(files.filter((name) => String(name).startsWith("idea/"))).toHaveLength(2);
+    expect(files.filter((name) => String(name).startsWith("translate/"))).toHaveLength(4);
     expect(files.filter((name) => String(name).startsWith("stress/"))).toHaveLength(
       provider === "local" ? 3 : 0,
     );
@@ -211,6 +243,9 @@ it.each(["none", "local"])(
       expect(new Set(ideaAttempts.map(({ problemId }) => problemId)).size).toBe(1);
       expect(await db.db.select().from(hintReveals)).toHaveLength(8);
       const diagnosisRows = await db.db.select().from(diagnoses);
+      const localized = await db.db.select().from(diagnosisTranslations);
+      expect(localized).toHaveLength(4);
+      expect(localized.map(({ locale }) => locale)).toEqual(["ar-EG", "ar-EG", "en", "ar-EG"]);
       expect(
         diagnosisRows.every((row) => !ideaAttempts.some((attempt) => attempt.id === row.attemptId)),
       ).toBe(true);

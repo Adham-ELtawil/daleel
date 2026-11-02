@@ -40,13 +40,14 @@ it.each([false, true])(
       dir,
       { timeMs: 1500, memoryMb: 256, outputKb: 64 },
       lib64,
+      1536,
     );
     expect(invocation.command).toBe("prlimit");
     expect(invocation.args).toEqual([
       "--as=268435456",
       "--cpu=3",
       "--fsize=65536",
-      "--nproc=1024",
+      "--nproc=1536",
       "--",
       "bwrap",
       "--ro-bind",
@@ -74,6 +75,39 @@ it.each([false, true])(
     expect(invocation.args).not.toContain("-c");
   },
 );
+it("counts the real uid's threads with headroom, tolerating processes that disappear", async () => {
+  const mod = await local();
+  expect(mod).toHaveProperty("nprocLimit");
+  const status = vi.fn((pid: string) => {
+    if (pid === "12") throw new Error("process exited");
+    return (
+      {
+        "10": "Uid:\t1000\t1000\t1000\t1000\nThreads:\t1100\n",
+        "11": "Uid:\t1000\t1000\t1000\t1000\nThreads:\t17\n",
+        "13": "Uid:\t2000\t1000\t1000\t1000\nThreads:\t900\n",
+        "14": "Uid:\t1000\t1000\t1000\t1000\n",
+      }[pid] ?? ""
+    );
+  });
+  expect(mod.nprocLimit(1000, { pids: () => ["10", "11", "12", "13", "14", "self"], status })).toBe(
+    1373,
+  );
+  expect(status).not.toHaveBeenCalledWith("self");
+});
+it("never uses an nproc limit below 1024 even if /proc is empty or inaccessible", async () => {
+  const mod = await local();
+  expect(mod).toHaveProperty("nprocLimit");
+  const status = () => "";
+  expect(mod.nprocLimit(1000, { pids: () => [], status })).toBe(1024);
+  expect(
+    mod.nprocLimit(1000, {
+      pids: () => {
+        throw new Error("no proc");
+      },
+      status,
+    }),
+  ).toBe(1024);
+});
 it("rejects missing binary ids and limits outside the product caps", async () => {
   const runner = (await local()).createLocalRunner();
   await expect(

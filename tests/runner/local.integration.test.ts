@@ -49,6 +49,24 @@ describe.skipIf(!process.env.RUNNER_INTEGRATION)("real local runner", () => {
       }),
     30000,
   );
+  it(
+    "runs the CF 1A reference on 6 6 4 and returns 4",
+    () =>
+      withRunner(async (runner, binaries) => {
+        const compiled = await runner.compile(
+          await readFile("docs/examples/cf-1A-theatre-square/brute.cpp", "utf8"),
+          "cpp17",
+        );
+        expect(compiled.ok).toBe(true);
+        if (!compiled.ok) throw new Error(compiled.output);
+        binaries.push(compiled.binaryId);
+        expect(await runner.run(compiled.binaryId, "6 6 4\n", limits)).toMatchObject({
+          status: "ok",
+          stdout: "4\n",
+        });
+      }),
+    30000,
+  );
   it.each([
     ["int main(){for(;;){}}", "tle", ""],
     ['#include <iostream>\nint main(){for(;;)std::cout << "xxxxxxxxxxxxxxxx";}', "ole", ""],
