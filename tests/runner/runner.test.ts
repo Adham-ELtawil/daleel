@@ -122,3 +122,12 @@ describe("mapStatus with bwrap exit codes", () => {
     expect(mapStatus({ ...base, exitCode: 153 })).toBe("ole");
   });
 });
+
+it("accepts Codeforces yes/no in any case but keeps other tokens case-sensitive", async () => {
+  const { compareOutputs } = await api();
+  expect(compareOutputs("YES\nNO", "Yes\nno", "exact_tokens", "codeforces")).toBe(true);
+  expect(compareOutputs("YES", "NO", "exact_tokens", "codeforces")).toBe(false);
+  expect(compareOutputs("Yes", "no", "exact_tokens", "codeforces")).toBe(false);
+  expect(compareOutputs("Abc", "abc", "exact_tokens", "codeforces")).toBe(false);
+  expect(compareOutputs("six", "SIX", "exact_tokens", "codeforces")).toBe(false);
+});
