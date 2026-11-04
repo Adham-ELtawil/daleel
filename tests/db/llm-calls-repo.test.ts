@@ -37,3 +37,21 @@ describe("llm_calls repo (feeds the meta-client budget guard)", () => {
     expect(await sumLlmCostSince(db, 0)).toBe(0);
   });
 });
+
+describe("llmCallSummary (per-attempt Meta badge data)", () => {
+  it("returns the latest successful or replayed call per step for one attempt", async () => {
+    const { llmCallSummary } = await import("@/src/db/repo/llm-calls");
+    const { sql } = await import("drizzle-orm");
+    await db.run(sql`PRAGMA foreign_keys = OFF`); // repo-level unit: attempt rows are irrelevant
+    const base = { ...rec(0.01), attemptId: "ATT" };
+    await recordLlmCall(db, { ...base, latencyMs: 100 }, 1_000);
+    await recordLlmCall(db, { ...base, latencyMs: 200 }, 2_000);
+    await recordLlmCall(db, { ...base, status: "error", latencyMs: 300 }, 3_000);
+    await recordLlmCall(db, { ...base, step: "ladder", status: "replay", latencyMs: 2 }, 2_500);
+    await recordLlmCall(db, { ...base, attemptId: "OTHER", step: "explain" }, 2_600);
+    expect(await llmCallSummary(db, "ATT")).toEqual({
+      diagnose: { model: "muse-spark-1.3", latencyMs: 200, replay: false },
+      ladder: { model: "muse-spark-1.3", latencyMs: 2, replay: true },
+    });
+  });
+});

@@ -116,7 +116,7 @@ it.each(["en", "ar-EG"] as const)(
       [...html.matchAll(/<pre\b[^>]*dir="ltr"[^>]*>([\s\S]*?)<\/pre>/g)].map((match) => match[1]),
     ).toEqual(["2\n", "NO\n", "YES\n"]);
     expect(html).toContain(
-      locale === "en" ? "verified by running your code" : "اتأكدنا بتشغيل الكود بتاعك",
+      locale === "en" ? "Verified by running your code" : "اتأكدنا بتشغيل الكود بتاعك",
     );
     expect(html).toContain(locale === "en" ? "Wrong answer" : "إجابة غلط");
     if (locale === "ar-EG") expect(html).not.toContain("Wrong answer");
