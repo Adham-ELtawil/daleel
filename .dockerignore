@@ -1,0 +1,11 @@
+node_modules
+.next
+data/*.db*
+data/.session-secret
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+tsconfig.tsbuildinfo
+.git

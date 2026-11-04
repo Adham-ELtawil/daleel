@@ -29,6 +29,9 @@ for (const [title, locale, directory] of [
     const badge =
       locale === "en" ? "Replay (recorded 2026-10-30)" : "إعادة تشغيل من تسجيل بتاريخ 2026-10-30";
     await expect(page.getByText(badge, { exact: true })).toHaveCount(1);
+    await expect(page.locator(".meta-badge").first()).toContainText(
+      "Muse Spark · muse-spark-1.3 · replay",
+    );
     await page
       .getByRole("button", { name: locale === "en" ? "Hint 1" : "تلميح 1", exact: true })
       .click();
@@ -36,6 +39,8 @@ for (const [title, locale, directory] of [
     await page.reload();
     await expect(page.getByText(badge, { exact: true })).toHaveCount(2);
     await expect(page.locator("[data-hint-level]")).toHaveCount(1);
+    // Diagnosis and hint ladder each carry their Meta provenance chip after reload.
+    await expect(page.locator(".meta-badge")).not.toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute("lang", locale);
   });
 }

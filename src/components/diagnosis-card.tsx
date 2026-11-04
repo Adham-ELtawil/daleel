@@ -11,6 +11,7 @@ import type { attemptDetail } from "@/src/services/attempt-service";
 import { readSse } from "@/src/services/sse";
 import { HintLadder } from "./hint-ladder";
 import { ReplayBadge } from "./replay-badge";
+import { MetaBadge } from "./meta-badge";
 import { StressResult } from "./stress-result";
 import { DiagnosisError, LoadingSkeleton } from "./attempt-feedback";
 import { Window } from "./ui/window";
@@ -124,7 +125,25 @@ export function DiagnosisCard({
         {error && <DiagnosisError code={error} locale={locale} />}
         {result && (
           <article className="space-y-3">
-            <ReplayBadge replay={result.replay} recordedAt={result.recordedAt} locale={locale} />
+            <div className="flex flex-wrap items-center gap-2">
+              <ReplayBadge replay={result.replay} recordedAt={result.recordedAt} locale={locale} />
+              <MetaBadge
+                attemptId={id}
+                step="diagnose"
+                initial={detail.meta?.diagnose}
+                locale={locale}
+                watch={result}
+              />
+              {detail.attempt.locale !== locale && detail.meta?.translate && (
+                <MetaBadge
+                  attemptId={id}
+                  step="translate"
+                  kind="translate"
+                  initial={detail.meta.translate}
+                  locale={locale}
+                />
+              )}
+            </div>
             <p dir="auto" className="max-w-[70ch] text-xl">
               {result.public_summary}
             </p>
@@ -185,6 +204,7 @@ export function DiagnosisCard({
           counterexample: result ? (
             <StressResult
               result={stress}
+              meta={{ attemptId: id, initial: detail.meta?.stress }}
               pending={busy && result.bug_found && !ladderReady && !error}
               locale={locale}
             />

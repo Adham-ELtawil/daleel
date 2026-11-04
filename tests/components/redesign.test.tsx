@@ -139,6 +139,7 @@ it("expands hint rows with a reduced-motion contract and keyboard focus target",
     canExplain: false,
     replay: false,
     recordedAt: null,
+    meta: {},
   };
   const html = renderToStaticMarkup(<HintLadder detail={detail} locale="en" ready />);
   expect(html).toMatch(/data-hint-level="1"[^>]*tabindex="-1"/);

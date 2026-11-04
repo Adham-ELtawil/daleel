@@ -4,13 +4,17 @@ import { t } from "@/src/i18n";
 import { LoadingSkeleton } from "./attempt-feedback";
 import { Window } from "./ui/window";
 import { JudgeOutput } from "./ui/judge-output";
+import { MetaBadge } from "./meta-badge";
+import type { LlmCallInfo } from "@/src/db/repo/llm-calls";
 
 export function StressResult({
   result,
   pending = false,
   locale,
+  meta,
 }: {
   result?: StressPublic;
+  meta?: { attemptId: string; initial?: LlmCallInfo };
   pending?: boolean;
   locale: "en" | "ar-EG";
 }) {
@@ -24,6 +28,15 @@ export function StressResult({
   const verified = result?.status === "verified";
   return (
     <section aria-live="polite" className="space-y-4">
+      {meta && result && (
+        <MetaBadge
+          attemptId={meta.attemptId}
+          step="stress"
+          initial={meta.initial}
+          locale={locale}
+          watch={result}
+        />
+      )}
       {verified ? (
         <section className="space-y-3" aria-label={t("verified", locale, "stress")}>
           <Window title={t("verified", locale, "stress")}>

@@ -281,5 +281,10 @@
     "sentence": "الصفحة دي مش موجودة، أو المحاولة تبع جلسة تانية.",
     "home": "الصفحة الرئيسية",
     "new_attempt": "محاولة جديدة"
+  },
+  "meta": {
+    "live_label": "اتولّد live بـ Meta Muse Spark",
+    "replay_label": "رد مسجّل من Meta Muse Spark (replay)",
+    "translated": "مترجَم"
   }
 }

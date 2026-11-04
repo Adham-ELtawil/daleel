@@ -72,6 +72,7 @@ it.each(["en", "ar-EG"] as const)("only offers the explanation when canExplain i
     canExplain: false,
     replay: false,
     recordedAt: null,
+    meta: {},
   };
   const label = locale === "en" ? "Full explanation" : "الشرح الكامل";
   expect(

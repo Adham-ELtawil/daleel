@@ -16,17 +16,22 @@ function sources(dir: string): string[] {
     return statSync(path).isDirectory() ? sources(path) : /\.tsx?$/.test(name) ? [path] : [];
   });
 }
-const code = ["src", "app", "scripts"].flatMap(sources).map((p) => readFileSync(p, "utf8")).join("\n");
+const code = ["src", "app", "scripts"]
+  .flatMap(sources)
+  .map((p) => readFileSync(p, "utf8"))
+  .join("\n");
 
 it("documents every variable declared in src/env.ts", () => {
   const declared = new Set<string>();
   for (const schema of Object.values(env)) {
-    const shape = (schema as { shape?: Record<string, unknown>; def?: { in?: { shape?: object } } })
-      .shape ?? (schema as { def?: { schema?: { shape?: object } } }).def?.schema?.shape;
+    const shape =
+      (schema as { shape?: Record<string, unknown>; def?: { in?: { shape?: object } } }).shape ??
+      (schema as { def?: { schema?: { shape?: object } } }).def?.schema?.shape;
     for (const key of Object.keys(shape ?? {})) if (key !== "NODE_ENV") declared.add(key);
   }
   expect(declared.size).toBeGreaterThan(15);
-  for (const key of declared) expect(entries.has(key), `${key} missing from .env.example`).toBe(true);
+  for (const key of declared)
+    expect(entries.has(key), `${key} missing from .env.example`).toBe(true);
   for (const key of ["SESSION_SECRET", "DATABASE_URL", "DATABASE_AUTH_TOKEN", "RUNNER_PROVIDER"])
     expect(entries.has(key), `${key} missing`).toBe(true);
 });

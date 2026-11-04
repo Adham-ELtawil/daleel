@@ -59,6 +59,7 @@ function render(
     canExplain: false,
     replay: false,
     recordedAt: null,
+    meta: {},
   };
   return renderToStaticMarkup(React.createElement(DiagnosisCard, { detail, locale }));
 }

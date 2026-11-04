@@ -40,6 +40,7 @@ const detail = (
   canExplain: revealed >= 3,
   replay: false,
   recordedAt: null,
+  meta: {},
 });
 it.each(["en", "ar-EG"] as const)(
   "shows idea hints, a reveal button and paste-code link without diagnosis/editor/explanation in %s",
