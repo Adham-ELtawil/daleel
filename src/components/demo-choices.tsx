@@ -89,7 +89,10 @@ export function DemoChoices({ locale }: { locale: "en" | "ar-EG" }) {
       });
       if (!response.ok) throw new Error("demo_failed");
       const { attemptId }: { attemptId: string } = await response.json();
-      router.push(`/attempt/${attemptId}?autostart=1`);
+      const target = `/attempt/${attemptId}?autostart=1`;
+      // A demo in the other language needs a full load so the layout (header, lang/dir) re-renders.
+      if (example.locale !== locale) window.location.assign(target);
+      else router.push(target);
     } catch {
       setError(true);
     } finally {

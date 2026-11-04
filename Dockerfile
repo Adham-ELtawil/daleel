@@ -13,7 +13,9 @@ RUN corepack prepare pnpm@10.34.6 --activate && pnpm install --frozen-lockfile
 
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm build && mkdir -p data && chown -R node:node /app/data /app/.next
+# Production build validates SESSION_SECRET; use a throwaway one here (the runtime secret is set by the entrypoint).
+RUN SESSION_SECRET=$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))") pnpm build \
+ && mkdir -p data && chown -R node:node /app/data /app/.next
 
 # Defaults: zero-key recorded demo, no sandbox. Override with -e or docker-compose.yml.
 ENV NODE_ENV=production \
