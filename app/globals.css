@@ -465,3 +465,31 @@ button:disabled {
     transition: none;
   }
 }
+
+/* Meta Muse Spark provenance chip (PR-33) */
+@layer components {
+  .meta-badge {
+    @apply inline-flex items-center gap-1.5 rounded-md border ps-2.5 pe-2.5 py-0.5 text-xs;
+    border-color: rgb(243 185 95 / 0.35);
+    background: rgb(15 24 48 / 0.85);
+    color: #f3b95f;
+  }
+  .meta-badge-text {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap;
+    font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+    letter-spacing: 0.01em;
+  }
+  .meta-badge-kind {
+    @apply font-medium;
+    color: rgb(243 185 95 / 0.8);
+  }
+  .meta-badge-dot {
+    @apply inline-block size-1.5 rounded-full;
+    background: #f3b95f;
+    box-shadow: 0 0 6px rgb(243 185 95 / 0.8);
+  }
+  .meta-badge[data-replay] .meta-badge-dot {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px #f3b95f;
+  }
+}

@@ -1,0 +1,22 @@
+# Usage:
+#   docker compose up --build              # recorded demo, no key needed (http://localhost:3000)
+#   MODEL_API_KEY=... DEMO_REPLAY=0 docker compose up --build   # live Muse Spark with your own key
+services:
+  daleel:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DEMO_REPLAY: ${DEMO_REPLAY:-1}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      RUNNER_PROVIDER: ${RUNNER_PROVIDER:-local}
+      DAILY_BUDGET_USD: ${DAILY_BUDGET_USD:-10}
+    # bubblewrap needs user namespaces; Docker's default seccomp/AppArmor profiles block them.
+    # These relax only the syscall filter for this container (no --privileged, no host mounts).
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+    volumes:
+      - daleel-data:/app/data
+volumes:
+  daleel-data:

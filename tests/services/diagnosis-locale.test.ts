@@ -230,3 +230,13 @@ it("GET attempt keeps serving the original when translation is unavailable", asy
     "en",
   );
 });
+
+it("attemptDetail falls back to the stored diagnosis model when the diagnosis was reused (no llm_calls row)", async () => {
+  const detail = await attemptDetail({ db: store.db, now }, id);
+  expect(detail.meta.diagnose).toEqual({
+    model: "fixture-model",
+    latencyMs: 0,
+    replay: false,
+    cached: true,
+  });
+});

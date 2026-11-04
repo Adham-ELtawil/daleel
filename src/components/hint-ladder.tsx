@@ -11,6 +11,7 @@ import { HttpError } from "@/src/services/http-error";
 import { HintRow } from "./ui/hint-row";
 import { Window } from "./ui/window";
 import { ReplayBadge } from "./replay-badge";
+import { MetaBadge } from "./meta-badge";
 import { Explanation } from "./explanation";
 import type { explainAttempt } from "@/src/services/explain-service";
 import { AttemptStepper, StepHeading } from "./attempt-steps";
@@ -120,7 +121,18 @@ export function HintLadder({
         ) : (
           !pipeline && <StepHeading step={3} locale={locale} />
         )}
-        {hints.length > 0 && <ReplayBadge {...provenance} locale={locale} />}
+        {hints.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <ReplayBadge {...provenance} locale={locale} />
+            <MetaBadge
+              attemptId={attempt.id}
+              step={idea ? "idea" : "ladder"}
+              initial={detail.meta?.[idea ? "idea" : "ladder"]}
+              locale={locale}
+              watch={hints.length}
+            />
+          </div>
+        )}
         {hints.map((hint) => (
           <HintRow key={hint.level} hint={hint} fresh={fresh === hint.level} />
         ))}
@@ -161,7 +173,16 @@ export function HintLadder({
   );
   function explainPanel() {
     return canExplain && explanation ? (
-      <Explanation {...explanation} heading={!pipeline} code={attempt.code} locale={locale} />
+      <div className="space-y-3">
+        <MetaBadge
+          attemptId={attempt.id}
+          step="explain"
+          initial={detail.meta?.explain}
+          locale={locale}
+          watch={explanation}
+        />
+        <Explanation {...explanation} heading={!pipeline} code={attempt.code} locale={locale} />
+      </div>
     ) : (
       <div className="space-y-3">
         {explainError && (

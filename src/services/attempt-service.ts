@@ -2,6 +2,7 @@ import { and, count, desc, eq, lt, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
+import { llmCallSummary } from "@/src/db/repo/llm-calls";
 import { StoredDiagnosisSchema, StoredLadderSchema, StoredStressTestsSchema } from "@/src/db/json";
 import {
   attempts,
@@ -133,6 +134,15 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
         )
       : toPublic(result.value)
     : null;
+  const meta = await llmCallSummary(deps.db, id);
+  // Identical submissions reuse an earlier diagnosis without a new call; keep its Meta provenance visible.
+  if (diagnosis && result && !meta.diagnose)
+    meta.diagnose = {
+      model: diagnosis.model,
+      latencyMs: 0,
+      replay: result.recordedAt !== null,
+      cached: true,
+    };
   const stress = await deps.db.select().from(stressRuns).where(eq(stressRuns.attemptId, id)).get();
   const metadata = stress && StoredStressTestsSchema.parse(JSON.parse(stress.testsJson));
   const attempt = {
@@ -178,6 +188,7 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
       : {}),
     replay: recordedAt !== null,
     recordedAt,
+    meta,
     revealedHints: ladder ? reveals.map((r) => publicHint(ladder.levels[r.level - 1])) : [],
     canExplain: canExplain(reveals.length, stored.status, stored.mode),
   };

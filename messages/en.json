@@ -48,7 +48,7 @@
     "input": "Input",
     "expected": "Expected",
     "actual": "Your output",
-    "verified_note": "verified by running your code",
+    "verified_note": "Verified by running your code",
     "not_verified": "Not verified",
     "compile_error": "Your code did not compile.",
     "no_mismatch": "No mismatch found in the tests.",
@@ -281,5 +281,11 @@
     "sentence": "This page doesn't exist, or the attempt belongs to another session.",
     "home": "Home",
     "new_attempt": "New attempt"
+  },
+  "meta": {
+    "live_label": "Generated live by Meta Muse Spark",
+    "replay_label": "Recorded Meta Muse Spark response (replay)",
+    "translated": "Translated",
+    "cached_label": "Reused Meta Muse Spark result (identical submission)"
   }
 }

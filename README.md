@@ -1,131 +1,216 @@
-# Daleel
+# Daleel — an Arabic-first debugging coach for competitive programmers
 
-Daleel diagnoses competitive programming bugs with Meta Muse Spark, verifies counterexamples in a sandbox, and teaches the fix through hints in Egyptian Arabic or English.
+**Daleel (دليل, "guide") finds out _why_ your Codeforces or AtCoder solution gets Wrong Answer, proves it with a counterexample it actually ran, and coaches you to the fix with hints in Egyptian Arabic or English — powered end to end by Meta Muse Spark.**
 
-**Daleel is a placeholder name.** Judges can run the app locally from this repository using recorded responses, without a Meta API key. No hosted deployment is required.
+![Daleel diagnosing a Codeforces 4A submission: Muse Spark diagnosis, a verified counterexample, and the hint ladder](docs/screenshots/diagnosis-en.png)
 
-## What was built this week
+## The problem
 
-The starting material was a Next.js scaffold, the product and prompt design docs, and example problems with buggy code. The feature build added problem intake and caching, streamed diagnosis, sandbox verification, four hint levels, re-checks, explanations and walkthroughs, Arabic/English UI, attempt history, coach dashboards and reports, and recorded demo replay. Codeforces/AtCoder supply the problems; Next.js, React, CodeMirror, Zod, Drizzle/libSQL and the SDK are existing dependencies.
+Competitive programming is one of the main ways Arab students get into software careers, ICPC, and big-tech interviews. But when a solution fails, the judge only says `Wrong answer on test 7` — and the hidden test is never shown. Most help that exists is in English, assumes a senior mentor is available, or simply hands over the accepted code, which teaches nothing.
 
-The implementation and verification history is in [the build plan](docs/05-BUILD-PLAN.md); [decisions](docs/DECISIONS.md) override older design proposals.
+Arab trainees and the volunteer coaches who run university and school teams need something else: an explanation in the language they think in, a **concrete failing input**, and hints that make them find the bug themselves.
 
-Idea hints help trainees start without code: reveal four hints in Arabic or English, then return to the same problem to paste code; coaches see idea-help counts separately.
+## What Daleel does
 
-## Run the judge demo without a key
+1. **Paste a problem and your code.** Codeforces/AtCoder problems are fetched by URL or ID (or pasted when the site blocks fetching). Statements render with KaTeX math.
+2. **Diagnose.** Muse Spark relates the problem's constraints and the intended idea to _your_ lines, classifies the bug (overflow, edge case, wrong algorithm, TLE, …) and highlights the suspicious lines.
+3. **Verify.** Muse Spark writes a small reference program and a stress plan; Daleel compiles and runs both against your code in a sandbox and shows the input where your output differs — **only marked "verified" if it really ran**.
+4. **Hint ladder.** Four increasingly specific hints (a spoiler validator blocks the answer from hints 1–3). An "idea hints" mode helps before you have code.
+5. **Explain + walkthrough.** After hint 3 (or "I'm stuck"): the reasoning, an edit to your own lines, complexity, and an animated step-by-step trace of your code on the failing input.
+6. **Re-check** your fixed code, and **coach dashboard**: per-trainee stats, weak topics, who needs attention, and a printable weekly report.
 
-Requires Node.js 20+ and pnpm 10. From the repository root:
+Everything works in **Egyptian Arabic (RTL)** and **English**; code, math and identifiers stay LTR inside Arabic text. A diagnosis viewed in the other language is translated once by Muse Spark and cached.
+
+| Arabic (RTL), verified overflow counterexample         | Explanation, fix and walkthrough                    |
+| ------------------------------------------------------ | --------------------------------------------------- |
+| ![Arabic diagnosis](docs/screenshots/diagnosis-ar.png) | ![Explanation](docs/screenshots/explanation-en.png) |
+
+| Home                               | Coach dashboard (synthetic demo team)             |
+| ---------------------------------- | ------------------------------------------------- |
+| ![Home](docs/screenshots/home.png) | ![Coach dashboard](docs/screenshots/coach-en.png) |
+
+## How Meta Muse Spark is used
+
+All AI in Daleel is **Meta Muse Spark (`muse-spark-1.3`) through the Meta Model API** (`https://api.meta.ai/v1`, OpenAI-compatible, called with the `openai` SDK). There is no other model provider.
+
+Every AI-produced result in the UI carries a provenance chip with the model and the measured latency of that call (or `replay` / `cached`):
+
+![Meta provenance chip](docs/screenshots/meta-badge.png)
+
+| Step                    | Effort (default) | Output                      | What Muse Spark does                                                                                                                                                                      |
+| ----------------------- | ---------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Diagnose                | `high`           | `Diagnosis` JSON            | Reads statement, constraints, samples, verdict and code; returns bug class, confidence, suspect lines, suspect inputs, a public summary in the user's language.                           |
+| Stress / counterexample | `medium`         | `StressPlan` JSON           | Writes a reference C++ program and small targeted tests. Daleel runs them in the sandbox; the reference must pass the official samples first. The reference is never sent to the browser. |
+| Hint ladder             | `low`            | `HintLadder` JSON           | Four teaching steps that point at the student's own lines; hints 1–3 pass a spoiler validator.                                                                                            |
+| Idea hints              | `low`            | `HintLadder` JSON           | Hints for "I don't know how to start" (no code yet).                                                                                                                                      |
+| Explain + walkthrough   | `medium`         | `Explanation` JSON          | Explanation, line edits, complexity note and animation frames (variables per step).                                                                                                       |
+| Translate               | `minimal`        | `DiagnosisTranslation` JSON | Translates the public diagnosis when viewed in the other UI language.                                                                                                                     |
+
+Implementation details ([`src/llm/meta-client.ts`](src/llm/meta-client.ts), `callStructured()`):
+
+- **Structured outputs:** each step's Zod schema is converted to a strict JSON Schema (`response_format: json_schema, strict: true`) and every response is re-validated with Zod and domain validators (line numbers exist, hints don't spoil, Arabic text style).
+- **Reasoning effort per step** via `EFFORT_*` env vars, and completion budgets that include reasoning tokens (`MAXTOK_*`).
+- **Caching:** `prompt_cache_key` per problem with `prompt_cache_retention=24h`; identical submissions reuse a diagnosis for 24 h; ladders, translations and explanations are cached per attempt and locale.
+- **Cost guard:** every call is logged to `llm_calls` (tokens, cached/reasoning tokens, cost, latency, status). `DAILY_BUDGET_USD` is a hard cap checked before each call with a conservative reservation for the worst case.
+- **Robustness:** our own retries with backoff and `Retry-After`, deadlines, schema-error retries, and untrusted problem/code text tagged in prompts against prompt injection.
+- **Replay:** recorded responses can be served instead of live calls (below), with provenance.
+
+Measured (from [`eval/results/`](eval/results), 10 buggy-solution cases): bug class 10/10, suspect-line overlap 10/10, verified counterexamples 8/10, about **$0.021 per diagnosis + stress**.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Browser
+    UI["Next.js pages<br/>Arabic RTL / English"]
+  end
+  subgraph Server["Next.js server (Route Handlers)"]
+    Intake["Problem intake<br/>Codeforces / AtCoder / paste"]
+    Pipe["Pipeline<br/>diagnose → stress → hints → explain"]
+    Client["callStructured()<br/>JSON schema · Zod · budget · retries · logging"]
+    Runner["C++17 sandbox<br/>g++ + bubblewrap + prlimit"]
+    Coach["Coach stats & weekly report<br/>(deterministic)"]
+  end
+  Meta[("Meta Model API<br/>Muse Spark muse-spark-1.3")]
+  Rec[("recordings/<br/>replay mode")]
+  DB[("libSQL / SQLite<br/>Drizzle")]
+
+  UI -- "SSE stream / JSON" --> Pipe
+  UI --> Intake
+  UI --> Coach
+  Pipe --> Client
+  Client -- live --> Meta
+  Client -- DEMO_REPLAY=1 --> Rec
+  Pipe -- "reference + tests" --> Runner
+  Intake --> DB
+  Pipe --> DB
+  Client -- llm_calls --> DB
+  Coach --> DB
+```
+
+Stack: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS v4, Drizzle ORM + libSQL, Zod 4, CodeMirror, KaTeX, Vitest, Playwright.
+
+## Quickstart
+
+You need either **Docker** (any OS) or **Node.js 20+ and pnpm 10**. A Meta key is optional: without one, the recorded demo runs with zero cost.
+
+### Option A — Docker (recommended, Linux / macOS / Windows)
 
 ```sh
-pnpm i
-cp .env.example .env.local
+git clone <this repo> daleel && cd daleel
+docker compose up --build
+```
+
+Open <http://localhost:3000> → **Try the demo**. This runs the recorded Muse Spark responses (`DEMO_REPLAY=1`) **with the real C++ sandbox** inside the container, so the counterexamples are executed and verified.
+
+Live mode with your own Meta key:
+
+```sh
+MODEL_API_KEY=your_meta_key DEMO_REPLAY=0 docker compose up --build
+```
+
+The sandbox uses bubblewrap user namespaces, which Docker's default seccomp/AppArmor profiles block; `docker-compose.yml` sets `security_opt: seccomp=unconfined, apparmor=unconfined` for this container only (no `--privileged`, no host mounts). With plain `docker run`, pass the same flags:
+
+```sh
+docker build -t daleel .
+docker run --rm -p 3000:3000 --security-opt seccomp=unconfined --security-opt apparmor=unconfined \
+  -e RUNNER_PROVIDER=local daleel
+```
+
+If the sandbox can't start, the container logs a warning and Daleel still works; counterexamples then show **Not verified**.
+
+### Option B — Node.js, recorded demo, no key (any OS)
+
+```sh
+pnpm install
+cp .env.example .env.local        # Windows PowerShell: Copy-Item .env.example .env.local
 pnpm db:migrate
 pnpm db:seed --demo-team
-DEMO_REPLAY=1 pnpm dev
 ```
 
-Alternatively, set `DEMO_REPLAY=1` in `.env.local` and run `pnpm dev`. Leave `MODEL_API_KEY` empty and `RUNNER_PROVIDER=none`. The default database is `file:./data/daleel.db`.
+Set `DEMO_REPLAY=1` in `.env.local`, then `pnpm dev` and open <http://localhost:3000>.
 
-1. Open <http://localhost:3000>. Under **Try the demo**, choose Watermelon in English, Theatre Square in Egyptian Arabic, or the AtCoder N-choice question in English. The exact example code is filled in and diagnosis starts automatically.
-2. Read the diagnosis and reveal the hints in order. A **Replay** badge shows the original recording date. Keep the example code, locale and model/effort settings unchanged: replay matches the request hash exactly.
-3. Open `/coach` and select **Open demo team as coach_demo**. The seed provides 20 synthetic trainees and 120 attempts across two Cairo weeks. Inspect weak topics, trainees needing attention and the printable weekly report. If the entry is disabled, run `pnpm db:seed --demo-team` and reload.
+1. Under **Try the demo**, pick **Watermelon** (English), **Theatre Square** (Egyptian Arabic) or the **AtCoder N-choice** example. The example code is filled in and diagnosis starts by itself.
+2. Reveal the hints in order, then open the full explanation and walkthrough.
+3. Open **Coach dashboard** → **Open demo team as coach_demo** for 20 synthetic trainees and 120 attempts, and the printable weekly report.
 
-**Recording coverage in this checkout:** diagnosis, hint ladders, stress plans and explanation + walkthrough are recorded for all three examples (re-recorded 2026-10-31), plus the fixed Watermelon re-check. Two sets are committed: runner-free (`RUNNER_PROVIDER=none`, the default) and local-runner (`RUNNER_PROVIDER=local`, verified counterexamples). Reveal Hint 3 or choose **I'm stuck**, then open the explanation. Missing recordings produce an error; replay never falls back to a live Meta call.
+Replay matches the exact request, so keep the example code, language and the default `MODEL_*`/`EFFORT_*` values. Without g++ (`RUNNER_PROVIDER=none`, the default), counterexamples show _Not verified_; everything else works.
 
-Recorded responses include date, model, effort, request hash, usage, cost and recording-tool provenance in [`recordings/`](recordings). Coach seed rows are explicitly synthetic. See [replay details](docs/REPLAY.md).
+### Option C — Node.js, live Muse Spark with your key
 
-## Use your own Meta key
+In `.env.local` set `MODEL_API_KEY=<your Meta Model API key>` and `DEMO_REPLAY=0`, then `pnpm dev`. Paste any Codeforces/AtCoder problem link or ID and your code at **New attempt**. Check connectivity with `pnpm smoke:meta`.
 
-Set `MODEL_API_KEY` in the ignored `.env.local`, set `DEMO_REPLAY=0`, and run `pnpm dev`. Obtain the key from the Meta Model API dashboard; the app uses `MODEL_API_BASE_URL=https://api.meta.ai/v1`. The separate `META_API_KEY` variable belongs to Muse Code, not the app.
-
-For production, set a persistent **`SESSION_SECRET` of at least 32 characters** before `pnpm build` and `pnpm start`. Development generates a temporary secret if it is empty; restarting invalidates those sessions.
-
-### Optional local verification
-
-On Linux, install the compiler and sandbox:
+To also run the C++ sandbox natively (**Linux only**):
 
 ```sh
-sudo apt install g++ bubblewrap
+sudo apt install g++ bubblewrap     # needs unprivileged user namespaces, timeout and prlimit
+pnpm smoke:runner                   # sandbox self-test, no Meta calls
 ```
 
-Set `RUNNER_PROVIDER=local` in `.env.local`; `pnpm smoke:runner` checks the sandbox without calling Meta. It needs unprivileged user namespaces, `timeout` and `prlimit`. Each run has no network, 2 seconds CPU, 256 MB memory and 64 KB output; stress plans have at most 12 tests. The reference program must pass official samples before a counterexample can be marked verified. With `none`, diagnosis and hints still work and display **Not verified**.
+and set `RUNNER_PROVIDER=local`. Each run: no network, 2 s CPU, 256 MB memory, 64 KB output, at most 12 stress tests. On macOS/Windows use Docker for the sandbox.
 
-The current runner supports C++17. Replay with the local runner also needs recordings made with that runner enabled. To refresh the judge recordings with your own key:
+For a production build (`pnpm build && pnpm start`), set `SESSION_SECRET` to 32+ characters (e.g. `openssl rand -hex 32`).
+
+## Configuration
+
+All variables are documented in [`.env.example`](.env.example) (a test keeps it in sync with the code).
+
+| Variable                                                        | Default                              | Purpose                                            |
+| --------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
+| `MODEL_API_KEY`                                                 | _(empty)_                            | Your Meta Model API key. Empty = replay only.      |
+| `MODEL_API_BASE_URL`                                            | `https://api.meta.ai/v1`             | Meta Model API endpoint.                           |
+| `DEMO_REPLAY`                                                   | `0`                                  | `1` = serve committed recordings, never call Meta. |
+| `MODEL_{DIAGNOSE,STRESS,LADDER,EXPLAIN}`                        | `muse-spark-1.3`                     | Model per step.                                    |
+| `EFFORT_DIAGNOSE` / `STRESS` / `LADDER` / `EXPLAIN`             | `high` / `medium` / `low` / `medium` | Reasoning effort per step (`minimal`…`xhigh`).     |
+| `MAXTOK_*`                                                      | 16000 / 16000 / 8000 / 16000         | Completion budget incl. reasoning tokens.          |
+| `PROMPT_CACHE_RETENTION`                                        | `24h`                                | Prompt cache hint (`in_memory` or `24h`).          |
+| `DAILY_BUDGET_USD`                                              | `10`                                 | Hard daily cap on live spend.                      |
+| `RUNNER_PROVIDER`                                               | `none`                               | `local` = C++17 sandbox (Linux/Docker).            |
+| `DATABASE_URL` / `DATABASE_AUTH_TOKEN`                          | `file:./data/daleel.db` / _(empty)_  | SQLite file or Turso.                              |
+| `SESSION_SECRET`                                                | _(empty)_                            | Required in production, 32+ chars.                 |
+| `EVAL_MAX_USD`, `RECORD_MAX_USD`, `DEMO_RECORD`, `RECORD_REUSE` |                                      | Script-only cost caps and recording switches.      |
+
+## Recorded runs (provenance)
+
+[`recordings/`](recordings) holds 22 genuine Muse Spark responses (diagnose, stress, ladder, idea, explain) for the three demo examples, recorded on 2026-10-31 and 2026-11-01 (UTC) with `pnpm record:demo` against the live Meta Model API. Each file includes `recordedAt`, model, reasoning effort, request hash, token usage, cost, latency and the recording tool. Files are keyed by a SHA-256 of model + reasoning effort + schema + messages, so changing any of them is a replay miss (an error, never a silent live call). Two sets are committed: runner-free and local-runner (verified counterexamples). In replay mode the UI shows **Replay (recorded …)** and the Meta chip shows `replay`. Details: [docs/REPLAY.md](docs/REPLAY.md).
+
+To re-record with your own key (live, billable, capped by `RECORD_MAX_USD`):
 
 ```sh
 DEMO_REPLAY=0 RUNNER_PROVIDER=local pnpm record:demo
 DEMO_REPLAY=0 RUNNER_PROVIDER=none RECORD_REUSE=1 pnpm record:demo
 ```
 
-The first command requires the sandbox; the second reuses its diagnoses (`RECORD_REUSE=1`) so both sets stay consistent. These commands make live, billable Meta calls. `RECORD_MAX_USD` caps each recording run; review the generated files before sharing them. Keep both sets so judges can use the default runner-free path.
-
-## How Meta Muse Spark is used
-
-All model calls go through `callStructured()` in [`src/llm/meta-client.ts`](src/llm/meta-client.ts), using the `openai` SDK against Meta's endpoint. Zod generates the strict JSON Schema and validates responses; the wrapper handles retries, budgets, usage logging and replay. Untrusted problem/code text is tagged in prompts.
-
-| Step                  | Default model    | Effort | Why                                                                                         |
-| --------------------- | ---------------- | ------ | ------------------------------------------------------------------------------------------- |
-| Diagnose              | `muse-spark-1.3` | high   | Relate the approach, constraints and student code; identify the bug and suspicious lines.   |
-| Stress, when enabled  | `muse-spark-1.3` | medium | Propose a small reference program and tests for the sandbox to check.                       |
-| Hint ladder           | `muse-spark-1.3` | low    | Turn the diagnosis into four increasingly specific teaching steps.                          |
-| Explain + walkthrough | `muse-spark-1.3` | medium | Explain the failure, suggest edits to the student's own lines and produce animation frames. |
-
-Models and efforts come from `MODEL_*` and `EFFORT_*`. Hints 1–3 pass a spoiler validator; the reference program is never sent to the browser. Coach stats and the current weekly report are deterministic and make no model calls; recommendations come from the checked-in Codeforces candidate fixture.
-
-## Evaluation and cost
-
-These are existing results from [`eval/results/`](eval/results), not new runs for this polish change. Both used `muse-spark-1.3` with high diagnosis effort on ten cases.
-
-| Recorded run                                                  | Bug class | Line overlap | Verified counterexamples | Total cost |
-| ------------------------------------------------------------- | --------- | ------------ | ------------------------ | ---------- |
-| [Oct 30, diagnosis](eval/results/2026-10-30-0207.md)          | 9/10      | 10/10        | Not run                  | $0.107453  |
-| [Oct 31, diagnosis + stress](eval/results/2026-10-31-1638.md) | 10/10     | 10/10        | 8/10                     | $0.214606  |
-
-Measured average cost was **$0.01075 per diagnosis** in the first run and **$0.02146 per diagnosis plus stress** in the second. Those figures exclude hints and explanations. The full-attempt planning estimate is about **$0.05**, with a product target of at most $0.08 on average; a full-pipeline average has not been measured here. Replay has zero LLM cost. Usage is stored in `llm_calls`; `DAILY_BUDGET_USD` defaults to $10.
-
-The Oct 31 run skipped one stress case and found no mismatch on AtCoder's case-sensitive output example. That result predates the PR-24A checker fix; no post-fix live eval is claimed. `pnpm eval` makes live Meta calls; `pnpm test` uses fixtures and fakes only.
-
-## Architecture
-
-```mermaid
-flowchart TD
-  UI[Next.js pages: Arabic / English] --> API[Route Handlers and services]
-  API --> Problems[Problem intake and cache]
-  Problems --> Judges[Codeforces / AtCoder]
-  API --> Pipeline[Diagnose → stress → hints → explain]
-  Pipeline --> Client[callStructured: schema, budget, retries]
-  Client --> Meta[Meta Muse Spark]
-  Client --> Replay[Recorded responses in replay mode]
-  Pipeline --> Runner[Local C++17 sandbox or none]
-  API --> Coach[Deterministic coach stats and reports]
-  API --> DB[(Drizzle / libSQL)]
-  Pipeline --> DB
-```
-
-## Checks and known limits
+## Tests
 
 ```sh
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm test:e2e
+pnpm test          # Vitest: 856 unit/integration tests, fixtures and fakes only, no network or Meta calls
+pnpm lint && pnpm typecheck
+pnpm exec playwright install chromium && pnpm test:e2e   # browser tests against replay mode
+RUNNER_INTEGRATION=1 pnpm test tests/runner              # real sandbox tests (Linux)
+pnpm eval          # live Muse Spark evaluation on 10 buggy solutions (billable, capped by EVAL_MAX_USD)
 ```
 
-Playwright needs Chromium installed separately with `pnpm exec playwright install chromium`. Local runner integration tests are opt-in.
+## Limitations
 
-- This is a demo with handle-only sessions: knowing a handle resumes that identity. It is not password authentication.
-- Replay covers exact recorded requests, not arbitrary submissions. Explanation and stress coverage depend on the matching files being present.
-- Verification tests a small generated plan, not an exhaustive judge suite. Model diagnoses and traces can be wrong.
-- Codeforces scraping can be blocked by Cloudflare; paste the statement when fetching fails. The live-contest guard covers Codeforces, not AtCoder.
-- Code, statements, samples and walkthrough data stay LTR inside the Arabic UI. Voice and screenshot intake remain unimplemented stretch items.
+- **Codeforces fetching** is often blocked by Cloudflare ("Just a moment…" / HTTP 403) for server requests. Daleel then asks you to paste the statement and samples, which always works. AtCoder fetching is usually fine.
+- The sandbox runs **C++17 only**, and natively only on Linux (use Docker elsewhere).
+- Verification checks a small generated test plan, not the judge's full test set; model diagnoses can be wrong (confidence is shown, and low confidence is flagged).
+- Replay covers the recorded demo requests only, not arbitrary submissions.
+- Sessions are handle-only demo sessions, not password accounts. The live-contest guard covers Codeforces only.
+- Muse Spark reasons before answering: a live high-effort diagnosis can take up to about a minute (with progress stages); hints and translations are faster.
 
-Product scope: [PRD](docs/02-PRD.md). External evidence: [VERIFIED.md](docs/VERIFIED.md). Contributor rules: [AGENTS.md](AGENTS.md).
+## Credits
+
+- **Meta Muse Spark** via the Meta Model API — all AI in the app.
+- [KaTeX](https://katex.org) (MIT) — math rendering in statements.
+- Homepage feature stickers from the [fun-isometric](https://github.com/kelvinkn17/skills) kit by Kelvin Adithya (MIT; license in [`src/stickers/LICENSE.txt`](src/stickers/LICENSE.txt)).
+- Fonts: [Readex Pro](app/fonts/readex-pro/OFL.txt) and [JetBrains Mono](app/fonts/jetbrains-mono/OFL.txt), SIL Open Font License 1.1.
+- Problems belong to [Codeforces](https://codeforces.com) and [AtCoder](https://atcoder.jp); demo examples use their public statements.
+- Open-source dependencies: Next.js, React, Tailwind CSS, Drizzle ORM, libSQL, Zod, CodeMirror, Vitest, Playwright, the `openai` SDK.
+
+More docs: [architecture](docs/03-ARCHITECTURE.md), [prompts](docs/04-PROMPTS.md), [decisions](docs/DECISIONS.md), [product spec](docs/02-PRD.md).
 
 ## License
 
-[MIT](LICENSE), copyright Daleel contributors.
-
-Credits: Readex Pro and JetBrains Mono, SIL OFL 1.1. Font licenses: [Readex Pro](app/fonts/readex-pro/OFL.txt) and [JetBrains Mono](app/fonts/jetbrains-mono/OFL.txt).
-
-## Credits
-Homepage feature icons use the [fun-isometric](https://github.com/kelvinkn17/skills) sticker kit by Kelvin Adithya (third-party, MIT; license in `src/stickers/LICENSE.txt`).
+[MIT](LICENSE) © Daleel contributors.
