@@ -1,8 +1,18 @@
-# Daleel — an Arabic-first debugging coach for competitive programmers
+<div align="center">
 
-**Daleel (دليل, "guide") finds out _why_ your Codeforces or AtCoder solution gets Wrong Answer, proves it with a counterexample it actually ran, and coaches you to the fix with hints in Egyptian Arabic or English — powered end to end by Meta Muse Spark.**
+<img src="docs/logo.svg" alt="Daleel logo" width="110" />
 
-▶️ **[Watch the 2:45 demo video on YouTube](https://youtu.be/_NSyiz4w2vY)**
+# Daleel · دليل
+
+**An Arabic-first debugging coach for competitive programmers, powered by Meta Muse Spark**
+
+[![Watch the demo](https://img.shields.io/badge/▶_Watch_demo-2:45-F3B95F?style=for-the-badge&labelColor=0F1830)](https://youtu.be/_NSyiz4w2vY)
+[![Muse Spark](https://img.shields.io/badge/Meta-muse--spark--1.3-F3B95F?style=for-the-badge&labelColor=0F1830)](#how-meta-muse-spark-is-used)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F3B95F?style=for-the-badge&labelColor=0F1830)](LICENSE)
+
+</div>
+
+Daleel (دليل, "guide") finds out _why_ your Codeforces or AtCoder solution gets Wrong Answer, proves it with a counterexample it actually ran, and coaches you to the fix with hints in Egyptian Arabic or English — powered end to end by Meta Muse Spark.
 
 ![Daleel diagnosing a Codeforces 4A submission: Muse Spark diagnosis, a verified counterexample, and the hint ladder](docs/screenshots/diagnosis-en.png)
 
