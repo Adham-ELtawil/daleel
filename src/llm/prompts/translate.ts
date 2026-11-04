@@ -42,6 +42,8 @@ export function translateStepConfig(env: Record<string, string | undefined>): Ll
   return {
     ...config,
     step: "translate",
+    // Translation keeps meaning only; minimal effort is ~3x faster on Muse Spark.
+    reasoningEffort: "minimal",
     maxCompletionTokens: Math.min(config.maxCompletionTokens, 4000),
     schemaName: "DiagnosisTranslation",
     schema: jsonSchemaFor(diagnosisTranslationSchema()),

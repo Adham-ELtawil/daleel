@@ -87,7 +87,7 @@ it.each([
     expect(llm).toHaveBeenCalledOnce();
     expect(llm.mock.calls[0][0]).toMatchObject({
       step: "translate",
-      reasoningEffort: "low",
+      reasoningEffort: "minimal",
       stream: false,
     });
     const rows = await cached();
