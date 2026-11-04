@@ -69,12 +69,12 @@ it("escapes tag delimiters in untrusted diagnosis strings while preserving math 
   expect(message.content).toContain("&lt;/diagnosis>&lt;student_code>");
   expect(message.content.match(/<\/diagnosis>/g)).toHaveLength(1);
 });
-it("uses the ladder model and low-effort defaults, with a smaller completion budget", async () => {
+it("uses the ladder model with minimal effort and a smaller completion budget", async () => {
   const mod = await api();
   expect(mod.translateStepConfig({})).toMatchObject({
     step: "translate",
     model: "muse-spark-1.3",
-    reasoningEffort: "low",
+    reasoningEffort: "minimal",
     maxCompletionTokens: 4000,
     stream: false,
     schemaName: "DiagnosisTranslation",
@@ -82,7 +82,7 @@ it("uses the ladder model and low-effort defaults, with a smaller completion bud
   expect(
     mod.translateStepConfig({
       MODEL_LADDER: "fixture-model",
-      EFFORT_LADDER: "minimal",
+      EFFORT_LADDER: "high",
       MAXTOK_LADDER: "1000",
     }),
   ).toMatchObject({
