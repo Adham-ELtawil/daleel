@@ -2,6 +2,8 @@
 
 **Daleel (دليل, "guide") finds out _why_ your Codeforces or AtCoder solution gets Wrong Answer, proves it with a counterexample it actually ran, and coaches you to the fix with hints in Egyptian Arabic or English — powered end to end by Meta Muse Spark.**
 
+▶️ **[Watch the 2:45 demo video on YouTube](https://youtu.be/_NSyiz4w2vY)**
+
 ![Daleel diagnosing a Codeforces 4A submission: Muse Spark diagnosis, a verified counterexample, and the hint ladder](docs/screenshots/diagnosis-en.png)
 
 ## The problem
