@@ -26,18 +26,21 @@ for (const [title, locale, directory] of [
       expect.objectContaining({ name: "daleel_locale", value: locale }),
     );
     await expect(page).toHaveURL(/\/attempt\/[^/?]+\?autostart=1$/);
+    // Recordings carry their own date (re-recorded 2026-10-31); match any recording date.
     const badge =
-      locale === "en" ? "Replay (recorded 2026-10-30)" : "إعادة تشغيل من تسجيل بتاريخ 2026-10-30";
-    await expect(page.getByText(badge, { exact: true })).toHaveCount(1);
+      locale === "en"
+        ? /^Replay \(recorded \d{4}-\d{2}-\d{2}\)$/
+        : /^إعادة تشغيل من تسجيل بتاريخ \d{4}-\d{2}-\d{2}$/;
+    await expect(page.getByText(badge)).toHaveCount(1);
     await expect(page.locator(".meta-badge").first()).toContainText(
       "Muse Spark · muse-spark-1.3 · replay",
     );
     await page
       .getByRole("button", { name: locale === "en" ? "Hint 1" : "تلميح 1", exact: true })
       .click();
-    await expect(page.getByText(badge, { exact: true })).toHaveCount(2);
+    await expect(page.getByText(badge)).toHaveCount(2);
     await page.reload();
-    await expect(page.getByText(badge, { exact: true })).toHaveCount(2);
+    await expect(page.getByText(badge)).toHaveCount(2);
     await expect(page.locator("[data-hint-level]")).toHaveCount(1);
     // Diagnosis and hint ladder each carry their Meta provenance chip after reload.
     await expect(page.locator(".meta-badge")).not.toHaveCount(0);

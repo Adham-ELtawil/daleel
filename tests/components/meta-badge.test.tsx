@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MetaBadge, formatLatency } from "@/src/components/meta-badge";
 
 const render = (
-  info: { model: string; latencyMs: number; replay: boolean } | undefined,
+  info: { model: string; latencyMs: number; replay: boolean; cached?: boolean } | undefined,
   locale: "en" | "ar-EG",
   kind?: "translate",
 ) =>
@@ -27,6 +27,14 @@ describe("MetaBadge (visible Meta Muse Spark provenance)", () => {
     expect(en).not.toContain("0.0s");
     const ar = render({ model: "muse-spark-1.3", latencyMs: 3, replay: true }, "ar-EG");
     expect(ar).toContain("رد مسجّل من Meta Muse Spark");
+  });
+  it("marks a diagnosis reused from an identical earlier submission as cached", () => {
+    const html = render(
+      { model: "muse-spark-1.3", latencyMs: 0, replay: false, cached: true },
+      "en",
+    );
+    expect(html).toContain("muse-spark-1.3 · cached");
+    expect(html).toContain("Reused Meta Muse Spark result (identical submission)");
   });
   it("labels translation calls in the viewer language", () => {
     expect(render({ model: "m", latencyMs: 4100, replay: false }, "en", "translate")).toContain(
