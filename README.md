@@ -207,6 +207,7 @@ pnpm eval          # live Muse Spark evaluation on 10 buggy solutions (billable,
 - Homepage feature stickers from the [fun-isometric](https://github.com/kelvinkn17/skills) kit by Kelvin Adithya (MIT; license in [`src/stickers/LICENSE.txt`](src/stickers/LICENSE.txt)).
 - Fonts: [Readex Pro](app/fonts/readex-pro/OFL.txt) and [JetBrains Mono](app/fonts/jetbrains-mono/OFL.txt), SIL Open Font License 1.1.
 - Problems belong to [Codeforces](https://codeforces.com) and [AtCoder](https://atcoder.jp); demo examples use their public statements.
+- Demo video music: "Inspired" by Kevin MacLeod ([incompetech.com](https://incompetech.com)), licensed under [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/).
 - Open-source dependencies: Next.js, React, Tailwind CSS, Drizzle ORM, libSQL, Zod, CodeMirror, Vitest, Playwright, the `openai` SDK.
 
 More docs: [architecture](docs/03-ARCHITECTURE.md), [prompts](docs/04-PROMPTS.md), [decisions](docs/DECISIONS.md), [product spec](docs/02-PRD.md).
