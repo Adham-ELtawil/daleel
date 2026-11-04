@@ -26,6 +26,10 @@ for (const [title, locale, directory] of [
       expect.objectContaining({ name: "daleel_locale", value: locale }),
     );
     await expect(page).toHaveURL(/\/attempt\/[^/?]+\?autostart=1$/);
+    // The whole shell (header nav included) switches to the demo's language, not just the page body.
+    await expect(
+      page.getByRole("link", { name: locale === "en" ? "New attempt" : "محاولة جديدة" }),
+    ).toBeVisible();
     // Recordings carry their own date (re-recorded 2026-10-31); match any recording date.
     const badge =
       locale === "en"
@@ -36,7 +40,7 @@ for (const [title, locale, directory] of [
       "Muse Spark · muse-spark-1.3 · replay",
     );
     await page
-      .getByRole("button", { name: locale === "en" ? "Hint 1" : "تلميح 1", exact: true })
+      .getByRole("button", { name: locale === "en" ? "Hint 1" : "الـ hint 1", exact: true })
       .click();
     await expect(page.getByText(badge)).toHaveCount(2);
     await page.reload();
