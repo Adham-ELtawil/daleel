@@ -17,7 +17,13 @@ export async function sumLlmCostSince(db: Db, sinceMs: number): Promise<number> 
   return Number(row?.cost ?? 0);
 }
 
-export type LlmCallInfo = { model: string; latencyMs: number; replay: boolean };
+export type LlmCallInfo = {
+  model: string;
+  latencyMs: number;
+  replay: boolean;
+  /** Result reused from an identical earlier submission (no new call). */
+  cached?: boolean;
+};
 export type LlmCallStep = (typeof llmCalls.$inferSelect)["step"];
 
 /** Latest successful (live or replayed) call per pipeline step for one attempt; feeds the UI Meta badge. */

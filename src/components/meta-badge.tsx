@@ -45,7 +45,11 @@ export function MetaBadge({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watch]);
   if (!info) return null;
-  const label = t(info.replay ? "replay_label" : "live_label", locale, "meta");
+  const label = t(
+    info.replay ? "replay_label" : info.cached ? "cached_label" : "live_label",
+    locale,
+    "meta",
+  );
   return (
     <span
       className="meta-badge"
@@ -58,7 +62,8 @@ export function MetaBadge({
       )}
       <span dir="ltr" className="bidi-isolate meta-badge-text">
         <span aria-hidden="true" className="meta-badge-dot" />
-        Muse Spark · {info.model} · {info.replay ? "replay" : formatLatency(info.latencyMs)}
+        Muse Spark · {info.model} ·{" "}
+        {info.replay ? "replay" : info.cached ? "cached" : formatLatency(info.latencyMs)}
       </span>
     </span>
   );

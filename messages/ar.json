@@ -285,6 +285,7 @@
   "meta": {
     "live_label": "اتولّد live بـ Meta Muse Spark",
     "replay_label": "رد مسجّل من Meta Muse Spark (replay)",
-    "translated": "مترجَم"
+    "translated": "مترجَم",
+    "cached_label": "نتيجة Meta Muse Spark متخزّنة من submission مطابق"
   }
 }
