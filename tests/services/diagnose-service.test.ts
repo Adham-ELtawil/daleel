@@ -179,6 +179,35 @@ afterEach(() => {
   store.cleanup();
 });
 
+it("flushes a large first SSE chunk before the model responds", async () => {
+  const id = await attempt();
+  const d = deps();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let modelStarted = false;
+  d.llm.mockImplementation(async () => {
+    modelStarted = true;
+    await gate;
+    return result;
+  });
+  const response = await createDiagnoseHandler({ ...d, log: vi.fn(), db: async () => store.db })(
+    request(),
+    id,
+  );
+  expect(response.headers.get("x-accel-buffering")).toBe("no");
+  expect(response.headers.get("cache-control")).toContain("no-transform");
+  const reader = response.body!.getReader();
+  const first = await reader.read();
+  expect(first.value?.byteLength).toBeGreaterThanOrEqual(2048);
+  expect(new TextDecoder().decode(first.value)).toContain("event: stage");
+  release();
+  while (!(await reader.read()).done) {
+    /* drain */
+  }
+  expect(modelStarted).toBe(true);
+});
 it("streams ordered stages, stores validated internals, and sends only the public diagnosis", async () => {
   const id = await attempt();
   const d = deps();

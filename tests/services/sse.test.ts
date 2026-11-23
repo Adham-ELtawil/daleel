@@ -45,6 +45,16 @@ it("reads fragmented UTF-8 events and detects premature EOF", async () => {
     ),
   ).rejects.toThrow();
 });
+it("ignores proxy padding and heartbeat comments between events", async () => {
+  const events: DiagnoseEvent[] = [];
+  const padding = `:${" ".repeat(2048)}\n: at=4\n`;
+  const body = `${padding}event: stage\ndata: {"name":"reading"}\n\n: ping\n\n: at=40\nevent: done\ndata: {}\n\n`;
+  await readSse(new Response(body).body!, (event) => events.push(event));
+  expect(events).toEqual([
+    { event: "stage", data: { name: "reading" } },
+    { event: "done", data: {} },
+  ]);
+});
 it("accepts the public stress event before ladder_ready and done", async () => {
   const result = {
     status: "verified",

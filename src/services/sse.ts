@@ -55,8 +55,15 @@ export async function readSse(
       buffer += decoder.decode(value, { stream: !done });
       let end: number;
       while ((end = buffer.indexOf("\n\n")) >= 0) {
-        const [event, data] = buffer.slice(0, end).split("\n");
+        const lines = buffer
+          .slice(0, end)
+          .split("\n")
+          .filter((line) => line.length > 0 && !line.startsWith(":"));
         buffer = buffer.slice(end + 2);
+        const event = lines.find((line) => line.startsWith("event:"));
+        const data = lines.find((line) => line.startsWith("data:"));
+        // Comment-only frames are padding or heartbeats for proxies that buffer small writes.
+        if (!event || !data) continue;
         const parsed = EventSchema.parse({
           event: event.slice(7),
           data: JSON.parse(data.slice(6)),
