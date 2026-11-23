@@ -138,6 +138,8 @@ bubblewrap cannot create a NETLINK_ROUTE socket, returning Operation not permitt
 
 Fresh `pnpm lint && pnpm typecheck && pnpm test` passed: `Test Files 97 passed | 1 skipped (98)`; `Tests 896 passed | 7 skipped (903)`. Lint reports 3 pre-existing warnings in `src/stickers/fun.ts`. Production build passed with a throwaway session secret and an empty model key. No live Muse Spark call: this environment has no `MODEL_API_KEY`.
 
+- [x] SSE first byte. Production `next start` already flushes small event-stream writes; a proxy in front can still hold them. The diagnose response now starts with an 8KB comment, `X-Accel-Buffering: no`, and per-event `at` timings. `pnpm exec tsx scripts/sse-timing.ts` prints client time, server `at`, and the lag.
+
 ## Day 8 — Wed Nov 4 → M8 (no new features)
 
 - 10:00–13:00 Bug fixes only from rehearsal. Rehearse the demo script 3× on the deployed URL (`06-DEMO-AND-SUBMISSION.md`). Each rehearsal: all 3 examples must pass.

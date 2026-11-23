@@ -33,6 +33,11 @@ export function createDiagnoseHandler(
       await guardContest(problem, { cfApi: deps.cfApi, log });
       let controller!: ReadableStreamDefaultController<Uint8Array>;
       let cancelled = false;
+      let primed = false;
+      const startedAt = Date.now();
+      const encoder = new TextEncoder();
+      // Larger than common reverse-proxy buffers (nginx 4–8KB, compression 1KB).
+      const padding = `:${" ".repeat(8192)}\n`;
       const stream = new ReadableStream<Uint8Array>({
         start(value) {
           controller = value;
@@ -41,26 +46,49 @@ export function createDiagnoseHandler(
           cancelled = true;
         },
       });
+      const heartbeat = setInterval(() => {
+        if (cancelled) return;
+        try {
+          controller.enqueue(encoder.encode(": ping\n\n"));
+        } catch {
+          /* The stream is already closed. */
+        }
+      }, 1000);
+      const stop = () => {
+        clearInterval(heartbeat);
+        if (!cancelled) {
+          try {
+            controller.close();
+          } catch {
+            /* Already closed. */
+          }
+        }
+      };
       await new Promise<void>((resolve, reject) => {
         void diagnoseAttempt(
           { ...deps, db, log },
           id,
           (event) => {
             if (event.event === "error") log(event.data.code);
-            if (!cancelled) controller.enqueue(new TextEncoder().encode(serializeSse(event)));
+            if (!cancelled) {
+              const lead = primed ? "" : padding;
+              primed = true;
+              controller.enqueue(
+                encoder.encode(`${lead}: at=${Date.now() - startedAt}\n${serializeSse(event)}`),
+              );
+            }
             resolve();
           },
           body.data.retry,
         )
           .catch(reject)
-          .finally(() => {
-            if (!cancelled) controller.close();
-          });
+          .finally(stop);
       });
       return new Response(stream, {
         headers: {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache, no-transform",
+          "X-Accel-Buffering": "no",
           "x-request-id": requestId,
         },
       });
