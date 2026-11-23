@@ -30,6 +30,9 @@ export async function callModel<T>(
     promptCacheRetention: env.PROMPT_CACHE_RETENTION,
     replay: { mode: env.DEMO_REPLAY === "1" ? "replay" : "off", store: createReplayStore() },
     getSpentTodayUsd: () => sumLlmCostSince(db, Math.floor(Date.now() / 86400000) * 86400000),
+    totalBudgetUsd: env.TOTAL_BUDGET_USD,
+    getSpentTotalUsd: () =>
+      sumLlmCostSince(db, env.BUDGET_SINCE ? Date.parse(env.BUDGET_SINCE) || 0 : 0),
     logCall: (record) =>
       recordLlmCall(db, { ...record, error: record.error ? "llm_error" : null }, Date.now()),
   }).callStructured(config, messages, options);

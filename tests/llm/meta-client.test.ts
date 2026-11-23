@@ -204,6 +204,24 @@ describe("createMetaClient().callStructured", () => {
     expect(fake.requests).toHaveLength(0);
   });
 
+  it("rejects at the total launch budget before making a request", async () => {
+    const { client, fake } = setup([], {
+      totalBudgetUsd: 140,
+      getSpentTotalUsd: vi.fn().mockResolvedValue(140),
+    });
+    await expect(client.callStructured(cfg, messages, opts)).rejects.toBeInstanceOf(BudgetReached);
+    expect(fake.requests).toHaveLength(0);
+  });
+
+  it("calls the model while total spend is below the launch budget", async () => {
+    const { client, fake } = setup([ok()], {
+      totalBudgetUsd: 140,
+      getSpentTotalUsd: vi.fn().mockResolvedValue(139.99),
+    });
+    await expect(client.callStructured(cfg, messages, opts)).resolves.toEqual(answer);
+    expect(fake.requests).toHaveLength(1);
+  });
+
   it("logs successful usage, price, latency and a SHA-256 request hash once", async () => {
     const { client, logCall } = setup([ok()]);
     await client.callStructured(cfg, messages, opts);

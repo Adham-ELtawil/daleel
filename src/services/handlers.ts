@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, count, countDistinct, eq, gte, sum } from "drizzle-orm";
+import { timingSafeEqual } from "node:crypto";
 import { ulid } from "ulid";
 import { z } from "zod";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
-import { attempts } from "@/src/db/schema";
+import { attempts, diagnoses, llmCalls, users } from "@/src/db/schema";
+import { MetaEnvSchema } from "@/src/env";
 import { resolveLocale } from "@/src/i18n";
 import { BudgetReached, MetaApiError, OutputTruncated, SchemaError } from "@/src/llm/meta-client";
 import { ReplayMiss } from "@/src/llm/replay/store";
@@ -14,6 +16,7 @@ import { SessionSchema, startSession } from "./session";
 import { createTeam, InviteSchema, joinTeam, teamStats } from "./teams";
 import { demoSession } from "./demo-service";
 import { HttpError } from "./http-error";
+import { launchLimits, limitModelCalls } from "./abuse-limits";
 import { defaultCfApi, guardContest } from "./contest-guard";
 import { resolveProblem } from "./problem-service";
 import {
@@ -81,6 +84,7 @@ export function createHandlers(deps: {
   explain?: Pick<ExplainDeps, "llm" | "config">;
 }) {
   const now = deps.now ?? Date.now;
+  const limits = launchLimits(now);
   async function run(request: Request, job: (log: (code: string) => void) => Promise<unknown>) {
     const requestId = request.headers.get("x-request-id") ?? ulid();
     const log = (code: string) => (deps.log ?? console.error)({ requestId, code });
@@ -162,6 +166,19 @@ export function createHandlers(deps: {
         if (!problem) throw new HttpError(404, "not_found");
         await guardContest(problem, { cfApi: deps.cfApi, log });
         const user = await getCurrentUser(db, request.headers.get("cookie"));
+        const today = await db
+          .select({ n: count() })
+          .from(attempts)
+          .where(
+            and(
+              eq(attempts.userId, user.id),
+              gte(attempts.createdAt, Math.floor(now() / 86400000) * 86400000),
+            ),
+          )
+          .get();
+        if ((today?.n ?? 0) >= limits.MAX_ATTEMPTS_PER_USER_PER_DAY)
+          throw new HttpError(429, "daily_limit");
+        limitModelCalls(request);
         if (fields.parentAttemptId) {
           const parent = await db
             .select({ problemId: attempts.problemId })
@@ -189,6 +206,7 @@ export function createHandlers(deps: {
     nextHint: (request: Request, id: string) =>
       run(request, async () => {
         const { locale } = await body(request, localeSchema);
+        limitModelCalls(request);
         const options = await attemptDeps(request);
         try {
           return await revealHint(options, id, locale);
@@ -212,6 +230,7 @@ export function createHandlers(deps: {
     explain: (request: Request, id: string) =>
       run(request, async () => {
         const { locale } = await body(request, localeSchema);
+        limitModelCalls(request);
         if (!deps.explain) throw new HttpError(500, "internal_error");
         try {
           const options = { ...(await attemptDeps(request)), ...deps.explain };
@@ -234,6 +253,67 @@ export function createHandlers(deps: {
             request.headers.get("accept-language"),
           );
         return attemptDetail(await attemptDeps(request), id, locale);
+      }),
+    adminStats: (request: Request) =>
+      run(request, async () => {
+        const presented = Buffer.from(
+          request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "",
+        );
+        const expected = Buffer.from(limits.ADMIN_TOKEN);
+        if (
+          expected.length < 16 ||
+          presented.length !== expected.length ||
+          !timingSafeEqual(presented, expected)
+        )
+          throw new HttpError(404, "not_found");
+        const meta = MetaEnvSchema.parse(process.env);
+        const since = meta.BUDGET_SINCE ? Date.parse(meta.BUDGET_SINCE) || 0 : 0;
+        const db = await deps.db();
+        const counts = async (from: number) => {
+          const [u, a, d, c] = await Promise.all([
+            db
+              .select({ n: count() })
+              .from(users)
+              .where(and(eq(users.isGuest, 0), gte(users.createdAt, from)))
+              .get(),
+            db
+              .select({ n: count(), active: countDistinct(attempts.userId) })
+              .from(attempts)
+              .where(gte(attempts.createdAt, from))
+              .get(),
+            db.select({ n: count() }).from(diagnoses).where(gte(diagnoses.createdAt, from)).get(),
+            db
+              .select({ n: count(), cost: sum(llmCalls.costUsd) })
+              .from(llmCalls)
+              .where(and(eq(llmCalls.status, "ok"), gte(llmCalls.createdAt, from)))
+              .get(),
+          ]);
+          return {
+            newUsers: u?.n ?? 0,
+            activeUsers: a?.active ?? 0,
+            attempts: a?.n ?? 0,
+            diagnoses: d?.n ?? 0,
+            llmCalls: c?.n ?? 0,
+            spendUsd: Math.round(Number(c?.cost ?? 0) * 10000) / 10000,
+          };
+        };
+        const [sinceLaunch, allTime] = await Promise.all([counts(since), counts(0)]);
+        const spent = sinceLaunch.spendUsd;
+        return {
+          since: since ? new Date(since).toISOString() : null,
+          sinceLaunch,
+          allTime,
+          budget: {
+            capUsd: meta.TOTAL_BUDGET_USD,
+            spentUsd: spent,
+            remainingUsd: Math.max(0, Math.round((meta.TOTAL_BUDGET_USD - spent) * 10000) / 10000),
+            dailyCapUsd: meta.DAILY_BUDGET_USD,
+          },
+          limits: {
+            attemptsPerUserPerDay: limits.MAX_ATTEMPTS_PER_USER_PER_DAY,
+            ipRequestsPerHour: limits.IP_RATE_LIMIT_PER_HOUR,
+          },
+        };
       }),
     stuck: (request: Request, id: string) => mark(request, id, "stuck"),
     solved: (request: Request, id: string) => mark(request, id, "solved"),

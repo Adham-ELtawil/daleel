@@ -26,7 +26,7 @@ export function DiagnosisError({
   return (
     <section
       role="alert"
-      className={`state-panel space-y-2 ${["budget_reached", "contest_running", "already_running"].includes(code) ? "state-warning" : "state-error"}`}
+      className={`state-panel space-y-2 ${["budget_reached", "contest_running", "already_running", "rate_limited", "daily_limit"].includes(code) ? "state-warning" : "state-error"}`}
     >
       <h2 className="font-semibold">{t(heading, locale)}</h2>
       <p>{t(code, locale)}</p>

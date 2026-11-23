@@ -7,6 +7,7 @@ import { HttpError } from "./http-error";
 import { guardContest, type ContestGuardDeps } from "./contest-guard";
 import { serializeSse } from "./sse";
 import { ownedAttempt } from "./attempt-service";
+import { limitModelCalls } from "./abuse-limits";
 
 export function createDiagnoseHandler(
   deps: Omit<DiagnoseDeps, "db" | "log"> & {
@@ -23,6 +24,7 @@ export function createDiagnoseHandler(
         .strictObject({ retry: z.boolean().default(false) })
         .safeParse(await request.json().catch(() => null));
       if (!body.success) throw new HttpError(400, "invalid");
+      limitModelCalls(request);
       const db = await deps.db();
       const attempt = await ownedAttempt(db, id, request.headers.get("cookie"));
       if (attempt.mode === "idea") throw new HttpError(409, "idea_attempt");

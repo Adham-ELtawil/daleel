@@ -48,6 +48,9 @@ export type MetaClientDeps = {
   promptCacheRetention?: "in_memory" | "24h";
   dailyBudgetUsd: number;
   getSpentTodayUsd: () => Promise<number>;
+  /** Optional lifetime cap (public launch): live calls stop once total spend reaches it. */
+  totalBudgetUsd?: number;
+  getSpentTotalUsd?: () => Promise<number>;
   logCall: (rec: LlmCallRecord) => Promise<void> | void;
   /** reuse: in record mode, return an existing recording instead of calling live (cheap, consistent re-records). */
   replay?: { mode: "off" | "replay" | "record"; store: ReplayStore; reuse?: boolean };
@@ -273,6 +276,10 @@ export function createMetaClient(deps: MetaClientDeps) {
     client(); // Live mode fails fast on a missing key.
     const spent = await deps.getSpentTodayUsd();
     if (spent >= deps.dailyBudgetUsd) throw new BudgetReached(spent, deps.dailyBudgetUsd);
+    if (deps.totalBudgetUsd !== undefined && deps.getSpentTotalUsd) {
+      const total = await deps.getSpentTotalUsd();
+      if (total >= deps.totalBudgetUsd) throw new BudgetReached(total, deps.totalBudgetUsd);
+    }
 
     let msgs = messages;
     let maxTokens = cfg.maxCompletionTokens;

@@ -47,6 +47,16 @@ export const MetaEnvSchema = z.object({
   PROMPT_CACHE_RETENTION: z.enum(["in_memory", "24h"]).default("24h"),
   DEMO_REPLAY: z.enum(["0", "1"]).default("0"),
   DEMO_RECORD: z.enum(["0", "1"]).default("0"),
+  // Lifetime cap on live spend counted from BUDGET_SINCE (ISO date; empty = all recorded calls).
+  TOTAL_BUDGET_USD: z.coerce.number().positive().default(143),
+  BUDGET_SINCE: z.string().default(""),
+});
+
+export const LimitsEnvSchema = z.object({
+  MAX_ATTEMPTS_PER_USER_PER_DAY: z.coerce.number().int().positive().default(10),
+  IP_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(30),
+  // Bearer token for /api/admin/stats; empty = the endpoint answers 404.
+  ADMIN_TOKEN: z.string().default(""),
 });
 
 export const RecordEnvSchema = MetaEnvSchema.extend({

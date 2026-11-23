@@ -92,7 +92,7 @@ export default function ProblemPage() {
       {error && (
         <p
           role="alert"
-          className={`state-panel ${error === "contest_running" ? "state-warning" : "state-error"}`}
+          className={`state-panel ${["contest_running", "daily_limit", "rate_limited", "budget_reached"].includes(error) ? "state-warning" : "state-error"}`}
         >
           {t(error)}
         </p>

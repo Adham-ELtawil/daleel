@@ -35,3 +35,14 @@ it.each(["budget_reached", "llm_error", "contest_running"] as const)(
     }
   },
 );
+it.each(["rate_limited", "daily_limit", "budget_reached"] as const)(
+  "shows the public-launch limit %s as a localized warning, not an error",
+  async (code) => {
+    const { DiagnosisError } = await feedback();
+    for (const locale of ["en", "ar-EG"] as const) {
+      const html = renderToStaticMarkup(<DiagnosisError code={code} locale={locale} />);
+      expect(html).toContain("state-warning");
+      expect(html).toContain(renderToStaticMarkup(<p>{t(code, locale)}</p>));
+    }
+  },
+);

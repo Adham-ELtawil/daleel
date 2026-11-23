@@ -71,7 +71,13 @@ export function DiagnosisCard({
           const blocked = z
             .object({
               error: z.object({
-                code: z.enum(["contest_running", "budget_reached", "llm_error", "already_running"]),
+                code: z.enum([
+                  "contest_running",
+                  "budget_reached",
+                  "llm_error",
+                  "already_running",
+                  "rate_limited",
+                ]),
               }),
             })
             .safeParse(await response.json().catch(() => null));
