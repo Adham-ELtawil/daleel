@@ -77,7 +77,7 @@ Line numbers are added by the server so the model can cite exact lines; the UI m
 
 ---
 
-## 1. DIAGNOSE  (`muse-spark-1.3`, reasoning_effort `high`, stream, max_completion_tokens 16000 via `MAXTOK_DIAGNOSE`)
+## 1. DIAGNOSE  (`muse-spark-1.3`, reasoning_effort `high`, stream, max_completion_tokens 32000 via `MAXTOK_DIAGNOSE`)
 
 ### 1.1 Developer prompt
 ```text
@@ -136,6 +136,10 @@ Rules:
 Server-side validation after zod: every `lines[].end ≥ start` and ≤ number of code lines (else drop the entry); `topics` trimmed and normalised to lowercase CF tags. Unknown tags use the `custom:<tag>` string representation (for example `custom:parity trick`); an existing prefix is preserved on repeated validation. The known-tag set is a small local allowlist, not an exhaustive CF taxonomy.
 
 ---
+
+## 1b. SNAP  (`muse-spark-1.3`, effort `minimal`, stream, max 400 via `MAXTOK_SNAP`)
+
+A live attempt may start this call beside diagnosis. It returns only `{public_summary}` (max 240 characters) from a short excerpt of the statement and at most 40 lines of code. It is not part of the replay hash: `DEMO_REPLAY=1` and `pnpm record:demo` do not send it. Its cost is logged on the normal budget like every other model call.
 
 ## 2. STRESS  (`muse-spark-1.3`, effort `medium`, stream, max 16000 via `MAXTOK_STRESS`; includes reasoning tokens)
 

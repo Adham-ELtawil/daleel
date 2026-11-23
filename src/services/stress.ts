@@ -157,7 +157,7 @@ export async function probeStudentSamples(
   runner: Runner,
   problem: Problem,
   code: string,
-): Promise<{ kind: "clear" } | { kind: "hit"; result: StressPublic }> {
+): Promise<{ kind: "clear"; matched: boolean } | { kind: "hit"; result: StressPublic }> {
   let binary: string | undefined;
   try {
     const compiled = await runner.compile(code, "cpp17");
@@ -176,9 +176,10 @@ export async function probeStudentSamples(
       memoryMb: Math.max(1, Math.min(problem.memoryLimitMb, 256)),
       outputKb: 64,
     };
+    let matched = problem.samples.length > 0;
     for (const sample of problem.samples) {
       const output = await runner.run(binary, sample.input, limits);
-      // Only non-ok runs are decided here. Output mismatches wait for the plan's checker.
+      // A crash or time limit is decided here. A wrong answer still waits for the plan's checker.
       if (output.status !== "ok") {
         return {
           kind: "hit",
@@ -192,8 +193,10 @@ export async function probeStudentSamples(
           },
         };
       }
+      if (compareOutputs(sample.output, output.stdout, "exact_tokens", problem.judge) !== true)
+        matched = false;
     }
-    return { kind: "clear" };
+    return { kind: "clear", matched };
   } finally {
     if (binary) {
       try {

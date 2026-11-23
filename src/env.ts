@@ -19,7 +19,13 @@ export const RunnerEnvSchema = z.object({
 export const DiagnoseEnvSchema = z.object({
   MODEL_DIAGNOSE: z.string().min(1).default("muse-spark-1.3"),
   EFFORT_DIAGNOSE: z.enum(["minimal", "low", "medium", "high", "xhigh"]).default("high"),
-  MAXTOK_DIAGNOSE: z.coerce.number().int().positive().default(16000),
+  MAXTOK_DIAGNOSE: z.coerce.number().int().positive().default(32000),
+});
+
+export const SnapEnvSchema = z.object({
+  MODEL_SNAP: z.string().min(1).default("muse-spark-1.3"),
+  EFFORT_SNAP: z.enum(["minimal", "low", "medium", "high", "xhigh"]).default("minimal"),
+  MAXTOK_SNAP: z.coerce.number().int().positive().max(500).default(400),
 });
 
 export const LadderEnvSchema = z.object({

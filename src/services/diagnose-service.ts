@@ -16,6 +16,7 @@ import {
 import { codeLines } from "@/src/domain/code-lines";
 import { validateDiagnosis } from "@/src/domain/diagnosis-validate";
 import { fixArabicPublicText } from "@/src/domain/arabic-style";
+import { probeHeadline } from "@/src/domain/probe-headline";
 import { previewSummary, streamedBugFound } from "@/src/domain/run-verdict";
 import { StressPublicSchema, type StressPublic } from "@/src/domain/stress-public";
 import {
@@ -27,7 +28,9 @@ import {
   type LlmStepConfig,
 } from "@/src/llm/meta-client";
 import { buildDiagnoseMessages } from "@/src/llm/prompts/diagnose";
+import { buildSnapMessages } from "@/src/llm/prompts/snap";
 import { buildStressMessages } from "@/src/llm/prompts/stress";
+import { SnapSchema, type Snap } from "@/src/llm/schemas/snap";
 import { DiagnosisSchema, toPublic, type Diagnosis } from "@/src/llm/schemas/diagnosis";
 import { StressPlanSchema, type StressPlan } from "@/src/llm/schemas/stress";
 import { t } from "@/src/i18n";
@@ -57,6 +60,15 @@ export type DiagnoseDeps = {
   stress?: Pick<StressDeps, "llm" | "config" | "runner">;
   /** Live attempts overlap the counterexample model with diagnosis. Replay and record stay sequential. */
   parallelStress?: boolean;
+  /** Cheap first sentence. Omitted in replay and record so those hashes stay unchanged. */
+  snap?: {
+    config: LlmStepConfig;
+    llm: (
+      config: LlmStepConfig,
+      messages: ChatMessage[],
+      options: CallOptions<Snap>,
+    ) => Promise<Snap>;
+  };
   log?: (code: string) => void;
 };
 async function withDeadline(job: (signal: AbortSignal) => Promise<Diagnosis>) {
@@ -156,6 +168,17 @@ export async function diagnoseAttempt(
     const saved = cached && StoredDiagnosisSchema.parse(JSON.parse(cached.diagnosis.resultJson));
     let recordedAt: string | null = saved?.recordedAt ?? null;
     emit({ event: "stage", data: { name: "thinking" } });
+    let preview = "";
+    let settled = false;
+    const rank = { probe: 1, snap: 2, model: 3 } as const;
+    let previewRank = 0;
+    const showPreview = (text: string, source: keyof typeof rank) => {
+      const sentence = text.trim().slice(0, 240);
+      if (settled || !sentence || rank[source] < previewRank || sentence === preview) return;
+      preview = sentence;
+      previewRank = rank[source];
+      emit({ event: "preview", data: { public_summary: sentence } });
+    };
     const ahead: { hit: StressPublic | null } = { hit: null };
     const canOverlap =
       !saved &&
@@ -170,6 +193,21 @@ export async function diagnoseAttempt(
           emit({ event: "stage", data: { name: "checking_samples" } });
           const probe = await probeStudentSamples(stress.runner, problem, attempt.code);
           if (stressAbort.signal.aborted) return null;
+          showPreview(
+            probeHeadline(
+              attempt.locale,
+              probe.kind === "hit"
+                ? {
+                    kind: "hit",
+                    status:
+                      probe.result.status === "compile_error"
+                        ? "compile"
+                        : (probe.result.student_status ?? "re"),
+                  }
+                : probe,
+            ),
+            "probe",
+          );
           if (probe.kind === "hit") {
             ahead.hit = probe.result;
             return null;
@@ -189,7 +227,25 @@ export async function diagnoseAttempt(
         }
       })();
     }
-    let preview = "";
+    const live = !saved && process.env.DEMO_REPLAY !== "1" && process.env.DEMO_RECORD !== "1";
+    if (live && deps.snap) {
+      const snap = deps.snap;
+      void snap
+        .llm(snap.config, buildSnapMessages({ problem, attempt, locale: attempt.locale }), {
+          zod: SnapSchema,
+          attemptId,
+          userId: attempt.userId,
+          cacheKey: `problem:${problem.id}`,
+        })
+        .then((value) => {
+          const text =
+            attempt.locale === "ar-EG"
+              ? fixArabicPublicText(value.public_summary).slice(0, 240)
+              : value.public_summary;
+          showPreview(text, "snap");
+        })
+        .catch(() => undefined);
+    }
     const raw = saved
       ? saved.value
       : await withDeadline((signal) =>
@@ -205,13 +261,9 @@ export async function diagnoseAttempt(
             onDelta: (text) => {
               if (streamedBugFound(text) === false) stressAbort.abort();
               let summary = previewSummary(text);
-              if (!summary || summary === preview) return;
-              if (attempt.locale === "ar-EG") {
-                summary = fixArabicPublicText(summary).slice(0, 240);
-                if (!summary) return;
-              }
-              preview = summary;
-              emit({ event: "preview", data: { public_summary: summary } });
+              if (!summary) return;
+              if (attempt.locale === "ar-EG") summary = fixArabicPublicText(summary).slice(0, 240);
+              showPreview(summary, "model");
             },
           }),
         );
@@ -252,6 +304,7 @@ export async function diagnoseAttempt(
       event: "diagnosis",
       data: { public: toPublic(result), replay: recordedAt !== null, recordedAt },
     });
+    settled = true;
     if (!result.bug_found) stressAbort.abort();
     if (deps.stress && result.bug_found) {
       try {

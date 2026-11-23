@@ -140,6 +140,8 @@ Fresh `pnpm lint && pnpm typecheck && pnpm test` passed: `Test Files 97 passed |
 
 - [x] SSE first byte. Production `next start` already flushes small event-stream writes; a proxy in front can still hold them. The diagnose response now starts with an 8KB comment, `X-Accel-Buffering: no`, and per-event `at` timings. `pnpm exec tsx scripts/sse-timing.ts` prints client time, server `at`, and the lag.
 
+- [x] Snap summary. A minimal-effort call returns the first sentence, and the sample probe emits a fixed English or Arabic line as soon as it finishes. The high-effort diagnosis still replaces that sentence. Empty reasoning cutoffs at a 16000 cap retry through 32000 and 64000. Default `MAXTOK_DIAGNOSE` is 32000.
+
 ## Day 8 — Wed Nov 4 → M8 (no new features)
 
 - 10:00–13:00 Bug fixes only from rehearsal. Rehearse the demo script 3× on the deployed URL (`06-DEMO-AND-SUBMISSION.md`). Each rehearsal: all 3 examples must pass.

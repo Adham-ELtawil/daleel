@@ -12,6 +12,7 @@ const StepSchema = z.enum([
   "idea",
   "explain",
   "report",
+  "snap",
 ]);
 const HashSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const TokensSchema = z.number().int().nonnegative();

@@ -7,7 +7,15 @@ import { costUsd } from "./pricing";
 import { ReplayMiss, type ReplayStore } from "./replay/store";
 
 export type LlmStep =
-  "normalize" | "diagnose" | "stress" | "ladder" | "translate" | "idea" | "explain" | "report";
+  | "normalize"
+  | "diagnose"
+  | "stress"
+  | "ladder"
+  | "translate"
+  | "idea"
+  | "explain"
+  | "report"
+  | "snap";
 export type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh";
 
 export interface LlmStepConfig {
@@ -289,7 +297,7 @@ export function createMetaClient(deps: MetaClientDeps) {
 
     let msgs = messages;
     let maxTokens = cfg.maxCompletionTokens;
-    let truncationRetried = false;
+    let truncationRetries = 0;
     let repairRetried = false;
     let recordedUsage: Completion["usage"] | undefined;
     let recordedCost = 0;
@@ -348,9 +356,14 @@ export function createMetaClient(deps: MetaClientDeps) {
       }
 
       if (completion.finishReason === "length") {
-        if (truncationRetried) throw new OutputTruncated(maxTokens);
-        truncationRetried = true;
-        maxTokens *= 2; // Muse Spark always reasons; reasoning tokens count against this budget
+        // Reasoning can consume the whole budget and leave content empty. A 16000 cap then
+        // gets one more try at 32000 and, if that is still empty, one at 64000.
+        const empty = !completion.content?.trim();
+        const allowed = empty && cfg.maxCompletionTokens >= 16000 ? 2 : 1;
+        if (truncationRetries >= allowed || maxTokens >= 64000)
+          throw new OutputTruncated(maxTokens);
+        truncationRetries += 1;
+        maxTokens = Math.min(64000, maxTokens * 2);
         continue;
       }
 

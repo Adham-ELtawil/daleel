@@ -174,7 +174,7 @@ All variables are documented in [`.env.example`](.env.example) (a test keeps it 
 | `DEMO_REPLAY`                                                   | `0`                                  | `1` = serve committed recordings, never call Meta. |
 | `MODEL_{DIAGNOSE,STRESS,LADDER,EXPLAIN}`                        | `muse-spark-1.3`                     | Model per step.                                    |
 | `EFFORT_DIAGNOSE` / `STRESS` / `LADDER` / `EXPLAIN`             | `high` / `medium` / `low` / `medium` | Reasoning effort per step (`minimal`…`xhigh`).     |
-| `MAXTOK_*`                                                      | 16000 / 16000 / 8000 / 16000         | Completion budget incl. reasoning tokens.          |
+| `MAXTOK_*`                                                      | 32000 / 16000 / 8000 / 16000         | Completion budget incl. reasoning tokens.          |
 | `PROMPT_CACHE_RETENTION`                                        | `24h`                                | Prompt cache hint (`in_memory` or `24h`).          |
 | `DAILY_BUDGET_USD`                                              | `10`                                 | Hard daily cap on live spend.                      |
 | `RUNNER_PROVIDER`                                               | `none`                               | `local` = C++17 sandbox (Linux/Docker).            |

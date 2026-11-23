@@ -234,6 +234,7 @@ export const llmCalls = sqliteTable(
         "idea",
         "explain",
         "report",
+        "snap",
         "asr",
       ],
     }).notNull(),
