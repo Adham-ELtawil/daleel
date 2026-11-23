@@ -25,18 +25,20 @@ export function buildStressMessages({
 }: {
   problem: Parameters<typeof buildProblemBlock>[0];
   attempt: AttemptBlock;
-  diagnosis: Diagnosis;
+  diagnosis?: Diagnosis;
 }): ChatMessage[] {
+  // Omitting diagnosis keeps the developer prompt identical and lets the call start early.
+  // Suspect inputs from the finished diagnosis are still executed by the runner.
+  const diagnosisLine = diagnosis
+    ? `\n<diagnosis_internal>${taggedText(diagnosis.root_cause_internal)} | suspects: ${taggedText(JSON.stringify(diagnosis.suspect_inputs))}</diagnosis_internal>`
+    : "";
   return [
     {
       role: "developer",
       content: DEVELOPER_PROMPT.replace("{{SAFETY_AND_DATA}}", () => SAFETY_AND_DATA),
     },
     { role: "developer", content: buildProblemBlock(problem) },
-    {
-      role: "user",
-      content: `${buildAttemptBlock(attempt)}\n<diagnosis_internal>${taggedText(diagnosis.root_cause_internal)} | suspects: ${taggedText(JSON.stringify(diagnosis.suspect_inputs))}</diagnosis_internal>`,
-    },
+    { role: "user", content: `${buildAttemptBlock(attempt)}${diagnosisLine}` },
   ];
 }
 

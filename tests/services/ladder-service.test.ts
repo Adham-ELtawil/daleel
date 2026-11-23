@@ -87,10 +87,28 @@ it("accepts a clean regeneration, sends only verified runner fields, and caches 
   expect(prompt).toContain("root_cause_internal");
   expect(prompt).toContain("verified");
   expect(prompt).not.toContain("private brute");
+  expect(prompt).not.toContain('"status":"tle"');
   await ensureLadder(d, id, "ar-EG");
   expect(d.llm).toHaveBeenCalledTimes(3);
   expect(await store.db.select().from(hintLadders)).toHaveLength(2);
   expect(
     (await store.db.select().from(attempts).where(eq(attempts.id, id)).get())?.maxHintLevel,
   ).toBe(2);
+});
+it("includes a time-limit status in the coach prompt", async () => {
+  await diagnose();
+  await store.db.insert(stressRuns).values({
+    ...rows.stress,
+    status: "verified",
+    actualOutput: "",
+    testsJson: JSON.stringify({
+      tests: [],
+      source: "test",
+      contradiction: false,
+      student_status: "tle",
+    }),
+  });
+  const d = deps();
+  await ensureLadder(d, id, "en");
+  expect(String(d.llm.mock.calls[0][1][2].content)).toContain('"status":"tle"');
 });

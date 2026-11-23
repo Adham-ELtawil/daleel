@@ -213,17 +213,15 @@ export function createHandlers(deps: {
         } catch (error) {
           if (error instanceof BudgetReached) throw new HttpError(503, "budget_reached");
           if (error instanceof HttpError) throw error;
+          if (
+            error instanceof SchemaError ||
+            error instanceof MetaApiError ||
+            error instanceof OutputTruncated
+          )
+            throw new HttpError(503, "llm_error");
           const attempt = await ownedAttempt(options.db, id, options.cookie);
-          if (attempt.mode === "idea") {
-            if (error instanceof ReplayMiss)
-              throw new HttpError(503, "idea_replay_unavailable", locale ?? attempt.locale);
-            if (
-              error instanceof SchemaError ||
-              error instanceof MetaApiError ||
-              error instanceof OutputTruncated
-            )
-              throw new HttpError(503, "llm_error");
-          }
+          if (attempt.mode === "idea" && error instanceof ReplayMiss)
+            throw new HttpError(503, "idea_replay_unavailable", locale ?? attempt.locale);
           throw error;
         }
       }),
@@ -237,6 +235,12 @@ export function createHandlers(deps: {
           return await explainAttempt(options, id, locale);
         } catch (error) {
           if (error instanceof BudgetReached) throw new HttpError(503, "budget_reached");
+          if (
+            error instanceof SchemaError ||
+            error instanceof MetaApiError ||
+            error instanceof OutputTruncated
+          )
+            throw new HttpError(503, "llm_error");
           throw error;
         }
       }),

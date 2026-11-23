@@ -134,6 +134,10 @@ Implementation is 284 changed lines including deletions; 348 with docs, excludin
 Real CF 1A runner integration is blocked here:
 bubblewrap cannot create a NETLINK_ROUTE socket, returning Operation not permitted at nproc 1300.
 
+- [x] Timeout verdicts, faster first result, and dropped-connection retry. A runner time limit or runtime error is no longer labeled Wrong answer, in English or Arabic, and the coach prompt can see `tle` / `re` / `mle` / `ole`. Live attempts probe official samples immediately and overlap the counterexample model with diagnosis; replay and record stay sequential so recordings keep their hashes. Explain, hints and diagnosis retry a dropped fetch without a second model call when the first call is still in flight or already cached. Explain model failures return 503 `llm_error`. No new env vars or migrations.
+
+Fresh `pnpm lint && pnpm typecheck && pnpm test` passed: `Test Files 97 passed | 1 skipped (98)`; `Tests 896 passed | 7 skipped (903)`. Lint reports 3 pre-existing warnings in `src/stickers/fun.ts`. Production build passed with a throwaway session secret and an empty model key. No live Muse Spark call: this environment has no `MODEL_API_KEY`.
+
 ## Day 8 — Wed Nov 4 → M8 (no new features)
 
 - 10:00–13:00 Bug fixes only from rehearsal. Rehearse the demo script 3× on the deployed URL (`06-DEMO-AND-SUBMISSION.md`). Each rehearsal: all 3 examples must pass.

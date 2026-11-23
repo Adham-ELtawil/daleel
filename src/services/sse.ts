@@ -5,7 +5,13 @@ import { StressPublicSchema } from "@/src/domain/stress-public";
 const EventSchema = z.discriminatedUnion("event", [
   z.object({
     event: z.literal("stage"),
-    data: z.object({ name: z.enum(["reading", "thinking", "validating"]) }),
+    data: z.object({
+      name: z.enum(["reading", "thinking", "validating", "checking_samples", "samples_clear"]),
+    }),
+  }),
+  z.object({
+    event: z.literal("preview"),
+    data: z.object({ public_summary: z.string().min(1).max(240) }),
   }),
   z.object({
     event: z.literal("diagnosis"),
@@ -31,6 +37,7 @@ const EventSchema = z.discriminatedUnion("event", [
   }),
 ]);
 export type DiagnoseEvent = z.infer<typeof EventSchema>;
+export type StageName = Extract<DiagnoseEvent, { event: "stage" }>["data"]["name"];
 export function serializeSse(event: DiagnoseEvent): string {
   return `event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`;
 }

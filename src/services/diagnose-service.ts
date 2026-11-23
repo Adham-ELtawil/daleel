@@ -3,7 +3,7 @@ import { and, eq, gte, isNull, lt, ne, or } from "drizzle-orm";
 import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
-import { StoredDiagnosisSchema, TagsSchema } from "@/src/db/json";
+import { StoredDiagnosisSchema, StoredStressTestsSchema, TagsSchema } from "@/src/db/json";
 import {
   attempts,
   diagnoses,
@@ -16,6 +16,8 @@ import {
 import { codeLines } from "@/src/domain/code-lines";
 import { validateDiagnosis } from "@/src/domain/diagnosis-validate";
 import { fixArabicPublicText } from "@/src/domain/arabic-style";
+import { previewSummary, streamedBugFound } from "@/src/domain/run-verdict";
+import { StressPublicSchema, type StressPublic } from "@/src/domain/stress-public";
 import {
   BudgetReached,
   SchemaError,
@@ -25,12 +27,19 @@ import {
   type LlmStepConfig,
 } from "@/src/llm/meta-client";
 import { buildDiagnoseMessages } from "@/src/llm/prompts/diagnose";
+import { buildStressMessages } from "@/src/llm/prompts/stress";
 import { DiagnosisSchema, toPublic, type Diagnosis } from "@/src/llm/schemas/diagnosis";
+import { StressPlanSchema, type StressPlan } from "@/src/llm/schemas/stress";
 import { t } from "@/src/i18n";
 import { HttpError } from "./http-error";
 import type { DiagnoseEvent } from "./sse";
 import { ensureLadder, type LadderDeps } from "./ladder-service";
-import { stressAttempt, type StressDeps } from "./stress";
+import {
+  probeStudentSamples,
+  stressAttempt,
+  withRunContradiction,
+  type StressDeps,
+} from "./stress";
 
 // Keep stale claims older than the 120s LLM deadline.
 export const STALE_MS = 150000;
@@ -46,6 +55,8 @@ export type DiagnoseDeps = {
   now: () => number;
   ladder: Pick<LadderDeps, "llm" | "config">;
   stress?: Pick<StressDeps, "llm" | "config" | "runner">;
+  /** Live attempts overlap the counterexample model with diagnosis. Replay and record stay sequential. */
+  parallelStress?: boolean;
   log?: (code: string) => void;
 };
 async function withDeadline(job: (signal: AbortSignal) => Promise<Diagnosis>) {
@@ -106,6 +117,8 @@ export async function diagnoseAttempt(
     .returning({ id: attempts.id })
     .get();
   if (!claimed) throw new HttpError(409, "already_running");
+  const stressAbort = new AbortController();
+  let earlyPlan: Promise<StressPlan | null> | undefined;
   try {
     if (retry) {
       await db.transaction(async (tx) => {
@@ -143,6 +156,40 @@ export async function diagnoseAttempt(
     const saved = cached && StoredDiagnosisSchema.parse(JSON.parse(cached.diagnosis.resultJson));
     let recordedAt: string | null = saved?.recordedAt ?? null;
     emit({ event: "stage", data: { name: "thinking" } });
+    const ahead: { hit: StressPublic | null } = { hit: null };
+    const canOverlap =
+      !saved &&
+      deps.parallelStress === true &&
+      deps.stress !== undefined &&
+      attempt.language === "cpp17" &&
+      deps.stress.runner.name !== "none";
+    if (canOverlap && deps.stress) {
+      const stress = deps.stress;
+      earlyPlan = (async () => {
+        try {
+          emit({ event: "stage", data: { name: "checking_samples" } });
+          const probe = await probeStudentSamples(stress.runner, problem, attempt.code);
+          if (stressAbort.signal.aborted) return null;
+          if (probe.kind === "hit") {
+            ahead.hit = probe.result;
+            return null;
+          }
+          emit({ event: "stage", data: { name: "samples_clear" } });
+          if (stressAbort.signal.aborted) return null;
+          const plan = await stress.llm(stress.config, buildStressMessages({ problem, attempt }), {
+            zod: StressPlanSchema,
+            attemptId,
+            userId: attempt.userId,
+            cacheKey: `problem:${problem.id}`,
+            signal: stressAbort.signal,
+          });
+          return stressAbort.signal.aborted ? null : plan;
+        } catch {
+          return null;
+        }
+      })();
+    }
+    let preview = "";
     const raw = saved
       ? saved.value
       : await withDeadline((signal) =>
@@ -154,6 +201,17 @@ export async function diagnoseAttempt(
             cacheKey: `problem:${problem.id}`,
             onReplay: (date) => {
               recordedAt = date;
+            },
+            onDelta: (text) => {
+              if (streamedBugFound(text) === false) stressAbort.abort();
+              let summary = previewSummary(text);
+              if (!summary || summary === preview) return;
+              if (attempt.locale === "ar-EG") {
+                summary = fixArabicPublicText(summary).slice(0, 240);
+                if (!summary) return;
+              }
+              preview = summary;
+              emit({ event: "preview", data: { public_summary: summary } });
             },
           }),
         );
@@ -194,13 +252,48 @@ export async function diagnoseAttempt(
       event: "diagnosis",
       data: { public: toPublic(result), replay: recordedAt !== null, recordedAt },
     });
+    if (!result.bug_found) stressAbort.abort();
     if (deps.stress && result.bug_found) {
       try {
-        const stress = await stressAttempt({ db, now, log: deps.log, ...deps.stress }, attemptId);
-        emit({ event: "stress", data: { result: stress } });
+        const storedStress = await db
+          .select()
+          .from(stressRuns)
+          .where(eq(stressRuns.attemptId, attemptId))
+          .get();
+        if (storedStress) {
+          const metadata = StoredStressTestsSchema.parse(JSON.parse(storedStress.testsJson));
+          emit({
+            event: "stress",
+            data: {
+              result: StressPublicSchema.parse({
+                status: storedStress.status,
+                failing_input: storedStress.failingInput,
+                expected_output: storedStress.expectedOutput,
+                actual_output: storedStress.actualOutput,
+                compile_output: storedStress.compileOutput,
+                source: metadata.source,
+                contradiction: metadata.contradiction,
+                student_status:
+                  metadata.student_status ?? (storedStress.status === "verified" ? "wa" : null),
+              }),
+            },
+          });
+        } else {
+          const plan = earlyPlan ? await earlyPlan : null;
+          const stressDeps = { db, now, log: deps.log, ...deps.stress };
+          const stress = ahead.hit
+            ? await stressAttempt(stressDeps, attemptId, {
+                preset: withRunContradiction(ahead.hit, result),
+              })
+            : await stressAttempt(stressDeps, attemptId, plan ? { plan } : undefined);
+          emit({ event: "stress", data: { result: stress } });
+        }
       } catch {
         (deps.log ?? ((code) => console.error({ requestId: attemptId, code })))("stress_error");
       }
+    } else {
+      stressAbort.abort();
+      await earlyPlan?.catch(() => undefined);
     }
     await db.update(attempts).set({ diagnosingSince: now() }).where(eq(attempts.id, attemptId));
     try {
@@ -215,6 +308,8 @@ export async function diagnoseAttempt(
       .where(eq(attempts.id, attemptId));
     emit({ event: "done", data: {} });
   } catch (error) {
+    stressAbort.abort();
+    await earlyPlan?.catch(() => undefined);
     await db
       .update(attempts)
       .set({ status: "error", diagnosingSince: null })

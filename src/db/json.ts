@@ -12,8 +12,14 @@ export const StoredStressTestsSchema = z.union([
   z.strictObject({
     tests: StressTestsSchema,
     ...StressPublicSchema.pick({ source: true, contradiction: true }).shape,
+    student_status: StressPublicSchema.shape.student_status.optional(),
   }),
-  StressTestsSchema.transform((tests) => ({ tests, source: null, contradiction: false })),
+  StressTestsSchema.transform((tests) => ({
+    tests,
+    source: null,
+    contradiction: false,
+    student_status: null,
+  })),
 ]);
 
 // Keep provenance outside model output; legacy rows are treated as live.

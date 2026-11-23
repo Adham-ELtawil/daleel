@@ -106,6 +106,7 @@ it("verifies the first mismatch on test 2 with raw runner outputs and keeps brut
     compile_output: null,
     source: "test",
     contradiction: false,
+    student_status: "wa",
   });
   expect(Object.keys(result).sort()).toEqual([
     "actual_output",
@@ -115,6 +116,7 @@ it("verifies the first mismatch on test 2 with raw runner outputs and keeps brut
     "failing_input",
     "source",
     "status",
+    "student_status",
   ]);
   expect(JSON.stringify(result)).not.toContain(planFixture.brute_cpp);
   expect(await saved()).toMatchObject({
@@ -467,4 +469,28 @@ it("cleans a compilation that finishes after the deadline without running it", a
   expect(d.runner.dispose).toHaveBeenCalledWith("late");
   expect(d.runner.compile).toHaveBeenCalledOnce();
   expect(d.runner.run).not.toHaveBeenCalled();
+});
+it.each(["tle", "re", "mle", "ole"] as const)(
+  "reports a student %s instead of a wrong answer",
+  async (status) => {
+    const d = await deps();
+    d.runner.run.mockImplementation(async (binary, input) => {
+      const failing = binary === "student" && input === "1\n";
+      return output(failing ? "" : input === "8\n" ? "YES\n" : "NO\n", failing ? status : "ok");
+    });
+    const result = await (await api()).stressAttempt(d, id);
+    expect(result).toMatchObject({
+      status: "verified",
+      failing_input: "1\n",
+      expected_output: "NO\n",
+      actual_output: "",
+      student_status: status,
+    });
+    const stored = StoredStressTestsSchema.parse(JSON.parse((await saved())!.testsJson));
+    expect(stored.student_status).toBe(status);
+  },
+);
+it("keeps a finished mismatch as a wrong answer", async () => {
+  const d = await deps();
+  expect((await (await api()).stressAttempt(d, id)).student_status).toBe("wa");
 });

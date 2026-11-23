@@ -115,6 +115,7 @@ it("streams diagnosis -> stress -> ladder_ready -> done and reloads the same saf
     compile_output: null,
     source: "test",
     contradiction: false,
+    student_status: "wa",
   };
   expect(events[4]).toEqual({ event: "stress", data: { result: verified } });
   expect(d.ladder.llm.mock.calls[0][1].map((message) => message.content).join("\n")).toContain(
@@ -586,6 +587,89 @@ it("ends with diagnosis + done when ladder generation fails and logs a safe ladd
   expect(JSON.stringify(log.mock.calls)).not.toContain("private ladder detail");
 });
 
+it("starts the counterexample model before diagnosis resolves and emits a streamed summary", async () => {
+  const id = await attempt();
+  const d = stressDeps();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const marks: string[] = [];
+  d.llm.mockImplementation(async (_config, _messages, options) => {
+    marks.push("diagnosis-start");
+    options.onDelta?.(
+      '{"bug_found":true,"public_summary":"The loop can run forever on some ribbons."}',
+    );
+    await gate;
+    marks.push("diagnosis-end");
+    return result;
+  });
+  d.stress.llm.mockImplementation(async () => {
+    marks.push("stress-start");
+    return { ...stressPlan, checker: "exact_tokens" as const };
+  });
+  const events: DiagnoseEvent[] = [];
+  const running = diagnoseAttempt({ ...d, parallelStress: true }, id, (event) =>
+    events.push(event),
+  );
+  await vi.waitFor(() => expect(marks).toContain("stress-start"));
+  expect(marks).not.toContain("diagnosis-end");
+  expect(events.some((event) => event.event === "diagnosis")).toBe(false);
+  expect(events).toContainEqual({
+    event: "preview",
+    data: { public_summary: "The loop can run forever on some ribbons." },
+  });
+  release();
+  await running;
+  expect(marks.indexOf("stress-start")).toBeLessThan(marks.indexOf("diagnosis-end"));
+  expect(d.stress.llm).toHaveBeenCalledOnce();
+  expect(events.map((event) => event.event).filter((event) => event !== "stage")).toEqual([
+    "preview",
+    "diagnosis",
+    "stress",
+    "ladder_ready",
+    "done",
+  ]);
+});
+it("shows a sample time limit without a counterexample model call", async () => {
+  const id = await attempt();
+  const d = stressDeps();
+  d.stress.runner.run.mockImplementation(async (binary) => ({
+    status: binary === "student" ? "tle" : "ok",
+    stdout: binary === "student" ? "" : "YES\n",
+    stderr: "",
+    timeMs: binary === "student" ? 2000 : 1,
+    exitCode: binary === "student" ? null : 0,
+  }));
+  const events: DiagnoseEvent[] = [];
+  await diagnoseAttempt({ ...d, parallelStress: true }, id, (event) => events.push(event));
+  expect(d.stress.llm).not.toHaveBeenCalled();
+  expect(events.find((event) => event.event === "stress")).toMatchObject({
+    data: {
+      result: {
+        status: "verified",
+        source: "sample",
+        student_status: "tle",
+        actual_output: "",
+        failing_input: "8\n",
+      },
+    },
+  });
+});
+it("reuses a saved counterexample when diagnosis is requested again", async () => {
+  const id = await attempt();
+  const d = stressDeps();
+  await diagnoseAttempt(d, id, () => {});
+  d.llm.mockClear();
+  d.stress.llm.mockClear();
+  d.stress.runner.compile.mockClear();
+  const events: DiagnoseEvent[] = [];
+  await diagnoseAttempt(d, id, (event) => events.push(event));
+  expect(d.llm).not.toHaveBeenCalled();
+  expect(d.stress.llm).not.toHaveBeenCalled();
+  expect(d.stress.runner.compile).not.toHaveBeenCalled();
+  expect(events.some((event) => event.event === "stress")).toBe(true);
+});
 it.each(["diagnosed", "error"] as const)(
   "sets the claim timestamp and clears it after %s",
   async (outcome) => {

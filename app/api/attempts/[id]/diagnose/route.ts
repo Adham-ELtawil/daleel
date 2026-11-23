@@ -12,5 +12,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     llm: callModel,
     ladder: { config: ladderStepConfig(process.env), llm: callModel },
     stress: stressDeps(process.env),
+    parallelStress: process.env.DEMO_REPLAY !== "1" && process.env.DEMO_RECORD !== "1",
   })(request, (await params).id);
 }

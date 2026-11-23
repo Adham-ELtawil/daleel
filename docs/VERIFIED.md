@@ -57,6 +57,8 @@ workspace. The CF 1A `6 6 4` integration was attempted and now reports RunnerErr
 remains unverified here. Existing stress tests confirm that RunnerError yields status `error`, without
 marking the reference `brute_untrusted` or failing the attempt.
 
+No live Muse Spark call was made for the timeout-verdict and latency work: this environment has no `MODEL_API_KEY`. The 37.7 s diagnosis and 51.5 s counterexample figures are the owner's report of one Codeforces 189A attempt, not a new measurement. A unit test checks that the counterexample model is started before that diagnosis call resolves. Overlapping those two reported calls, after a short local sample probe, is an estimate of about 54 s to both results instead of about 89 s, and a sample time limit can show in a few seconds without the counterexample model. Streaming `public_summary` does not start until the model emits that field.
+
 PR-29 fresh verification: lint/typecheck passed; `Test Files 91 passed | 1 skipped (92)`;
 `Tests 842 passed | 6 skipped (848)`. Changed matched files pass Prettier and production build passed
 with the supplied throwaway session secret, compiling successfully and generating 16/16 static pages.

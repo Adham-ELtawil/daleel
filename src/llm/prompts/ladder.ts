@@ -31,7 +31,13 @@ export function buildLadderMessages({
 }: {
   problem: Parameters<typeof buildProblemBlock>[0];
   diagnosis: Diagnosis;
-  runnerResult: { verified: true; input: string; expected: string; actual: string } | null;
+  runnerResult: {
+    verified: true;
+    input: string;
+    expected: string;
+    actual: string;
+    status?: "tle" | "mle" | "re" | "ole";
+  } | null;
   code: string;
   locale: "en" | "ar-EG";
 }): ChatMessage[] {

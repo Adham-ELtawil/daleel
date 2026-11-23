@@ -17,7 +17,12 @@ export function buildExplainMessages(context: {
   problem: Parameters<typeof blocks.buildProblemBlock>[0];
   attempt: blocks.AttemptBlock;
   diagnosis: Diagnosis;
-  stress: { status: string; failingInput: string | null; expectedOutput: string | null } | null;
+  stress: {
+    status: string;
+    failingInput: string | null;
+    expectedOutput: string | null;
+    studentStatus?: "wa" | "tle" | "mle" | "re" | "ole" | null;
+  } | null;
   locale: "en" | "ar-EG";
 }): ChatMessage[] {
   const { problem, attempt, diagnosis, stress, locale } = context;
@@ -39,7 +44,11 @@ export function buildExplainMessages(context: {
       content: `${blocks.buildAttemptBlock(attempt)}
 <diagnosis_internal>${blocks.taggedText(JSON.stringify(diagnosis))}</diagnosis_internal>
 <trace_input>${blocks.taggedText(input)}</trace_input>
-<expected_output>${blocks.taggedText(expected)}</expected_output>`,
+<expected_output>${blocks.taggedText(expected)}</expected_output>${
+        verified?.studentStatus && verified.studentStatus !== "wa"
+          ? `\n<runner_status>${verified.studentStatus}</runner_status>`
+          : ""
+      }`,
     },
   ];
 }

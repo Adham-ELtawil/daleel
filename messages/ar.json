@@ -56,7 +56,12 @@
     "brute_untrusted": "الكود المرجعي فشل في مراجعة الـ samples.",
     "error": "معرفناش نكمّل التحقق بالتشغيل.",
     "missing": "لسه مفيش نتيجة من تشغيل الكود.",
-    "contradiction": "ممكن التشخيص يكون مش دقيق؛ راجع الـ counterexample."
+    "contradiction": "ممكن التشخيص يكون مش دقيق؛ راجع الـ counterexample.",
+    "verdict_tle": "وقت التنفيذ خلص",
+    "verdict_mle": "الذاكرة خلصت",
+    "verdict_re": "حصل runtime error",
+    "verdict_ole": "الـ output زاد عن الحد",
+    "no_output": "مفيش output"
   },
   "walkthrough": {
     "title": "تابع الكود خطوة خطوة",
@@ -210,6 +215,9 @@
     "reading": "بنقرأ المسألة…",
     "thinking": "بنحلّل الكود بتاعك…",
     "validating": "بنراجع التشخيص…",
+    "checking_samples": "بنشغّل الكود بتاعك على الـ samples الرسمية…",
+    "samples_clear": "الكود خلّص الـ samples الرسمية. بندوّر على counterexample…",
+    "connection_dropped": "الاتصال قطع قبل ما النتيجة توصل. جرّب تاني.",
     "bug_class": "نوع الـ bug",
     "confidence": "درجة الثقة",
     "low_confidence": "مش متأكدين المشكلة في أنهي سطر. راجع الملخص قبل ما تغيّر الكود.",

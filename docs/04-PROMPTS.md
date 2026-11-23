@@ -151,6 +151,8 @@ Do not copy the student's code into brute_cpp. Do not explain. Output JSON only.
 ```
 User message: PROBLEM BLOCK is already the 2nd developer message; user = ATTEMPT BLOCK + `<diagnosis_internal>{{root_cause_internal}} | suspects: {{suspect_inputs}}</diagnosis_internal>`.
 
+On a live attempt the stress call may start before diagnosis finishes. That request uses the same developer prompt and problem block, and the user message is only the attempt block. Suspect inputs from the finished diagnosis are still executed by the runner. Replay and `pnpm record:demo` wait for the diagnosis and send the full user message, so existing recordings keep their hashes.
+
 ### 2.2 JSON Schema `StressPlan`
 ```json
 {
@@ -173,7 +175,7 @@ PR-16A uses diagnosis suspect inputs first, then plan tests, retaining the first
 2. Compile brute + student (`g++ -O2 -std=c++17`). Student CE → `compile_error` with output. Brute CE → `brute_untrusted`.
 3. **Trust gate:** run brute on every official sample; any mismatch with the official output → `brute_untrusted`.
 4. Run student on the samples too (if the student fails a sample, that sample is the counterexample: it is official, so status `verified` with `source:"sample"`).
-5. For each test (in order): run brute (2 s); if brute TLE/RE → skip the test; run student; compare with the checker. First mismatch (or student TLE/RE where brute is fine) → `verified` with that input.
+5. For each test (in order): run brute (2 s); if brute TLE/RE → skip the test; run student; compare with the checker. First mismatch (or student TLE/RE where brute is fine) → `verified` with that input. The public result includes `student_status`: `wa` when the program finished with the wrong output, otherwise `tle`, `mle`, `re` or `ole`. The card uses that status instead of always saying wrong answer.
 6. No mismatch → `no_mismatch`.
 7. If verified and the failing input contradicts `diagnosis.lines` (heuristic: the diagnosis was `time_complexity` but the student produced a wrong answer, or vice versa) → trigger one re-diagnose with `<runner_result>` appended (see §1, same prompt).
 PR-16A returns a `contradiction` flag for that heuristic, verified evidence with `bug_found=false`, or `no_mismatch` with confidence below 0.4. TODO PR-16B: wire at most one re-diagnosis with the counterexample in the student note; no re-diagnosis occurs in the stress service.
@@ -195,7 +197,7 @@ If the bug is a compile error, level 1 quotes the first relevant compiler messag
 {{STYLE}}
 {{SAFETY_AND_DATA}}
 ```
-User message: `<diagnosis>` (public + internal fields) + `<runner_result>` (`verified` input/expected/actual, or "not verified") + `uncertain: {{confidence < 0.4 && !verified}}` + `<student_code>` (with line numbers).
+User message: `<diagnosis>` (public + internal fields) + `<runner_result>` (`verified` input/expected/actual, or "not verified") + `uncertain: {{confidence < 0.4 && !verified}}` + `<student_code>` (with line numbers). When the runner status is `tle`, `mle`, `re` or `ole`, `runner_result` also includes `status`. A finished wrong answer omits `status`, so recorded ladders keep their hashes. The explain user message adds `<runner_status>` in that same non-answer case.
 
 ### 3.2 JSON Schema `HintLadder`
 ```json
