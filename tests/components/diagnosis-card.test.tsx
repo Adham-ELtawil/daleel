@@ -20,6 +20,7 @@ const verified: StressPublic = {
   compile_output: null,
   source: "test",
   contradiction: false,
+  student_status: "wa" as const,
 };
 function render(
   stress?: StressPublic,
@@ -147,6 +148,22 @@ it("caps compiler output at 30 lines, keeps it LTR and escapes HTML", () => {
   expect(html).toContain("compiler line 30");
   expect(html).not.toContain("compiler line 31");
   expect(html).not.toContain("compiler line 32");
+});
+it.each([
+  ["tle", "Time limit exceeded", "وقت التنفيذ خلص", "No output", "مفيش output"],
+  ["re", "Runtime error", "حصل runtime error", "No output", "مفيش output"],
+  ["mle", "Memory limit exceeded", "الذاكرة خلصت", "No output", "مفيش output"],
+  ["ole", "Output limit exceeded", "الـ output زاد عن الحد", "No output", "مفيش output"],
+] as const)("labels a %s counterexample in both locales", (status, en, ar, emptyEn, emptyAr) => {
+  for (const [locale, verdict, empty] of [
+    ["en", en, emptyEn],
+    ["ar-EG", ar, emptyAr],
+  ] as const) {
+    const html = render({ ...verified, student_status: status, actual_output: "" }, locale);
+    expect(html).toContain(verdict);
+    expect(html).toContain(empty);
+    expect(html).not.toContain(locale === "en" ? "Wrong answer" : "إجابة غلط");
+  }
 });
 it.each(["en", "ar-EG"] as const)(
   "localizes the contradiction note in %s only when flagged",

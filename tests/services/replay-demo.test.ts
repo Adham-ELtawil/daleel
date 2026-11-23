@@ -171,7 +171,7 @@ async function diagnose(flow: ReturnType<typeof setup>, id: string) {
   expect(response.status).toBe(200);
   const events: DiagnoseEvent[] = [];
   await readSse(response.body!, (event) => events.push(event));
-  expect(events.map((e) => e.event)).toEqual([
+  expect(events.map((e) => e.event).filter((event) => event !== "preview")).toEqual([
     "stage",
     "stage",
     "stage",
@@ -179,7 +179,7 @@ async function diagnose(flow: ReturnType<typeof setup>, id: string) {
     "ladder_ready",
     "done",
   ]);
-  return events[3];
+  return events.find((event) => event.event === "diagnosis");
 }
 it("replays the committed 4A diagnosis and ladder with no key or network calls", async () => {
   const flow = setup("replay");

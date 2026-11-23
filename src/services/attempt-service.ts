@@ -174,6 +174,7 @@ export async function attemptDetail(deps: AttemptDeps, id: string, locale?: "en"
             compile_output: stress.compileOutput,
             source: metadata.source,
             contradiction: metadata.contradiction,
+            student_status: metadata.student_status ?? (stress.status === "verified" ? "wa" : null),
           }),
         }
       : {}),

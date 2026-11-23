@@ -54,6 +54,7 @@ it("accepts the public stress event before ladder_ready and done", async () => {
     compile_output: null,
     source: "test",
     contradiction: true,
+    student_status: "wa",
   };
   const received: DiagnoseEvent[] = [];
   await readSse(

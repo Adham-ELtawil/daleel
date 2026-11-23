@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
-import { StoredDiagnosisSchema, StoredLadderSchema } from "@/src/db/json";
+import { StoredDiagnosisSchema, StoredLadderSchema, StoredStressTestsSchema } from "@/src/db/json";
 import { attempts, diagnoses, hintLadders, stressRuns } from "@/src/db/schema";
 import { applyFallback, validateLadder } from "@/src/domain/ladder-validator";
 import { fixArabicPublicText } from "@/src/domain/arabic-style";
@@ -47,6 +47,8 @@ export async function ensureLadder(
   const stress = idea
     ? undefined
     : await db.select().from(stressRuns).where(eq(stressRuns.attemptId, attemptId)).get();
+  const stressMeta =
+    stress && StoredStressTestsSchema.parse(JSON.parse(stress.testsJson)).student_status;
   const runnerResult =
     stress?.status === "verified" &&
     stress.failingInput !== null &&
@@ -57,6 +59,7 @@ export async function ensureLadder(
           input: stress.failingInput,
           expected: stress.expectedOutput,
           actual: stress.actualOutput,
+          ...(stressMeta && stressMeta !== "wa" ? { status: stressMeta } : {}),
         }
       : null;
   const context = {

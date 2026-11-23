@@ -7,7 +7,7 @@ import { createHandlers } from "@/src/services/handlers";
 import { markAttempt, revealHint } from "@/src/services/attempt-service";
 import { ladderStepConfig } from "@/src/llm/prompts/ladder";
 import { HintLadderSchema } from "@/src/llm/schemas/ladder";
-import { BudgetReached } from "@/src/llm/meta-client";
+import { BudgetReached, MetaApiError, OutputTruncated, SchemaError } from "@/src/llm/meta-client";
 import { tempDb } from "@/tests/db/helpers";
 import example from "@/tests/fixtures/llm/explanation-a.json";
 import ladder from "@/tests/fixtures/llm/ladder-a.json";
@@ -138,4 +138,40 @@ it("rejects missing and other-user attempts, bad bodies and returns safe budget 
     .values({ ...rows.user, id: "other-user", role: "student", locale: "en" });
   await store.db.update(attempts).set({ userId: "other-user" }).where(eq(attempts.id, id));
   expect((await handlers.explain(request(), id)).status).toBe(404);
+});
+it.each([
+  new MetaApiError("private transport detail", 502),
+  new SchemaError("private schema detail"),
+  new OutputTruncated(16000),
+])("maps explain model failures to 503 llm_error", async (error) => {
+  const { handlers, deps } = await setup();
+  await markAttempt({ db: store.db, now: deps.now }, id, "stuck");
+  deps.llm.mockRejectedValue(error);
+  const response = await handlers.explain(request(), id);
+  expect(response.status).toBe(503);
+  const body = await response.json();
+  expect(body).toMatchObject({ error: { code: "llm_error" } });
+  expect(JSON.stringify(body)).not.toContain("private");
+});
+it("joins a second explain onto the in-flight call and then serves the cache", async () => {
+  const { explainAttempt, deps } = await setup();
+  await markAttempt({ db: store.db, now: deps.now }, id, "stuck");
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  deps.llm.mockImplementation(async () => {
+    await gate;
+    return structuredClone(example);
+  });
+  const first = explainAttempt(deps, id);
+  const second = explainAttempt(deps, id);
+  await vi.waitFor(() => expect(deps.llm).toHaveBeenCalledOnce());
+  release();
+  const [a, b] = await Promise.all([first, second]);
+  expect(a).toEqual(b);
+  expect(deps.llm).toHaveBeenCalledOnce();
+  deps.llm.mockClear();
+  expect(await explainAttempt(deps, id)).toEqual(a);
+  expect(deps.llm).not.toHaveBeenCalled();
 });

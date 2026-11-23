@@ -3,6 +3,7 @@ import { ulid } from "ulid";
 import type { Db } from "@/src/db/client";
 import { getProblem, type Problem } from "@/src/db/repo/problems";
 import { StoredDiagnosisSchema, StoredStressTestsSchema } from "@/src/db/json";
+import { runVerdict } from "@/src/domain/run-verdict";
 import type { StressPublic } from "@/src/domain/stress-public";
 import { attempts, diagnoses, stressRuns } from "@/src/db/schema";
 import type { CallOptions, ChatMessage, LlmStepConfig } from "@/src/llm/meta-client";
@@ -41,7 +42,21 @@ const empty = (status: StressPublic["status"]): StressPublic => ({
   compile_output: null,
   source: null,
   contradiction: false,
+  student_status: null,
 });
+export function withRunContradiction(result: StressPublic, diagnosis: Diagnosis): StressPublic {
+  if (result.status === "no_mismatch")
+    return { ...result, contradiction: diagnosis.confidence < 0.4 };
+  if (result.status !== "verified") return result;
+  const verdict = result.student_status ?? "wa";
+  return {
+    ...result,
+    contradiction:
+      !diagnosis.bug_found ||
+      (diagnosis.bug_class === "time_complexity" && verdict === "wa") ||
+      (diagnosis.bug_class !== "time_complexity" && verdict === "tle"),
+  };
+}
 
 // Covers the stress LLM call (medium effort, often 10-40 s) plus compiles and runs.
 export const STRESS_DEADLINE_MS = 120000;
@@ -105,17 +120,18 @@ async function executePlan(
     expected: string,
     actual: RunResult,
     source: "sample" | "test",
-  ): StressPublic => ({
-    ...empty("verified"),
-    failing_input: input,
-    expected_output: expected,
-    actual_output: actual.stdout,
-    source,
-    contradiction:
-      !diagnosis.bug_found ||
-      (diagnosis.bug_class === "time_complexity" && actual.status === "ok") ||
-      (diagnosis.bug_class !== "time_complexity" && actual.status === "tle"),
-  });
+  ): StressPublic =>
+    withRunContradiction(
+      {
+        ...empty("verified"),
+        failing_input: input,
+        expected_output: expected,
+        actual_output: actual.stdout,
+        source,
+        student_status: runVerdict(actual.status),
+      },
+      diagnosis,
+    );
   // Complete the entire trust gate before accepting even an official sample failure.
   for (const sample of problem.samples) {
     const output = await run(brute.binaryId, sample.input, bruteLimits);
@@ -134,12 +150,65 @@ async function executePlan(
     if (actual.status !== "ok" || !matches(expected.stdout, actual.stdout))
       return verified(test.input, expected.stdout, actual, "test");
   }
-  return { ...empty("no_mismatch"), contradiction: diagnosis.confidence < 0.4 };
+  return withRunContradiction(empty("no_mismatch"), diagnosis);
+}
+
+export async function probeStudentSamples(
+  runner: Runner,
+  problem: Problem,
+  code: string,
+): Promise<{ kind: "clear" } | { kind: "hit"; result: StressPublic }> {
+  let binary: string | undefined;
+  try {
+    const compiled = await runner.compile(code, "cpp17");
+    if (!compiled.ok) {
+      return {
+        kind: "hit",
+        result: {
+          ...empty("compile_error"),
+          compile_output: capOutput(compiled.output, 8192, 30),
+        },
+      };
+    }
+    binary = compiled.binaryId;
+    const limits = {
+      timeMs: Math.max(1, Math.min(problem.timeLimitMs, 2000)),
+      memoryMb: Math.max(1, Math.min(problem.memoryLimitMb, 256)),
+      outputKb: 64,
+    };
+    for (const sample of problem.samples) {
+      const output = await runner.run(binary, sample.input, limits);
+      // Only non-ok runs are decided here. Output mismatches wait for the plan's checker.
+      if (output.status !== "ok") {
+        return {
+          kind: "hit",
+          result: {
+            ...empty("verified"),
+            failing_input: sample.input,
+            expected_output: sample.output,
+            actual_output: output.stdout,
+            source: "sample",
+            student_status: runVerdict(output.status),
+          },
+        };
+      }
+    }
+    return { kind: "clear" };
+  } finally {
+    if (binary) {
+      try {
+        await runner.dispose(binary);
+      } catch {
+        /* The full stress run compiles again. */
+      }
+    }
+  }
 }
 
 export async function stressAttempt(
   { db, llm, config, runner, now, log }: StressDeps,
   attemptId: string,
+  options?: { plan?: StressPlan; preset?: StressPublic },
 ): Promise<StressPublic> {
   const attempt = await db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
   const problem = attempt && (await getProblem(db, attempt.problemId));
@@ -151,21 +220,23 @@ export async function stressAttempt(
   const report = log ?? ((code: string) => console.error({ requestId: attemptId, code }));
   let bruteCode: string | null = null;
   let tests: StressPlan["tests"] = [];
-  let result = empty("skipped");
-  if (runner.name !== "none" && attempt.language === "cpp17") {
+  let result = options?.preset ?? empty("skipped");
+  if (!options?.preset && runner.name !== "none" && attempt.language === "cpp17") {
     try {
       result = await withDeadline(async (signal) => {
         const binaries: string[] = [];
         try {
-          const plan = StressPlanSchema.parse(
-            await llm(config, buildStressMessages({ problem, attempt, diagnosis }), {
-              zod: StressPlanSchema,
-              attemptId,
-              userId: attempt.userId,
-              cacheKey: `problem:${problem.id}`,
-              signal,
-            }),
-          );
+          const plan =
+            options?.plan ??
+            StressPlanSchema.parse(
+              await llm(config, buildStressMessages({ problem, attempt, diagnosis }), {
+                zod: StressPlanSchema,
+                attemptId,
+                userId: attempt.userId,
+                cacheKey: `problem:${problem.id}`,
+                signal,
+              }),
+            );
           bruteCode = plan.brute_cpp;
           tests = [
             ...diagnosis.suspect_inputs.map((test) => ({
@@ -210,6 +281,7 @@ export async function stressAttempt(
         tests,
         source: result.source,
         contradiction: result.contradiction,
+        ...(result.student_status ? { student_status: result.student_status } : {}),
       }),
     ),
     failingInput: result.failing_input,

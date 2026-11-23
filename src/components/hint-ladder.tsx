@@ -7,6 +7,7 @@ import { cpp } from "@codemirror/lang-cpp";
 import { appendHint, nextHintLevel, type Hint } from "@/src/domain/attempt-ui";
 import { t } from "@/src/i18n";
 import type { attemptDetail } from "@/src/services/attempt-service";
+import { isDroppedConnection, withConnectionRetry } from "@/src/services/client-retry";
 import { HttpError } from "@/src/services/http-error";
 import { HintRow } from "./ui/hint-row";
 import { Window } from "./ui/window";
@@ -51,7 +52,7 @@ export function HintLadder({
   useEffect(() => {
     onProgress?.({ hints: canExplain, explanation: canExplain && Boolean(explanation) });
   }, [canExplain, explanation, onProgress]);
-  const [explainError, setExplainError] = useState(false);
+  const [explainError, setExplainError] = useState<"load" | "connection" | false>(false);
   const [solved, setSolved] = useState(attempt.status === "solved");
   const [editing, setEditing] = useState(false);
   const [code, setCode] = useState(attempt.code);
@@ -82,17 +83,39 @@ export function HintLadder({
     try {
       const path = `/api/attempts/${attempt.id}`;
       if (action === "hint") {
-        const { hint, replay, recordedAt } = await post<{
-          hint: Hint;
-          replay: boolean;
-          recordedAt: string | null;
-        }>(`${path}/hints/next`, { locale });
-        setProvenance({ replay, recordedAt });
-        setFresh(hint.level);
-        setHints((previous) => appendHint(previous, hint));
-        if (!idea && hint.level >= 3) setCanExplain(true);
+        const before = hints.length;
+        await withConnectionRetry(async () => {
+          try {
+            const { hint, replay, recordedAt } = await post<{
+              hint: Hint;
+              replay: boolean;
+              recordedAt: string | null;
+            }>(`${path}/hints/next`, { locale });
+            setProvenance({ replay, recordedAt });
+            setFresh(hint.level);
+            setHints((previous) => appendHint(previous, hint));
+            if (!idea && hint.level >= 3) setCanExplain(true);
+          } catch (error) {
+            if (!isDroppedConnection(error)) throw error;
+            const deadline = Date.now() + 20000;
+            while (Date.now() < deadline) {
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+              const response = await fetch(`${path}?locale=${locale}`).catch(() => null);
+              if (!response?.ok) continue;
+              const detail = (await response.json()) as Awaited<ReturnType<typeof attemptDetail>>;
+              if (detail.revealedHints.length > before) {
+                setHints(detail.revealedHints);
+                setProvenance({ replay: detail.replay, recordedAt: detail.recordedAt });
+                setFresh(detail.revealedHints.at(-1)?.level);
+                if (!idea && detail.revealedHints.length >= 3) setCanExplain(true);
+                return;
+              }
+            }
+            throw error;
+          }
+        });
       } else if (action === "explain") {
-        setExplanation(await post(`${path}/explain`, { locale }));
+        setExplanation(await withConnectionRetry(() => post(`${path}/explain`, { locale })));
       } else if (action === "recheck") {
         const { attemptId } = await post<{ attemptId: string }>("/api/attempts", {
           problemId: attempt.problemId,
@@ -107,7 +130,9 @@ export function HintLadder({
         setCanExplain(action === "stuck" || hints.length >= 3);
       }
     } catch (failure) {
-      if (action === "explain") setExplainError(true);
+      if (action === "explain")
+        setExplainError(isDroppedConnection(failure) ? "connection" : "load");
+      else if (isDroppedConnection(failure)) setError("connection_dropped");
       else setError(failure instanceof HttpError ? failure.code : "internal_error");
     } finally {
       setBusy(false);
@@ -187,7 +212,9 @@ export function HintLadder({
       <div className="space-y-3">
         {explainError && (
           <p role="alert" className="state-panel state-error">
-            {t("load_error", locale, "walkthrough")}
+            {explainError === "connection"
+              ? t("connection_dropped", locale)
+              : t("load_error", locale, "walkthrough")}
           </p>
         )}
         {canExplain ? (

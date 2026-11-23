@@ -63,6 +63,8 @@ export type CallOptions<T> = {
   userId?: string;
   cacheKey?: string;
   zod: ZodType<T>;
+  /** Accumulated assistant text while a streamed completion is still open. */
+  onDelta?: (text: string) => void;
 };
 
 export class BudgetReached extends Error {
@@ -179,6 +181,7 @@ export function createMetaClient(deps: MetaClientDeps) {
     body: Record<string, unknown>,
     stream: boolean,
     signal?: AbortSignal,
+    onDelta?: (text: string) => void,
   ): Promise<Completion> {
     const api = client();
     if (!stream) {
@@ -209,7 +212,10 @@ export function createMetaClient(deps: MetaClientDeps) {
     let usage: RawUsage;
     for await (const chunk of chunks) {
       const choice = chunk.choices[0];
-      if (choice?.delta?.content) content += choice.delta.content;
+      if (choice?.delta?.content) {
+        content += choice.delta.content;
+        onDelta?.(content);
+      }
       if (choice?.finish_reason) finishReason = choice.finish_reason;
       if (chunk.usage) usage = chunk.usage;
     }
@@ -307,7 +313,7 @@ export function createMetaClient(deps: MetaClientDeps) {
         }
         const started = now();
         try {
-          completion = await request(body, cfg.stream, opts.signal);
+          completion = await request(body, cfg.stream, opts.signal, opts.onDelta);
         } catch (err) {
           const status = err instanceof OpenAI.APIError ? (err.status ?? null) : null;
           const message = err instanceof Error ? err.message : String(err);

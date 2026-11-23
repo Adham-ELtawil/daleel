@@ -3,7 +3,7 @@ import { ulid } from "ulid";
 import { z } from "zod";
 import type { Db } from "@/src/db/client";
 import { getProblem } from "@/src/db/repo/problems";
-import { StoredDiagnosisSchema } from "@/src/db/json";
+import { StoredDiagnosisSchema, StoredStressTestsSchema } from "@/src/db/json";
 import { diagnoses, hintReveals, stressRuns, walkthroughs } from "@/src/db/schema";
 import { validateExplanation } from "@/src/domain/explanation-validate";
 import type { CallOptions, ChatMessage, LlmStepConfig } from "@/src/llm/meta-client";
@@ -39,19 +39,26 @@ function readWalkthrough(row: typeof walkthroughs.$inferSelect) {
     trace: StoredTraceSchema.parse(JSON.parse(row.traceJson)),
   };
 }
-export async function explainAttempt(
-  { db, now, config, llm, cookie }: ExplainDeps,
-  id: string,
-  locale?: "en" | "ar-EG",
-) {
-  const attempt = await ownedAttempt(db, id, cookie);
+const flights = new Map<string, Promise<ReturnType<typeof readWalkthrough>>>();
+export async function explainAttempt(deps: ExplainDeps, id: string, locale?: "en" | "ar-EG") {
+  const attempt = await ownedAttempt(deps.db, id, deps.cookie);
   if (attempt.mode === "idea") throw new HttpError(409, "idea_attempt");
-  const [{ total }] = await db
+  const [{ total }] = await deps.db
     .select({ total: count() })
     .from(hintReveals)
     .where(eq(hintReveals.attemptId, id));
   if (!canExplain(total, attempt.status)) throw new HttpError(403, "locked");
   const language = locale ?? attempt.locale;
+  const flightKey = `${id}:${language}`;
+  const pending = flights.get(flightKey);
+  if (pending) return pending;
+  const job = generateExplanation(deps, id, language).finally(() => flights.delete(flightKey));
+  flights.set(flightKey, job);
+  return job;
+}
+async function generateExplanation(deps: ExplainDeps, id: string, language: "en" | "ar-EG") {
+  const { db, now, config, llm, cookie } = deps;
+  const attempt = await ownedAttempt(db, id, cookie);
   const key = and(eq(walkthroughs.attemptId, id), eq(walkthroughs.locale, language));
   const cached = await db.select().from(walkthroughs).where(key).get();
   if (cached) return readWalkthrough(cached);
@@ -62,9 +69,18 @@ export async function explainAttempt(
   if (!problem) throw new HttpError(404, "not_found");
   const stress =
     (await db.select().from(stressRuns).where(eq(stressRuns.attemptId, id)).get()) ?? null;
+  const studentStatus = stress
+    ? (StoredStressTestsSchema.parse(JSON.parse(stress.testsJson)).student_status ?? null)
+    : null;
   const raw = await llm(
     config,
-    buildExplainMessages({ problem, attempt, diagnosis, stress, locale: language }),
+    buildExplainMessages({
+      problem,
+      attempt,
+      diagnosis,
+      stress: stress ? { ...stress, studentStatus } : null,
+      locale: language,
+    }),
     {
       zod: ExplanationSchema,
       attemptId: id,

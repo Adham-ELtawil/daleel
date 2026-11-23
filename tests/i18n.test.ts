@@ -70,6 +70,11 @@ it("has complete stress copy in both locales with Arabic-first lines", () => {
     "error",
     "missing",
     "contradiction",
+    "verdict_tle",
+    "verdict_mle",
+    "verdict_re",
+    "verdict_ole",
+    "no_output",
   ];
   for (const messages of [en, ar]) {
     expect(messages).toHaveProperty("stress");

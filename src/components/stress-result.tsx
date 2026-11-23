@@ -26,6 +26,15 @@ export function StressResult({
     );
   }
   const verified = result?.status === "verified";
+  const verdictKey =
+    !result?.student_status || result.student_status === "wa"
+      ? "verdict"
+      : (`verdict_${result.student_status}` as const);
+  const actual =
+    result?.actual_output ||
+    (result?.student_status && result.student_status !== "wa"
+      ? t("no_output", locale, "stress")
+      : "");
   return (
     <section aria-live="polite" className="space-y-4">
       {meta && result && (
@@ -42,7 +51,7 @@ export function StressResult({
           <Window title={t("verified", locale, "stress")}>
             <JudgeOutput
               animate
-              verdict={t("verdict", locale, "stress")}
+              verdict={t(verdictKey, locale, "stress")}
               rows={[
                 { label: t("input", locale, "stress"), value: result.failing_input ?? "" },
                 {
@@ -52,7 +61,7 @@ export function StressResult({
                 },
                 {
                   label: t("actual", locale, "stress"),
-                  value: result.actual_output ?? "",
+                  value: actual,
                   tone: "got",
                 },
               ]}

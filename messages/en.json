@@ -56,7 +56,12 @@
     "brute_untrusted": "The reference code failed the sample checks.",
     "error": "Execution verification could not finish.",
     "missing": "No execution result is available.",
-    "contradiction": "The diagnosis may be off; check the counterexample."
+    "contradiction": "The diagnosis may be off; check the counterexample.",
+    "verdict_tle": "Time limit exceeded",
+    "verdict_mle": "Memory limit exceeded",
+    "verdict_re": "Runtime error",
+    "verdict_ole": "Output limit exceeded",
+    "no_output": "No output"
   },
   "walkthrough": {
     "title": "Walkthrough",
@@ -210,6 +215,9 @@
     "reading": "Reading the problem…",
     "thinking": "Analysing your code…",
     "validating": "Checking the diagnosis…",
+    "checking_samples": "Running your code on the official samples…",
+    "samples_clear": "Your code finished the official samples. Searching for a counterexample…",
+    "connection_dropped": "The connection dropped before the result arrived. Please try again.",
     "bug_class": "Bug class",
     "confidence": "Confidence",
     "low_confidence": "Not sure exactly where. Check the summary before changing your code.",
