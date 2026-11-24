@@ -312,6 +312,26 @@ describe("createMetaClient().callStructured", () => {
     });
   });
 
+  it("retries an empty reasoning cutoff twice when the cap is at least 16000", async () => {
+    const truncated = chatCompletion("");
+    truncated.choices[0] = { ...truncated.choices[0], finish_reason: "length" };
+    const body = {
+      ...truncated,
+      choices: [{ ...truncated.choices[0], message: { role: "assistant", content: null } }],
+    };
+    const { client, fake } = setup([
+      { status: 200, json: body },
+      { status: 200, json: body },
+      ok(),
+    ]);
+    expect(
+      await client.callStructured({ ...cfg, maxCompletionTokens: 16000 }, messages, opts),
+    ).toEqual(answer);
+    expect(fake.requests.map((item) => item.body.max_completion_tokens)).toEqual([
+      16000, 32000, 64000,
+    ]);
+  });
+
   it("rejects OutputTruncated when the larger budget is also cut off", async () => {
     const truncated = chatCompletion('{"answer":');
     truncated.choices[0] = { ...truncated.choices[0], finish_reason: "length" };

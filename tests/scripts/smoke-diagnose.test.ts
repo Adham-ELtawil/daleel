@@ -82,7 +82,7 @@ it.each([
     const request = fake.requests[0].body;
     expect(request).toMatchObject({
       stream: true,
-      max_completion_tokens: 16000,
+      max_completion_tokens: 32000,
       prompt_cache_key: `problem:${id}`,
     });
     expect(JSON.stringify(request.messages)).toContain(

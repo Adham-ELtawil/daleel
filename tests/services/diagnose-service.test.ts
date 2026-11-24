@@ -27,6 +27,8 @@ import fixture from "@/tests/fixtures/llm/diagnosis-a.json";
 import ladderFixture from "@/tests/fixtures/llm/ladder-a.json";
 import type { LadderDeps } from "@/src/services/ladder-service";
 import { stressStepConfig } from "@/src/llm/prompts/stress";
+import { snapStepConfig } from "@/src/llm/prompts/snap";
+import snapFixture from "@/tests/fixtures/llm/snap-a.json";
 import type { StressDeps } from "@/src/services/stress";
 import { fakeStressRunner } from "@/tests/runner/stress-fake";
 import stressPlan from "@/tests/fixtures/llm/stress-a.json";
@@ -652,13 +654,79 @@ it("starts the counterexample model before diagnosis resolves and emits a stream
   await running;
   expect(marks.indexOf("stress-start")).toBeLessThan(marks.indexOf("diagnosis-end"));
   expect(d.stress.llm).toHaveBeenCalledOnce();
-  expect(events.map((event) => event.event).filter((event) => event !== "stage")).toEqual([
+  const kinds = events.map((event) => event.event).filter((event) => event !== "stage");
+  expect(kinds.slice(kinds.lastIndexOf("preview"))).toEqual([
     "preview",
     "diagnosis",
     "stress",
     "ladder_ready",
     "done",
   ]);
+});
+it("emits the sample sentence and the snap preview before the slow diagnosis", async () => {
+  const id = await attempt();
+  const d = stressDeps();
+  let releaseDiagnosis!: () => void;
+  const diagnosisGate = new Promise<void>((resolve) => {
+    releaseDiagnosis = resolve;
+  });
+  const started = Date.now();
+  const stamped: { name: string; ms: number; text?: string }[] = [];
+  d.llm.mockImplementation(async () => {
+    await diagnosisGate;
+    return result;
+  });
+  const snap = {
+    config: snapStepConfig({}),
+    llm: vi.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      return snapFixture;
+    }),
+  };
+  const events: DiagnoseEvent[] = [];
+  const running = diagnoseAttempt({ ...d, parallelStress: true, snap }, id, (event) => {
+    stamped.push({
+      name: event.event,
+      ms: Date.now() - started,
+      text: event.event === "preview" ? event.data.public_summary : undefined,
+    });
+    events.push(event);
+  });
+  await vi.waitFor(() =>
+    expect(stamped.some((item) => item.text?.includes("official samples"))).toBe(true),
+  );
+  expect(events.some((event) => event.event === "diagnosis")).toBe(false);
+  await vi.waitFor(() =>
+    expect(stamped.some((item) => item.text === snapFixture.public_summary)).toBe(true),
+  );
+  const local = stamped.find((item) => item.text?.includes("official samples"))!;
+  const snapAt = stamped.find((item) => item.text === snapFixture.public_summary)!;
+  expect(local.ms).toBeLessThan(snapAt.ms);
+  expect(snap.llm).toHaveBeenCalledOnce();
+  releaseDiagnosis();
+  await running;
+  const diagnosisAt = stamped.find((item) => item.name === "diagnosis")!;
+  expect(snapAt.ms).toBeLessThan(diagnosisAt.ms);
+  expect(events.find((event) => event.event === "diagnosis")).toMatchObject({
+    data: { public: { public_summary: result.public_summary } },
+  });
+  expect(result.public_summary).not.toBe(snapFixture.public_summary);
+});
+it("does not spend a snap call in replay or record", async () => {
+  const snap = {
+    config: snapStepConfig({}),
+    llm: vi.fn(async () => snapFixture),
+  };
+  try {
+    vi.stubEnv("DEMO_REPLAY", "1");
+    await diagnoseAttempt({ ...deps(), snap }, await attempt(), () => {});
+    vi.stubEnv("DEMO_REPLAY", "0");
+    vi.stubEnv("DEMO_RECORD", "1");
+    await diagnoseAttempt({ ...deps(), snap }, await attempt(), () => {});
+    expect(snap.llm).not.toHaveBeenCalled();
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });
 it("shows a sample time limit without a counterexample model call", async () => {
   const id = await attempt();

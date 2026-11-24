@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { z } from "zod";
+import { headlineText } from "@/src/domain/probe-headline";
 import { diagnosisHighlights } from "@/src/domain/diagnosis-highlights";
 import { shouldAutostart } from "@/src/domain/attempt-ui";
 import { bugClassLabel, t } from "@/src/i18n";
@@ -139,7 +140,6 @@ export function DiagnosisCard({
               if (event.event === "stage") setStage(event.data.name);
               if (event.event === "preview") setPreview(event.data.public_summary);
               if (event.event === "diagnosis") {
-                setPreview(undefined);
                 setResult({
                   ...event.data.public,
                   replay: event.data.replay,
@@ -217,7 +217,7 @@ export function DiagnosisCard({
               </div>
             )}
             <p dir="auto" className="max-w-[70ch] text-xl">
-              {result?.public_summary ?? preview}
+              {headlineText(preview, result?.public_summary)}
             </p>
             {result && (
               <div className="flex flex-wrap gap-2">

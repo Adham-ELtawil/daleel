@@ -118,13 +118,13 @@ describe("buildDiagnoseMessages", () => {
 });
 
 describe("diagnoseStepConfig", () => {
-  it("defaults to high effort, streaming and a 16000-token completion budget", () => {
+  it("defaults to high effort, streaming and a 32000-token completion budget", () => {
     expect(diagnoseStepConfig({})).toMatchObject({
       step: "diagnose",
       model: "muse-spark-1.3",
       reasoningEffort: "high",
       stream: true,
-      maxCompletionTokens: 16000,
+      maxCompletionTokens: 32000,
       schemaName: "Diagnosis",
     });
   });
